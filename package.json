@@ -1,0 +1,52 @@
+{
+  "name": "asciidoctor-kroki",
+  "version": "0.1.0",
+  "description": "Asciidoctor extension to convert diagrams to images using Kroki",
+  "main": "dist/node/asciidoctor-kroki.js",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "test": "mocha test/**.js",
+    "lint": "standard src/**.js test/**.js",
+    "clean": "rm -rf dist/*",
+    "dist": "npm run clean && npm run dist:browser && npm run dist:node",
+    "dist:browser": "mkdir -p dist/browser && browserify src/asciidoctor-kroki.js --standalone AsciidoctorKroki -o dist/browser/asciidoctor-kroki.js",
+    "dist:node": "mkdir -p dist/node && cp src/**.js dist/node/"
+  },
+  "dependencies": {
+    "pako": "^1.0.10",
+    "rusha": "^0.8.13"
+  },
+  "devDependencies": {
+    "@asciidoctor/core": "^2.0.0",
+    "browserify": "^16.2.3",
+    "chai": "^4.2.0",
+    "dirty-chai": "^2.0.1",
+    "mocha": "^5.2.0",
+    "standard": "^12.0.1"
+  },
+  "peerDependencies": {
+    "@asciidoctor/core": "^2.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Mogztter/asciidoctor-kroki.git"
+  },
+  "keywords": [
+    "asciidoctor",
+    "kroki",
+    "diagrams",
+    "javascript",
+    "extension"
+  ],
+  "author": "Guillaume Grossetie (https://github.com/mogztter)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Mogztter/asciidoctor-kroki/issues"
+  },
+  "homepage": "https://github.com/Mogztter/asciidoctor-kroki#readme",
+  "publishConfig": {
+    "access": "public"
+  }
+}
