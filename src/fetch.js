@@ -2,7 +2,21 @@ const rusha = require('rusha')
 const path = require('path')
 
 module.exports.save = function (diagramUrl, doc, target, format, vfs) {
-  const dirPath = path.join(doc.getAttribute('imagesoutdir') || '', doc.getAttribute('imagesdir') || '')
+  const imagesOutputDir = doc.getAttribute('imagesoutdir')
+  const outDir = doc.getAttribute('outdir')
+  const toDir = doc.getAttribute('to_dir')
+  const baseDir = doc.getAttribute('base_dir') || ''
+  const imagesDir = doc.getAttribute('imagesdir') || ''
+  let dirPath
+  if (imagesOutputDir) {
+    dirPath = imagesOutputDir
+  } else if (outDir) {
+    dirPath = path.join(outDir, imagesDir)
+  } else if (toDir) {
+    dirPath = path.join(toDir, imagesDir)
+  } else {
+    dirPath = path.join(baseDir, imagesDir)
+  }
   const diagramName = `${target || rusha.createHash().update(diagramUrl).digest('hex')}.${format}`
   let read
   if (typeof vfs === 'undefined' || typeof vfs.read !== 'function') {
