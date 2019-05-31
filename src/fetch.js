@@ -1,6 +1,5 @@
 const rusha = require('rusha')
 const path = require('path')
-const fs = require('fs')
 
 module.exports.save = function (diagramUrl, doc, target, format, vfs) {
   const imagesOutputDir = doc.getAttribute('imagesoutdir')

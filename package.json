@@ -7,7 +7,9 @@
     "dist"
   ],
   "scripts": {
-    "test": "mocha test/**.js",
+    "test": "npm run test:node && npm run test:browser",
+    "test:node": "mocha test/test.js",
+    "test:browser": "node test/browser/run.js",
     "lint": "standard src/**.js test/**.js",
     "clean": "rm -rf dist/*",
     "dist": "npm run clean && npm run dist:browser && npm run dist:node",
@@ -24,6 +26,7 @@
     "chai": "^4.2.0",
     "dirty-chai": "^2.0.1",
     "mocha": "^5.2.0",
+    "puppeteer": "^1.17.0",
     "rimraf": "^2.6.3",
     "sinon": "^7.3.2",
     "standard": "^12.0.1"

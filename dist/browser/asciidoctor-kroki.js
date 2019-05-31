@@ -16927,7 +16927,7 @@ function diagramBlockMacro (name, context) {
       }
       const role = attrs.role
       const diagramType = name
-      target = parent.$apply_subs(target)
+      target = parent.$apply_subs(target, ['attributes'])
       let diagramText = vfs.read(target)
       try {
         return processKroki(this, parent, attrs, diagramType, diagramText, context)

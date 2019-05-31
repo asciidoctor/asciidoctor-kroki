@@ -70,7 +70,7 @@ Hello -> World
 `
       const registry = asciidoctor.Extensions.create()
       asciidoctorKroki.register(registry)
-      const html = asciidoctor.convert(input, { extension_registry: registry, attributes: { 'kroki-fetch-diagram': true  } })
+      const html = asciidoctor.convert(input, { extension_registry: registry, attributes: { 'kroki-fetch-diagram': true } })
       expect(html).to.contain('<img src=".asciidoctor/kroki/7a123c0b2909750ca5526554cd8620774ccf6cd9.svg" alt="hello-world">')
     })
     it('should not download twice the same image', () => {
@@ -85,7 +85,7 @@ AsciiDoc -> HTML5: convert
       sinon.spy(http, 'get')
       const registry = asciidoctor.Extensions.create()
       asciidoctorKroki.register(registry)
-      const html = asciidoctor.convert(input, { extension_registry: registry, attributes: { 'kroki-fetch-diagram': true  } })
+      const html = asciidoctor.convert(input, { extension_registry: registry, attributes: { 'kroki-fetch-diagram': true } })
       expect(html).to.contain('<img src=".asciidoctor/kroki/ea85be88a0e4e5fb02f59602af7fe207feb5b904.svg" alt="asciidoc-html5">')
       expect(http.get.calledOnce).to.be.true()
     })
