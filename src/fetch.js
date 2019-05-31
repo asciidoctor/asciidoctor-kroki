@@ -1,5 +1,6 @@
 const rusha = require('rusha')
 const path = require('path')
+const fs = require('fs')
 
 module.exports.save = function (diagramUrl, doc, target, format, vfs) {
   const imagesOutputDir = doc.getAttribute('imagesoutdir')
@@ -17,14 +18,27 @@ module.exports.save = function (diagramUrl, doc, target, format, vfs) {
   } else {
     dirPath = path.join(baseDir, imagesDir)
   }
-  const diagramName = `${target || rusha.createHash().update(diagramUrl).digest('hex')}.${format}`
+  const diagramName = `${rusha.createHash().update(diagramUrl).digest('hex')}.${format}`
+  let exists
+  if (typeof vfs === 'undefined' || typeof vfs.exists !== 'function') {
+    exists = require('./node-fs').exists
+  } else {
+    exists = vfs.exists
+  }
   let read
   if (typeof vfs === 'undefined' || typeof vfs.read !== 'function') {
     read = require('./node-fs').read
   } else {
     read = vfs.read
   }
-  const contents = read(diagramUrl, 'binary')
+  const filePath = path.format({ dir: dirPath, base: diagramName })
+  let contents
+  if (exists(filePath)) {
+    // file already exists on the file system
+    contents = read(filePath, 'binary')
+  } else {
+    contents = read(diagramUrl, 'binary')
+  }
   let add
   if (typeof vfs === 'undefined' || typeof vfs.add !== 'function') {
     add = require('./node-fs').add
