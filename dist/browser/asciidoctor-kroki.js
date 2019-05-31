@@ -16966,7 +16966,6 @@ module.exports.register = function register (registry, context = {}) {
 (function (Buffer){
 const rusha = require('rusha')
 const path = require('path')
-const fs = require('fs')
 
 module.exports.save = function (diagramUrl, doc, target, format, vfs) {
   const imagesOutputDir = doc.getAttribute('imagesoutdir')
@@ -17021,7 +17020,7 @@ module.exports.save = function (diagramUrl, doc, target, format, vfs) {
 }
 
 }).call(this,require("buffer").Buffer)
-},{"./node-fs":62,"buffer":4,"fs":3,"path":30,"rusha":47}],62:[function(require,module,exports){
+},{"./node-fs":62,"buffer":4,"path":30,"rusha":47}],62:[function(require,module,exports){
 const fs = require('fs')
 const path = require('path')
 const mkdirp = require('mkdirp')
