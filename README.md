@@ -29,8 +29,8 @@ const registry = asciidoctor.Extensions.create()
 kroki.register(registry)
 console.log(asciidoctor.convert(input, {'extension_registry': registry})) // <2>
 ```
-<1> Register the extension in the global registry
-<2> Register the extension in a dedicated registry
+**<1>** Register the extension in the global registry
+**<2>** Register the extension in a dedicated registry
 
 ### Browser
 
