@@ -43,7 +43,7 @@ Create a file named `kroki.html` with the following content and open it in your 
 ```html
 <html>
   <head>
-    <script src="node_modules/asciidoctor/dist/browser/asciidoctor.js"></script>
+    <script src="node_modules/@asciidoctor/core/dist/browser/asciidoctor.js"></script>
     <script src="node_modules/asciidoctor-kroki/dist/browser/asciidoctor-kroki.js"></script>
   </head>
   <body>
