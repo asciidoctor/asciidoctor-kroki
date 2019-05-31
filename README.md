@@ -20,7 +20,7 @@ Create a file named `kroki.js` with following content and run it:
 const asciidoctor = require('@asciidoctor/core')()
 const kroki = require('asciidoctor-kroki')
 
-const input = 'spreadsheet:sales.csv[3,2]'
+const input = 'plantuml::hello.puml[svg,role=sequence]'
 
 kroki.register(asciidoctor.Extensions)
 console.log(asciidoctor.convert(input)) // <1>
@@ -49,7 +49,7 @@ Create a file named `kroki.html` with the following content and open it in your 
   <body>
     <div id="content"></div>
     <script>
-      var input = 'spreadsheet:sales.csv[3,2]'
+      var input = 'plantuml::hello.puml[svg,role=sequence]'
 
       var asciidoctor = Asciidoctor()
       var kroki = AsciidoctorKroki
@@ -68,7 +68,7 @@ Create a file named `kroki.html` with the following content and open it in your 
 ## Usage
 
 ```adoc
-[plantuml,svg,role=sequence]
+[plantuml,alice-bob,svg,role=sequence]
 ....
 alice -> bob
 ....
