@@ -1,7 +1,7 @@
 # 🖍 Asciidoctor Kroki Extension
 
 
-[![Travis build status](http://img.shields.io/travis/Mogztter/asciidoctor-kroki.js.svg)](https://travis-ci.org/Mogztter/asciidoctor-kroki)
+[![Travis build status](http://img.shields.io/travis/Mogztter/asciidoctor-kroki.svg)](https://travis-ci.org/Mogztter/asciidoctor-kroki)
 [![npm version](http://img.shields.io/npm/v/asciidoctor-kroki.svg)](https://www.npmjs.com/package/asciidoctor-kroki)
 
 An extension for [Asciidoctor.js](https://github.com/asciidoctor/asciidoctor.js) to convert diagrams to images using [Kroki](https://kroki.io)!
