@@ -16944,7 +16944,7 @@ function diagramBlockMacro (name, context) {
 }
 
 module.exports.register = function register (registry, context = {}) {
-  const names = ['plantuml', 'ditaa', 'graphviz', 'blockdiag', 'seqdiag', 'actdiag', 'nwdiag', 'c4', 'erd', 'mermaid', 'nomnoml', 'svgbob', 'umlet']
+  const names = ['plantuml', 'ditaa', 'graphviz', 'blockdiag', 'seqdiag', 'actdiag', 'nwdiag', 'c4plantuml', 'erd', 'mermaid', 'nomnoml', 'svgbob', 'umlet']
   if (typeof registry.register === 'function') {
     registry.register(function () {
       for (let name of names) {
