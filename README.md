@@ -1,6 +1,5 @@
 # 🖍 Asciidoctor Kroki Extension
 
-
 [![Travis build status](http://img.shields.io/travis/Mogztter/asciidoctor-kroki.svg)](https://travis-ci.org/Mogztter/asciidoctor-kroki)
 [![npm version](http://img.shields.io/npm/v/asciidoctor-kroki.svg)](https://www.npmjs.com/package/asciidoctor-kroki)
 
@@ -86,3 +85,23 @@ digraph foo {
 ....
 ```
 
+## Contributing
+
+### Setup
+
+To build this project, you will need Node.js >= 8.11 and npm (we recommend `nvm` to manage multiple active Node.js versions).
+
+### Building
+
+1. Install the dependencies:
+
+    $ npm i
+
+2. Generate a distribution:
+
+    $ npm run dist
+
+When working on a new feature or when fixing a bug, make sure to run the linter and the tests suite:
+
+    $ npm run lint
+    $ npm run test
