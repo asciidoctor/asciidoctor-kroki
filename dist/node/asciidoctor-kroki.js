@@ -96,16 +96,13 @@ function diagramBlockMacro (name, context) {
       const role = attrs.role
       const diagramType = name
       target = parent.$apply_subs(target, ['attributes'])
-      let diagramText = vfs.read(target)
       try {
+        const diagramText = vfs.read(target)
         return processKroki(this, parent, attrs, diagramType, diagramText, context)
       } catch (e) {
-        if (e.name === 'UnsupportedFormatError' || e.name === 'InvalidConfigurationError') {
-          console.warn(`Skipping ${diagramType} block macro. ${e.message}`)
-          attrs.role = role ? `${role} kroki-error` : 'kroki-error'
-          return this.createBlock(parent, 'paragraph', `${e.message} - ${diagramType}::${target}[]`, attrs)
-        }
-        throw e
+        console.warn(`Skipping ${diagramType} block macro. ${e.message}`)
+        attrs.role = role ? `${role} kroki-error` : 'kroki-error'
+        return this.createBlock(parent, 'paragraph', `${e.message} - ${diagramType}::${target}[]`, attrs)
       }
     })
   }
