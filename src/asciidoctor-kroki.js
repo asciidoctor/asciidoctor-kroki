@@ -41,7 +41,7 @@ const processKroki = (processor, parent, attrs, diagramType, diagramText, contex
   // Be careful not to specify "specialcharacters" or your diagram code won't be valid anymore!
   const subs = attrs.subs
   if (subs) {
-    diagramText = parent.$apply_subs(diagramText, parent.$resolve_subs(subs), true)
+    diagramText = parent.applySubstitutions(diagramText, parent.$resolve_subs(subs))
   }
   const role = attrs.role
   const blockId = attrs.id
@@ -92,7 +92,7 @@ function diagramBlockMacro (name, context) {
       }
       const role = attrs.role
       const diagramType = name
-      target = parent.$apply_subs(target, ['attributes'])
+      target = parent.applySubstitutions(target, ['attributes'])
       try {
         const diagramText = vfs.read(target)
         return processKroki(this, parent, attrs, diagramType, diagramText, context)
