@@ -58,7 +58,7 @@ const httpGet = (uri, encoding = 'utf8') => {
     describe('When extension is registered', () => {
       it('should convert a diagram to an image', () => {
         const input = `
-[plantuml,alice-bob,svg,role=sequence]
+[plantuml,alice-bob,png,role=sequence]
 ....
 alice -> bob
 ....
@@ -66,8 +66,8 @@ alice -> bob
         const registry = asciidoctor.Extensions.create()
         AsciidoctorKroki.register(registry)
         const html = asciidoctor.convert(input, { extension_registry: registry })
-        expect(html).to.contain('https://kroki.io/plantuml/svg/eNpLzMlMTlXQtVNIyk8CABoDA90=')
-        expect(html).to.contain('<div class="imageblock sequence kroki">')
+        expect(html).to.contain('https://kroki.io/plantuml/png/eNpLzMlMTlXQtVNIyk8CABoDA90=')
+        expect(html).to.contain('<div class="imageblock sequence png kroki">')
       })
       it('should convert a diagram with a relative path to an image', () => {
         const input = `plantuml::${baseDir}/test/fixtures/alice.puml[svg,role=sequence]`

@@ -43,14 +43,23 @@ const processKroki = (processor, parent, attrs, diagramType, diagramText, contex
   if (subs) {
     diagramText = parent.applySubstitutions(diagramText, parent.$resolve_subs(subs))
   }
-  const role = attrs.role
   const blockId = attrs.id
   const title = attrs.title
   const target = attrs.target
   const format = attrs.format || 'svg'
+  let role = attrs.role
+  if (role) {
+    if (format) {
+      role = `${role} ${format} kroki`
+    } else {
+      role = `${role} kroki`
+    }
+  } else {
+    role = 'kroki'
+  }
   const imageUrl = createImageSrc(doc, diagramText, diagramType, target, format, context.vfs)
   const blockAttrs = {
-    role: role ? `${role} kroki` : 'kroki',
+    role: role,
     target: imageUrl,
     alt: target || 'diagram',
     title
