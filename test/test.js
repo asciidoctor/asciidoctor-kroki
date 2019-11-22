@@ -38,7 +38,7 @@ alice -> bob
       asciidoctorKroki.register(registry)
       const html = asciidoctor.convert(input, { extension_registry: registry })
       expect(html).to.contain('https://kroki.io/plantuml/svg/eNpLzMlMTlXQtVNIyk8CABoDA90=')
-      expect(html).to.contain('<div class="imageblock sequence kroki">')
+      expect(html).to.contain('<div class="imageblock sequence kroki-format-svg kroki">')
     })
     it('should convert a diagram with an absolute path to an image', () => {
       const input = `plantuml::${__dirname}/fixtures/alice.puml[svg,role=sequence]`
@@ -46,7 +46,7 @@ alice -> bob
       asciidoctorKroki.register(registry)
       const html = asciidoctor.convert(input, { extension_registry: registry })
       expect(html).to.contain('https://kroki.io/plantuml/svg/eNpzKC5JLCopzc3hSszJTE5V0LVTSMpP4nJIzUsBCQIAr3EKfA==')
-      expect(html).to.contain('<div class="imageblock sequence kroki">')
+      expect(html).to.contain('<div class="imageblock sequence kroki-format-svg kroki">')
     })
     it('should convert a diagram with a relative path to an image', () => {
       const input = `
