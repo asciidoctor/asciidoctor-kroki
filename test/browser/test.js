@@ -67,7 +67,7 @@ alice -> bob
         AsciidoctorKroki.register(registry)
         const html = asciidoctor.convert(input, { extension_registry: registry })
         expect(html).to.contain('https://kroki.io/plantuml/png/eNpLzMlMTlXQtVNIyk8CABoDA90=')
-        expect(html).to.contain('<div class="imageblock sequence png kroki">')
+        expect(html).to.contain('<div class="imageblock sequence kroki-format-png kroki">')
       })
       it('should convert a diagram with a relative path to an image', () => {
         const input = `plantuml::${baseDir}/test/fixtures/alice.puml[svg,role=sequence]`

@@ -50,7 +50,7 @@ const processKroki = (processor, parent, attrs, diagramType, diagramText, contex
   let role = attrs.role
   if (role) {
     if (format) {
-      role = `${role} ${format} kroki`
+      role = `${role} kroki-format-${format} kroki`
     } else {
       role = `${role} kroki`
     }
