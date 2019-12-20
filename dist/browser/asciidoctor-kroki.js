@@ -15973,7 +15973,12 @@ const processKroki = (processor, parent, attrs, diagramType, diagramText, contex
   }
   const blockAttrs = {
     role,
-    title
+    title,
+    format
+  }
+  const inline = attrs['inline-option'] === ''
+  if (inline) {
+    blockAttrs['inline-option'] = ''
   }
   if (blockId) {
     blockAttrs.id = blockId
@@ -16000,7 +16005,7 @@ function diagramBlock (context) {
     self.process((parent, reader, attrs) => {
       const diagramType = this.name.toString()
       const role = attrs.role
-      let diagramText = reader.getString()
+      let diagramText = reader.$read()
       try {
         return processKroki(this, parent, attrs, diagramType, diagramText, context)
       } catch (e) {
