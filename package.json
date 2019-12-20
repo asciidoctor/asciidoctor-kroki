@@ -13,7 +13,7 @@
     "lint": "standard src/**.js test/**.js",
     "clean": "rm -rf dist/*",
     "dist": "npm run clean && npm run dist:browser && npm run dist:node",
-    "dist:browser": "mkdir -p dist/browser && browserify src/asciidoctor-kroki.js -u ./fetch --standalone AsciidoctorKroki -o dist/browser/asciidoctor-kroki.js",
+    "dist:browser": "mkdir -p dist/browser && browserify src/asciidoctor-kroki.js -u ./fetch -u ./antora-adapter --standalone AsciidoctorKroki -o dist/browser/asciidoctor-kroki.js",
     "dist:node": "mkdir -p dist/node && cp src/**.js dist/node/"
   },
   "dependencies": {

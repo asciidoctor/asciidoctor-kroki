@@ -133,6 +133,10 @@ function diagramBlockMacro (name, context) {
 }
 
 module.exports.register = function register (registry, context = {}) {
+  // patch context in case of Antora
+  if (typeof context.contentCatalog !== 'undefined' && typeof context.contentCatalog.addFile === 'function' && typeof context.file !== 'undefined') {
+    context.vfs = require('./antora-adapter')(context.file, context.contentCatalog, context.vfs)
+  }
   const names = ['plantuml', 'ditaa', 'graphviz', 'blockdiag', 'seqdiag', 'actdiag', 'nwdiag', 'c4plantuml', 'erd', 'mermaid', 'nomnoml', 'svgbob', 'umlet']
   if (typeof registry.register === 'function') {
     registry.register(function () {
