@@ -151,5 +151,25 @@ Bob->Alice : hello
         http.get.restore()
       }
     })
+    it('should read diagram text', () => {
+      const input = `
+[plantuml]
+....
+[A] B [C]
+paragraph
+....`
+      const defaultLogger = asciidoctor.LoggerManager.getLogger()
+      const memoryLogger = asciidoctor.MemoryLogger.create()
+      try {
+        asciidoctor.LoggerManager.setLogger(memoryLogger)
+        const registry = asciidoctor.Extensions.create()
+        asciidoctorKroki.register(registry)
+        const html = asciidoctor.convert(input, { extension_registry: registry })
+        expect(html).to.contain('<img src="https://kroki.io/plantuml/svg/eNqLdoxVcFKIdo7lKkgsSkwvSizIAAA36QY3" alt="diagram">')
+        expect(memoryLogger.getMessages().length).to.equal(0)
+      } finally {
+        asciidoctor.LoggerManager.setLogger(defaultLogger)
+      }
+    })
   })
 })
