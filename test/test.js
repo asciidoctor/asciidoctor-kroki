@@ -116,11 +116,40 @@ AsciiDoc -> HTML5: convert
 ....
 `
       sinon.spy(http, 'get')
-      const registry = asciidoctor.Extensions.create()
-      asciidoctorKroki.register(registry)
-      const html = asciidoctor.convert(input, { extension_registry: registry, attributes: { 'kroki-fetch-diagram': true } })
-      expect(html).to.contain('<img src=".asciidoctor/kroki/ea85be88a0e4e5fb02f59602af7fe207feb5b904.svg" alt="asciidoc-html5">')
-      expect(http.get.calledOnce).to.be.true()
+      try {
+        const registry = asciidoctor.Extensions.create()
+        asciidoctorKroki.register(registry)
+        const html = asciidoctor.convert(input, { extension_registry: registry, attributes: { 'kroki-fetch-diagram': true } })
+        expect(html).to.contain('<img src=".asciidoctor/kroki/ea85be88a0e4e5fb02f59602af7fe207feb5b904.svg" alt="asciidoc-html5">')
+        expect(http.get.calledOnce).to.be.true()
+      } finally {
+        http.get.restore()
+      }
+    })
+    it('should create a literal block when format is txt', () => {
+      const input = `
+[plantuml,format=txt]
+....
+Bob->Alice : hello
+....
+`
+      sinon.spy(http, 'get')
+      try {
+        const registry = asciidoctor.Extensions.create()
+        asciidoctorKroki.register(registry)
+        const html = asciidoctor.convert(input, { extension_registry: registry })
+        expect(html).to.contain('pre>     ,---.          ,-----.\n' +
+          '     |Bob|          |Alice|\n' +
+          '     `-+-\'          `--+--\'\n' +
+          '       |    hello      |\n' +
+          '       |--------------&gt;|\n' +
+          '     ,-+-.          ,--+--.\n' +
+          '     |Bob|          |Alice|\n' +
+          '     `---\'          `-----\'</pre>')
+        expect(http.get.calledOnce).to.be.true()
+      } finally {
+        http.get.restore()
+      }
     })
   })
 })

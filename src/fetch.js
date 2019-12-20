@@ -31,12 +31,24 @@ module.exports.save = function (diagramUrl, doc, target, format, vfs) {
     read = vfs.read
   }
   const filePath = path.format({ dir: dirPath, base: diagramName })
+  let encoding = 'utf8'
+  let mediaType
+  if (format === 'txt' || format === 'atxt' || format === 'utxt') {
+    mediaType = 'text/plain; charset=utf-8'
+    encoding = 'utf8'
+  } else if (format === 'svg') {
+    mediaType = 'image/svg+xml'
+    encoding = 'binary'
+  } else {
+    mediaType = 'image/png'
+    encoding = 'binary'
+  }
   let contents
   if (exists(filePath)) {
     // file already exists on the file system
-    contents = read(filePath, 'binary')
+    contents = read(filePath, encoding)
   } else {
-    contents = read(diagramUrl, 'binary')
+    contents = read(diagramUrl, encoding)
   }
   let add
   if (typeof vfs === 'undefined' || typeof vfs.add !== 'function') {
@@ -47,8 +59,18 @@ module.exports.save = function (diagramUrl, doc, target, format, vfs) {
   add({
     relative: dirPath,
     basename: diagramName,
-    mediaType: format === 'svg' ? 'image/svg+xml' : 'image/png',
-    contents: Buffer.from(contents, 'binary')
+    mediaType: mediaType,
+    contents: Buffer.from(contents, encoding)
   })
   return diagramName
+}
+
+module.exports.getTextContent = function (diagramUrl, vfs) {
+  let read
+  if (typeof vfs === 'undefined' || typeof vfs.read !== 'function') {
+    read = require('./node-fs').read
+  } else {
+    read = vfs.read
+  }
+  return read(diagramUrl, 'utf8')
 }

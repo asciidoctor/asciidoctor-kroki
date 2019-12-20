@@ -15924,6 +15924,17 @@ InvalidConfigurationError.prototype = new Error
 
 const getServerUrl = (doc) => doc.getAttribute('kroki-server-url') || 'https://kroki.io'
 
+const getTextContent = (doc, text, type, format, vfs) => {
+  const serverUrl = getServerUrl(doc)
+  const data = Buffer.from(text, 'utf8')
+  const compressed = pako.deflate(data, { level: 9 })
+  const base64 = Buffer.from(compressed)
+    .toString('base64')
+    .replace(/\+/g, '-').replace(/\//g, '_')
+  let diagramUrl = `${serverUrl}/${type}/${format}/${base64}`
+  return require('./fetch').getTextContent(diagramUrl, vfs)
+}
+
 const createImageSrc = (doc, text, type, target, format, vfs) => {
   const serverUrl = getServerUrl(doc)
   const shouldFetch = doc.isAttribute('kroki-fetch-diagram')
@@ -15949,7 +15960,6 @@ const processKroki = (processor, parent, attrs, diagramType, diagramText, contex
   }
   const blockId = attrs.id
   const title = attrs.title
-  const target = attrs.target
   const format = attrs.format || 'svg'
   let role = attrs.role
   if (role) {
@@ -15961,17 +15971,25 @@ const processKroki = (processor, parent, attrs, diagramType, diagramText, contex
   } else {
     role = 'kroki'
   }
-  const imageUrl = createImageSrc(doc, diagramText, diagramType, target, format, context.vfs)
   const blockAttrs = {
-    role: role,
-    target: imageUrl,
-    alt: target || 'diagram',
+    role,
     title
   }
   if (blockId) {
     blockAttrs.id = blockId
   }
-  return processor.createImageBlock(parent, blockAttrs)
+  if (format === 'txt' || format === 'atxt' || format === 'utxt') {
+    const content = getTextContent(doc, diagramText, diagramType, format, context.vfs)
+    return processor.createBlock(parent, 'literal', content, blockAttrs, {})
+  } else {
+    const target = attrs.target
+    const imageUrl = createImageSrc(doc, diagramText, diagramType, target, format, context.vfs)
+    const imageBlockAttrs = Object.assign({}, blockAttrs, {
+      target: imageUrl,
+      alt: target || 'diagram'
+    })
+    return processor.createImageBlock(parent, imageBlockAttrs)
+  }
 }
 
 function diagramBlock (context) {
