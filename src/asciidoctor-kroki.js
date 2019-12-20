@@ -69,7 +69,12 @@ const processKroki = (processor, parent, attrs, diagramType, diagramText, contex
   }
   const blockAttrs = {
     role,
-    title
+    title,
+    format
+  }
+  const inline = attrs['inline-option'] === ''
+  if (inline) {
+    blockAttrs['inline-option'] = ''
   }
   if (blockId) {
     blockAttrs.id = blockId
