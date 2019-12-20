@@ -69,7 +69,7 @@ function diagramBlock (context) {
     self.process((parent, reader, attrs) => {
       const diagramType = this.name.toString()
       const role = attrs.role
-      let diagramText = reader.getString()
+      let diagramText = reader.$read()
       try {
         return processKroki(this, parent, attrs, diagramType, diagramText, context)
       } catch (e) {
