@@ -15980,6 +15980,10 @@ const processKroki = (processor, parent, attrs, diagramType, diagramText, contex
   if (inline) {
     blockAttrs['inline-option'] = ''
   }
+  const interactive = attrs['interactive-option'] === ''
+  if (interactive) {
+    blockAttrs['interactive-option'] = ''
+  }
   if (blockId) {
     blockAttrs.id = blockId
   }
