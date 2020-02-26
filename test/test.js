@@ -18,6 +18,10 @@ describe('Registration', () => {
     asciidoctorKroki.register(registry)
     expect(registry['$block_macros?']()).to.be.true()
     expect(registry['$registered_for_block_macro?']('plantuml')).to.be.an('object')
+    expect(registry['$registered_for_block_macro?']('vega')).to.be.an('object')
+    expect(registry['$registered_for_block_macro?']('vegalite')).to.be.an('object')
+    expect(registry['$registered_for_block_macro?']('packetdiag')).to.be.an('object')
+    expect(registry['$registered_for_block_macro?']('rackdiag')).to.be.an('object')
   })
 })
 
@@ -225,6 +229,310 @@ plantuml::test/fixtures/alice.puml[svg,role=sequence,opts=interactive]
       asciidoctorKroki.register(registry)
       const html = asciidoctor.convert(input, { safe: 'safe', extension_registry: registry, attributes: { 'kroki-fetch-diagram': true } })
       expect(html).to.contain(`<object type="image/svg+xml" data=".asciidoctor/kroki/3b6025d05a9642fd93791b9eed064448bee17803.svg"><span class="alt">diagram</span></object>`)
+    })
+    it('should convert a PacketDiag diagram to an image', () => {
+      const input = `
+[packetdiag]
+....
+packetdiag {
+  colwidth = 32;
+  node_height = 72;
+
+  0-15: Source Port;
+  16-31: Destination Port;
+  32-63: Sequence Number;
+  64-95: Acknowledgment Number;
+  96-99: Data Offset;
+  100-105: Reserved;
+  106: URG [rotate = 270];
+  107: ACK [rotate = 270];
+  108: PSH [rotate = 270];
+  109: RST [rotate = 270];
+  110: SYN [rotate = 270];
+  111: FIN [rotate = 270];
+  112-127: Window;
+  128-143: Checksum;
+  144-159: Urgent Pointer;
+  160-191: (Options and Padding);
+  192-223: data [colheight = 3];
+}
+....
+`
+      const registry = asciidoctor.Extensions.create()
+      asciidoctorKroki.register(registry)
+      const html = asciidoctor.convert(input, { extension_registry: registry })
+      expect(html).to.contain('https://kroki.io/packetdiag/svg/eNptkU9Pg0AQxe9-ijnqYRN2QSgYD6bGPzFpCW1jTGPMyk5hQ9mtsMjB-N0dIGk8cH2_mXkzb04yr9ApLQv4uQDI7bHXypVwC764IcFYhR8l6qJ0pEWkkegxfp3AxnZNjpDaxg2VPGQ-T-AeW6eNdNqaM_IFC31qwK8ODbWsuvoTm4GEAYtp1F1eGdsfURU1GvePxyGLYxoqnYT14dDiZOXRBh71Zdhi841qEsMEdtkj7BvrpENaV0Te-4Qi8li-zKJFAunmaRaRc7bZziHu0Tlvq1lEITw8zyPBuKBVXrVRth8lsWA8oGyWJeZV29WjGAQUMJnvmmKII7XauCkPHtLlMTlcrk9DxC1IoyCVSmlTXI0VsWBC0EQ1ZLanh56_59MWv39OCoi9')
+      expect(html).to.contain('<div class="imageblock kroki">')
+    })
+    it('should convert a RackDiag diagram to an image', () => {
+      const input = `
+[rackdiag]
+....
+rackdiag {
+  16U;
+  1: UPS [2U];
+  3: DB Server;
+  4: Web Server;
+  5: Web Server;
+  6: Web Server;
+  7: Load Balancer;
+  8: L3 Switch;
+}
+....
+`
+      const registry = asciidoctor.Extensions.create()
+      asciidoctorKroki.register(registry)
+      const html = asciidoctor.convert(input, { extension_registry: registry })
+      expect(html).to.contain('https://kroki.io/rackdiag/svg/eNorSkzOTslMTFeo5lJQMDQLtQZRVgqhAcEK0UahsSCusZWCi5NCcGpRWWoRiG9ipRCemoQkYIouYIYuYG6l4JOfmKLglJiTmJcMEbMAihkrBJdnliRnWHPVAgDhXSWB')
+      expect(html).to.contain('<div class="imageblock kroki">')
+    })
+    it('should convert a Vega diagram to an image', () => {
+      const input = `
+[vega]
+....
+{
+  "$schema": "https://vega.github.io/schema/vega/v5.json",
+  "width": 400,
+  "height": 200,
+  "padding": 5,
+
+  "data": [
+    {
+      "name": "table",
+      "values": [
+        {"category": "A", "amount": 28},
+        {"category": "B", "amount": 55},
+        {"category": "C", "amount": 43},
+        {"category": "D", "amount": 91},
+        {"category": "E", "amount": 81},
+        {"category": "F", "amount": 53},
+        {"category": "G", "amount": 19},
+        {"category": "H", "amount": 87}
+      ]
+    }
+  ],
+
+  "signals": [
+    {
+      "name": "tooltip",
+      "value": {},
+      "on": [
+        {"events": "rect:mouseover", "update": "datum"},
+        {"events": "rect:mouseout",  "update": "{}"}
+      ]
+    }
+  ],
+
+  "scales": [
+    {
+      "name": "xscale",
+      "type": "band",
+      "domain": {"data": "table", "field": "category"},
+      "range": "width",
+      "padding": 0.05,
+      "round": true
+    },
+    {
+      "name": "yscale",
+      "domain": {"data": "table", "field": "amount"},
+      "nice": true,
+      "range": "height"
+    }
+  ],
+
+  "axes": [
+    { "orient": "bottom", "scale": "xscale" },
+    { "orient": "left", "scale": "yscale" }
+  ],
+
+  "marks": [
+    {
+      "type": "rect",
+      "from": {"data":"table"},
+      "encode": {
+        "enter": {
+          "x": {"scale": "xscale", "field": "category"},
+          "width": {"scale": "xscale", "band": 1},
+          "y": {"scale": "yscale", "field": "amount"},
+          "y2": {"scale": "yscale", "value": 0}
+        },
+        "update": {
+          "fill": {"value": "steelblue"}
+        },
+        "hover": {
+          "fill": {"value": "red"}
+        }
+      }
+    },
+    {
+      "type": "text",
+      "encode": {
+        "enter": {
+          "align": {"value": "center"},
+          "baseline": {"value": "bottom"},
+          "fill": {"value": "#333"}
+        },
+        "update": {
+          "x": {"scale": "xscale", "signal": "tooltip.category", "band": 0.5},
+          "y": {"scale": "yscale", "signal": "tooltip.amount", "offset": -2},
+          "text": {"signal": "tooltip.amount"},
+          "fillOpacity": [
+            {"test": "datum === tooltip", "value": 0},
+            {"value": 1}
+          ]
+        }
+      }
+    }
+  ]
+}
+....
+`
+      const registry = asciidoctor.Extensions.create()
+      asciidoctorKroki.register(registry)
+      const html = asciidoctor.convert(input, { extension_registry: registry })
+      expect(html).to.contain('https://kroki.io/vega/svg/eNqVVcmSmzAQvfsrKCVHgrE9VGZc5UP23PIBKR8ENKAZgSgQjikX_x5JLELYcpzLMDTv9fq6fVk5DnpfRxnkGO0dlHFe1vv1-gQp9lLCsyb0CFv3AGVdnwLvtWYFciX1D4l5JohPvq_eMyBpxoVhOxhKHMekSIUlcFfSEGMuI_0W_zvORf0V1gLnIONzHFJQrpX5hGkD9QRXFBRhDimrWon_hFwH4Zw1hQr63LkW4GcDGARW4BcD-LSzAr8awJeNFfjNAD7bgd_NHO2hfxjAzYsV-NMM_bEbcEf1lG_Hfio1SQtM6zuDYYxyUi5GI75cpuBIiMKcFJyg4NIpqiDie5FHDewElcyqKYUSlGvxbHJk1HCT2HDBmxMvHbIXFGEKd-o5K4Auh7elsoe4iLU1ZjkmsqrLqNtRoQ5KCNBYWqaG605UuEiVu34_JrveBt_zAw0XA5KueNVAX4h7O-t2kfVD-Q3z19kVJIIh2nXGwwYv-4nP826KWVcElKhQyDhnuYzYJ6ebO5Uxh1NIuAFuR7AOluPq7cbsxhlJTegeJJWIrjswNEBXC0XEYqXUSWDCxoUK5yZhPCsvyyLuT1oRxyN4k6wEJZbUpLQmvL2OtZxaT9vaeOM6-t2En1H10hgVJ4RS5XBko5oD0FC-3PaTqfX9p5sK4rmD1fy51PY4VQ7n2VQfnhqm4nSZ0aMeaLYuxDVQUoAJHcRrQq_rebfb7dD_dNaqpf7Qzi6qN4lKi8X3ggflcu1u0I34xpKkBrlzH7amN9Vp5dDGvu7HrxJHhLfGge9vNYeaT2fcORwOzvRbMZelu6CNXzbd7MPRphl5G1bdX_2bNmU=')
+      expect(html).to.contain('<div class="imageblock kroki">')
+    })
+    it('should convert a Vega-Lite diagram to an image', () => {
+      const input = `
+[vegalite]
+....
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v4.json",
+  "description": "Horizontally concatenated charts that show different types of discretizing scales.",
+  "data": {
+    "values": [
+      {"a": "A", "b": 28},
+      {"a": "B", "b": 55},
+      {"a": "C", "b": 43},
+      {"a": "D", "b": 91},
+      {"a": "E", "b": 81},
+      {"a": "F", "b": 53},
+      {"a": "G", "b": 19},
+      {"a": "H", "b": 87},
+      {"a": "I", "b": 52}
+    ]
+  },
+  "hconcat": [
+    {
+      "mark": "circle",
+      "encoding": {
+        "y": {
+          "field": "b",
+          "type": "nominal",
+          "sort": null,
+          "axis": {
+            "ticks": false,
+            "domain": false,
+            "title": null
+          }
+        },
+        "size": {
+          "field": "b",
+          "type": "quantitative",
+          "scale": {
+            "type": "quantize"
+          }
+        },
+        "color": {
+          "field": "b",
+          "type": "quantitative",
+          "scale": {
+            "type": "quantize",
+            "zero": true
+          },
+          "legend": {
+            "title": "Quantize"
+          }
+        }
+      }
+    },
+    {
+      "mark": "circle",
+      "encoding": {
+        "y": {
+          "field": "b",
+          "type": "nominal",
+          "sort": null,
+          "axis": {
+            "ticks": false,
+            "domain": false,
+            "title": null
+          }
+        },
+        "size": {
+          "field": "b",
+          "type": "quantitative",
+          "scale": {
+            "type": "quantile",
+            "range": [80, 160, 240, 320, 400]
+          }
+        },
+        "color": {
+          "field": "b",
+          "type": "quantitative",
+          "scale": {
+            "type": "quantile",
+            "scheme": "magma"
+          },
+          "legend": {
+            "format": "d",
+            "title": "Quantile"
+          }
+        }
+      }
+    },
+    {
+      "mark": "circle",
+      "encoding": {
+        "y": {
+          "field": "b",
+          "type": "nominal",
+          "sort": null,
+          "axis": {
+            "ticks": false,
+            "domain": false,
+            "title": null
+          }
+        },
+        "size": {
+          "field": "b",
+          "type": "quantitative",
+          "scale": {
+            "type": "threshold",
+            "domain": [30, 70],
+            "range": [80, 200, 320]
+          }
+        },
+        "color": {
+          "field": "b",
+          "type": "quantitative",
+          "scale": {
+            "type": "threshold",
+            "domain": [30, 70],
+            "scheme": "viridis"
+          },
+          "legend": {
+            "title": "Threshold"
+          }
+        }
+      }
+    }
+  ],
+  "resolve": {
+    "scale": {
+      "color": "independent",
+      "size": "independent"
+    }
+  }
+}
+....
+`
+      const registry = asciidoctor.Extensions.create()
+      asciidoctorKroki.register(registry)
+      const html = asciidoctor.convert(input, { extension_registry: registry })
+      expect(html).to.contain('https://kroki.io/vegalite/svg/eNrtVktz2yAQvvtXMEyOqt9pnNz6To-d6c3jA5ZWEg0CF7Ba26P_3gVb2JJSN8mhTWdyMIb92CffCnY9QuiFiXMoGL0hNLd2ZW4GgxIy1s-4zdfLPleD_QYvfSW4hUE57X8zStLI6SdgYs1XlqMAbdwqzbdKWibEhsRKxsyCxF9C4pxpa4jNmSUmVz9IwtMUNEhL7GYFhqgURWgMLN9ymRETMwGmf3DDrItxh3NclUysweB67teE7KjP4A2NCF3ibDyroib0toYuL9vQuxqaTtrQ-xq6HrWhDzU060Afg6-OwU81NLpuQ7fB4FUb-hwMjiuPLHD0m2i-L3Koxe6gSQum75xuzHUsgNYWKchYJVjfUE0v3TSWKEg5iMTpL4Oql7uzcmKpCi6ZaIJGaReJXAvRkLOf3LQcOFM8vnPilAkDURNLVMG4_A1ouRVw8HOCVGFeHRWo4Vt4bHLf10yiE2Z5Ca0MHSnvSaWhiA7_GFashNJ_P65WJbegFeJWr-E04oZpARnI5L7j258C_XI-6d7p_8H0C0v_PUtFhw2aycxtmM-GERm9xmE8xWEyxmE6HC6eJam7afgLy-8oWIZX26OZnSpd-E8qTWh0lvTihfT_C-ltrgHfHaJzpCGf-QR5fjVcnOuK8XDfEM-tF56c3bFZSq45PsDo0y-CryGIhzQFjj4YikpKlMfkOrmGWlIuE1hhEPhqPLbNgUYNMLioetUvacF4MA==')
+      expect(html).to.contain('<div class="imageblock kroki">')
     })
   })
 })
