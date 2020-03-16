@@ -27,7 +27,7 @@ const getTextContent = (doc, text, type, format, vfs) => {
   const base64 = Buffer.from(compressed)
     .toString('base64')
     .replace(/\+/g, '-').replace(/\//g, '_')
-  let diagramUrl = `${serverUrl}/${type}/${format}/${base64}`
+  const diagramUrl = `${serverUrl}/${type}/${format}/${base64}`
   return require('./fetch').getTextContent(diagramUrl, vfs)
 }
 
@@ -105,7 +105,7 @@ function diagramBlock (context) {
     self.process((parent, reader, attrs) => {
       const diagramType = this.name.toString()
       const role = attrs.role
-      let diagramText = reader.$read()
+      const diagramText = reader.$read()
       try {
         return processKroki(this, parent, attrs, diagramType, diagramText, context)
       } catch (e) {
@@ -149,13 +149,13 @@ module.exports.register = function register (registry, context = {}) {
   const names = ['plantuml', 'ditaa', 'graphviz', 'blockdiag', 'seqdiag', 'actdiag', 'nwdiag', 'packetdiag', 'rackdiag', 'c4plantuml', 'erd', 'mermaid', 'nomnoml', 'svgbob', 'umlet', 'vega', 'vegalite']
   if (typeof registry.register === 'function') {
     registry.register(function () {
-      for (let name of names) {
+      for (const name of names) {
         this.block(name, diagramBlock(context))
         this.blockMacro(diagramBlockMacro(name, context))
       }
     })
   } else if (typeof registry.block === 'function') {
-    for (let name of names) {
+    for (const name of names) {
       registry.block(name, diagramBlock(context))
       registry.blockMacro(diagramBlockMacro(name, context))
     }
