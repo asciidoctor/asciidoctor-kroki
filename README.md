@@ -85,6 +85,38 @@ digraph foo {
 ....
 ```
 
+## Using Your Own Kroki
+
+By default this extension sends information and receives diagrams back from https://kroki.io.
+
+You may choose to use your own server due to:
+
+* Network restrictions - if Kroki is not available behind your corporate firewall
+* Network latency - you are far from the European public instance
+* Privacy - you don't want to send your diagrams to a remote server on the internet
+
+
+This is done using the `kroki-server-url` attribute.
+Typically, this is at the top of the document (under the title):
+
+```adoc
+:kroki-server-url: http://my-server-url:port
+```
+
+For instance, if you have followed [the instructions](https://docs.kroki.io/kroki/setup/install/#_using_docker) to set up a self-managed server using Docker you can use the following:
+
+```adoc
+:kroki-server-url: http://localhost:8080
+```
+
+Note that either the `http://` or `https://` prefix _is_ required (the default Docker image only uses `http`).
+
+You can also set this attribute using the Javascript API, for instance:
+
+```js
+asciidoctor.convertFile('file.adoc', { attributes: { 'kroki-server-url': 'http://my-server-url:port' } })
+```
+
 ## Contributing
 
 ### Setup
