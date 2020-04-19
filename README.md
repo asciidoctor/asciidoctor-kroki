@@ -29,7 +29,7 @@ const registry = asciidoctor.Extensions.create()
 kroki.register(registry)
 console.log(asciidoctor.convert(input, {'extension_registry': registry})) // <2>
 ```
-**<1>** Register the extension in the global registry
+**<1>** Register the extension in the global registry <br/>
 **<2>** Register the extension in a dedicated registry
 
 ### Browser
@@ -62,7 +62,7 @@ Create a file named `kroki.html` with the following content and open it in your 
   </body>
 </html>
 ```
-**<1>** Register the extension in the global registry
+**<1>** Register the extension in the global registry <br/>
 **<2>** Register the extension in a dedicated registry
 
 ## Usage
@@ -88,7 +88,7 @@ digraph foo {
 
 ## Using Your Own Kroki
 
-By default this extension sends information and receives diagrams back from https://kroki.io.
+By default, this extension sends information and receives diagrams back from https://kroki.io.
 
 You may choose to use your own server due to:
 
@@ -128,11 +128,11 @@ To build this project, you will need Node.js >= 8.11 and npm (we recommend `nvm`
 
 1. Install the dependencies:
 
-    $ npm i
+       $ npm i
 
 2. Generate a distribution:
 
-    $ npm run dist
+       $ npm run dist
 
 When working on a new feature or when fixing a bug, make sure to run the linter and the tests suite:
 
