@@ -17,8 +17,6 @@ jobs:
         run: |
           npm ci
       - name: Lint, build and test
-        env:
-          ASCIIDOCTOR_CORE_VERSION: v2.0.9
         run: |
           npm run lint
           npm t
