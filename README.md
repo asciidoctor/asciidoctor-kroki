@@ -1,6 +1,6 @@
 # 🖍 Asciidoctor Kroki Extension
 
-[![Travis build status](http://img.shields.io/travis/Mogztter/asciidoctor-kroki.svg)](https://travis-ci.org/Mogztter/asciidoctor-kroki)
+[![Build status](https://github.com/Mogztter/asciidoctor-kroki/workflows/Build/badge.svg)](https://github.com/Mogztter/asciidoctor-kroki/actions?query=workflow%3ABuild+branch%3Amaster)
 [![npm version](http://img.shields.io/npm/v/asciidoctor-kroki.svg)](https://www.npmjs.com/package/asciidoctor-kroki)
 [![Gitter](https://img.shields.io/gitter/room/kroki-project/community)](https://gitter.im/kroki-project/community)
 
