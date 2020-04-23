@@ -139,7 +139,7 @@ If you are using [Antora](https://antora.org/), you can integrate Kroki in your 
 3. Enjoy!
 
 **💡 TIP**:
-You can use the `kroki-fetch-diagram` option to download the images from Kroki during the build time.
+You can use the `kroki-fetch-diagram` option to download the images from Kroki at build time.
 In other words, while viewing pages you won't rely on Kroki anymore.
 
 ```yaml
