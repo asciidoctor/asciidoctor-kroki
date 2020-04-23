@@ -6,6 +6,16 @@
 
 An extension for [Asciidoctor.js](https://github.com/asciidoctor/asciidoctor.js) to convert diagrams to images using [Kroki](https://kroki.io)!
 
+  * [Install](#install)
+    + [Node.js](#nodejs)
+    + [Browser](#browser)
+  * [Usage](#usage)
+  * [Using Your Own Kroki](#using-your-own-kroki)
+  * [Antora Integration](#antora-integration)
+  * [Contributing](#contributing)
+    + [Setup](#setup)
+    + [Building](#building)
+
 ## Install
 
 ### Node.js
