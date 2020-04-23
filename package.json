@@ -17,6 +17,7 @@
     "dist:node": "mkdir -p dist/node && cp src/**.js dist/node/"
   },
   "dependencies": {
+    "mkdirp": "^1.0.4",
     "pako": "^1.0.10",
     "rusha": "^0.8.13",
     "unxhr": "1.0.1"
