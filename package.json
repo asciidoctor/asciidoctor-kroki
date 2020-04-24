@@ -1,6 +1,6 @@
 {
   "name": "asciidoctor-kroki",
-  "version": "0.8.1",
+  "version": "0.8.2",
   "description": "Asciidoctor extension to convert diagrams to images using Kroki",
   "main": "dist/node/asciidoctor-kroki.js",
   "files": [
