@@ -109,7 +109,8 @@ const processKroki = (processor, parent, attrs, diagramType, diagramText, contex
 function preprocessVegaLite (diagramText, context) {
   let diagramObject;
   try {
-    diagramObject = JSON.parse(diagramText);
+    const JSON5 = require('json5');
+    diagramObject = JSON5.parse(diagramText);
   } catch (e) {
     console.warn(`Skipping preprocessing of vegalite diagram because of parsing error:  ${e}`);
     return diagramText;
