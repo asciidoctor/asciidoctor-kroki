@@ -535,6 +535,39 @@ rackdiag {
       expect(html).to.contain('https://kroki.io/vegalite/svg/eNrtVktz2yAQvvtXMEyOqt9pnNz6To-d6c3jA5ZWEg0CF7Ba26P_3gVb2JJSN8mhTWdyMIb92CffCnY9QuiFiXMoGL0hNLd2ZW4GgxIy1s-4zdfLPleD_QYvfSW4hUE57X8zStLI6SdgYs1XlqMAbdwqzbdKWibEhsRKxsyCxF9C4pxpa4jNmSUmVz9IwtMUNEhL7GYFhqgURWgMLN9ymRETMwGmf3DDrItxh3NclUysweB67teE7KjP4A2NCF3ibDyroib0toYuL9vQuxqaTtrQ-xq6HrWhDzU060Afg6-OwU81NLpuQ7fB4FUb-hwMjiuPLHD0m2i-L3Koxe6gSQum75xuzHUsgNYWKchYJVjfUE0v3TSWKEg5iMTpL4Oql7uzcmKpCi6ZaIJGaReJXAvRkLOf3LQcOFM8vnPilAkDURNLVMG4_A1ouRVw8HOCVGFeHRWo4Vt4bHLf10yiE2Z5Ca0MHSnvSaWhiA7_GFashNJ_P65WJbegFeJWr-E04oZpARnI5L7j258C_XI-6d7p_8H0C0v_PUtFhw2aycxtmM-GERm9xmE8xWEyxmE6HC6eJam7afgLy-8oWIZX26OZnSpd-E8qTWh0lvTihfT_C-ltrgHfHaJzpCGf-QR5fjVcnOuK8XDfEM-tF56c3bFZSq45PsDo0y-CryGIhzQFjj4YikpKlMfkOrmGWlIuE1hhEPhqPLbNgUYNMLioetUvacF4MA==')
       expect(html).to.contain('<div class="imageblock kroki">')
     })
+    it('should inline a referenced data file for a Vega-Lite diagram and convert to an image', () => {
+      const input = `
+[vegalite]
+....
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v4.json",
+  "data": {
+    "url": "test/fixtures/vegalite-data.csv"
+  },
+	"encoding": {
+		"color": {
+			"field": "c",
+			"type": "nominal"
+		},
+		"x": {
+			"field": "a",
+			"type": "temporal"
+		},
+		"y": {
+			"field": "b",
+			"type": "quantitative"
+		}
+	},
+  "mark": "line"
+}
+....
+`
+      const registry = asciidoctor.Extensions.create()
+      asciidoctorKroki.register(registry)
+      const html = asciidoctor.convert(input, { extension_registry: registry })
+      expect(html).to.contain('https://kroki.io/vegalite/svg/eNpdjd1OwzAMRt_F4jJt08IE2u1egxs39VpDfkrjRkzT3p2kQ-rgzj4-n78rPEUzkUM4wiQyx2PTJBqxHlmmta85NPf7RivLQk16qT9i8KBgQMnBKyS0K8X8AlWvzLvvdKcr3Vb6oHT9rE7tjtqCXv-gzTqoU_fPettQrjmHxaGUIrnMlGtMTHC7KSBvwsB-LCcTbFjKcGayQ5Fy8tf3wbFHCzny_ajgrgi5OSx35_Lo9LvztaIXFhROtPU7XD4zt-zz_gNJZ2R8')
+      expect(html).to.contain('<div class="imageblock kroki">')
+    })
     it('should convert a WaveDrom diagram to an image', () => {
       const input = `
 [wavedrom]
