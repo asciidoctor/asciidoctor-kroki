@@ -1,3 +1,5 @@
 {
-    "javascript.format.insertSpaceBeforeFunctionParenthesis": true
+    "javascript.format.insertSpaceBeforeFunctionParenthesis": true,
+    "javascript.format.semicolons": "remove",
+    "javascript.preferences.quoteStyle": "single",
 }

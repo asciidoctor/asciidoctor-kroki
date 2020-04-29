@@ -544,20 +544,20 @@ rackdiag {
   "data": {
     "url": "test/fixtures/vegalite-data.csv"
   },
-	"encoding": {
-		"color": {
-			"field": "c",
-			"type": "nominal"
-		},
-		"x": {
-			"field": "a",
-			"type": "temporal"
-		},
-		"y": {
-			"field": "b",
-			"type": "quantitative"
-		}
-	},
+  "encoding": {
+    "color": {
+      "field": "c",
+      "type": "nominal"
+    },
+    "x": {
+      "field": "a",
+      "type": "temporal"
+    },
+    "y": {
+      "field": "b",
+      "type": "quantitative"
+    }
+  },
   "mark": "line"
 }
 ....

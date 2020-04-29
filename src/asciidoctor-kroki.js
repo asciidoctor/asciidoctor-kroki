@@ -55,8 +55,8 @@ const processKroki = (processor, parent, attrs, diagramType, diagramText, contex
   if (subs) {
     diagramText = parent.applySubstitutions(diagramText, parent.$resolve_subs(subs))
   }
-  if (diagramType === "vegalite") {
-    diagramText = preprocessVegaLite(diagramText, context);
+  if (diagramType === 'vegalite') {
+    diagramText = preprocessVegaLite(diagramText, context)
   }
   const blockId = attrs.id
   const title = attrs.title
@@ -107,37 +107,38 @@ const processKroki = (processor, parent, attrs, diagramType, diagramText, contex
  * @returns {string}
  */
 function preprocessVegaLite (diagramText, context) {
-  let diagramObject;
+  let diagramObject
   try {
-    const JSON5 = require('json5');
-    diagramObject = JSON5.parse(diagramText);
+    const JSON5 = require('json5')
+    diagramObject = JSON5.parse(diagramText)
   } catch (e) {
-    console.warn(`Skipping preprocessing of vegalite diagram because of parsing error:  ${e}`);
-    return diagramText;
+    console.warn(`Skipping preprocessing of vegalite diagram because of parsing error:  ${e}`)
+    return diagramText
   }
 
-  if (!diagramObject || !diagramObject.data || !diagramObject.data.url)
-    return diagramText;
+  if (!diagramObject || !diagramObject.data || !diagramObject.data.url) {
+    return diagramText
+  }
 
-  let vfs = context.vfs;
+  let vfs = context.vfs
   if (typeof vfs === 'undefined' || typeof vfs.read !== 'function') {
-    vfs = require('./node-fs');
+    vfs = require('./node-fs')
   }
-  const data = diagramObject.data;
-  data.values = vfs.read(data.url);
+  const data = diagramObject.data
+  data.values = vfs.read(data.url)
   if (!data.format) {
     // Extract extension from URL using snippet from
     // http://stackoverflow.com/questions/680929/how-to-extract-extension-from-filename-string-in-javascript
     // Same code as in Vega-Lite:
     // https://github.com/vega/vega-lite/blob/master/src/compile/data/source.ts
-    let type = /(?:\.([^.]+))?$/.exec(data.url)[1];
+    let type = /(?:\.([^.]+))?$/.exec(data.url)[1]
     if (['json', 'csv', 'tsv', 'dsv', 'topojson'].indexOf(type) < 0) {
-      type = 'json';
+      type = 'json'
     }
-    data.format = { "type": type };
+    data.format = { type: type }
   }
-  data.url = undefined;
-  return JSON.stringify(diagramObject);
+  data.url = undefined
+  return JSON.stringify(diagramObject)
 }
 
 function diagramBlock (context) {
