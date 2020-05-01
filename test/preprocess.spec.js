@@ -1,3 +1,4 @@
+/* global describe it */
 // @ts-check
 const chai = require('chai')
 const expect = chai.expect
@@ -62,6 +63,4 @@ describe('preprocessVegaLite', () => {
 }`
     expect(preprocessVegaLite(referencedRemoteCsvFile, {})).to.be.equal(inlinedRemoteCsvFile)
   })
-
 })
-

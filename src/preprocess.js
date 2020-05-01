@@ -1,7 +1,7 @@
 // @ts-check
 /**
  * @param {string} diagramText
- * @param {unknown} context
+ * @param {any} context
  * @returns {string}
  */
 module.exports.preprocessVegaLite = function (diagramText, context) {
@@ -18,7 +18,7 @@ module.exports.preprocessVegaLite = function (diagramText, context) {
     return diagramText
   }
 
-  let vfs = context["vfs"]
+  let vfs = context.vfs
   if (typeof vfs === 'undefined' || typeof vfs.read !== 'function') {
     vfs = require('./node-fs')
   }
