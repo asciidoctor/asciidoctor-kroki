@@ -1,5 +1,7 @@
 {
-    "javascript.format.insertSpaceBeforeFunctionParenthesis": true,
-    "javascript.format.semicolons": "remove",
-    "javascript.preferences.quoteStyle": "single",
+  "editor.detectIndentation": false,
+  "editor.tabSize": 2,
+  "javascript.format.insertSpaceBeforeFunctionParenthesis": true,
+  "javascript.format.semicolons": "remove",
+  "javascript.preferences.quoteStyle": "single",
 }

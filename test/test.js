@@ -565,7 +565,7 @@ rackdiag {
       const registry = asciidoctor.Extensions.create()
       asciidoctorKroki.register(registry)
       const html = asciidoctor.convert(input, { extension_registry: registry })
-      expect(html).to.contain('https://kroki.io/vegalite/svg/eNpdjd1OwzAMRt_F4jJt08IE2u1egxs39VpDfkrjRkzT3p2kQ-rgzj4-n78rPEUzkUM4wiQyx2PTJBqxHlmmta85NPf7RivLQk16qT9i8KBgQMnBKyS0K8X8AlWvzLvvdKcr3Vb6oHT9rE7tjtqCXv-gzTqoU_fPettQrjmHxaGUIrnMlGtMTHC7KSBvwsB-LCcTbFjKcGayQ5Fy8tf3wbFHCzny_ajgrgi5OSx35_Lo9LvztaIXFhROtPU7XD4zt-zz_gNJZ2R8')
+      expect(html).to.contain('https://kroki.io/vegalite/svg/eNptj8tugzAQRff9CmR1acDQRI2yzW9kMxgH3PpB8GA1ivj32i5qEpINso_vmTtc37KMvDveCw1kn5EecXD7svSig6KT2E9NIW35F0g0VxJF6TfFl7OG0Oi3gFG-hnO4eVCTcHEY0Ibyo6lZzXJW5WxLWfFBD9UNVRF9PqCU2tJDvUrtEkqFoeRkRw34XxoIXgYRS7nzJLE5fOe0nzDcttJ0tx25VXa8t09SqDbpS8PdRGO1NKCWqcsCPy9teLZR6MGOa_3yUm-e9fMEBiUCSi_W_6Vh_I4ZJU14m38B3ityog==')
       expect(html).to.contain('<div class="imageblock kroki">')
     })
     it('should convert a WaveDrom diagram to an image', () => {
