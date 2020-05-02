@@ -10,8 +10,12 @@ module.exports.preprocessVegaLite = function (diagramText, context) {
     const JSON5 = require('json5')
     diagramObject = JSON5.parse(diagramText)
   } catch (e) {
-    console.warn(`Skipping preprocessing of vegalite diagram because of parsing error:  ${e}`)
-    return diagramText
+    const message = `Preprocessing of Vega-Lite view specification failed, because of a parsing error:
+${e}
+The invalid view specification was:
+${diagramText}
+`
+    throw addCauseToError(new Error(message), e)
   }
 
   if (!diagramObject || !diagramObject.data || !diagramObject.data.url) {
@@ -26,8 +30,13 @@ module.exports.preprocessVegaLite = function (diagramText, context) {
   try {
     data.values = vfs.read(data.url)
   } catch (e) {
-    console.warn(`Skipping preprocessing of vegalite diagram because of read error:  ${e}`)
-    return diagramText
+    if (isRemoteUrl(data.url)) {
+      // Only warn and do not throw an error, because the data file can perhaps be found by kroki server (https://github.com/yuzutech/kroki/issues/60)
+      console.warn(`Skipping preprocessing of Vega-Lite view specification, because reading the referenced remote file '${data.url}' caused an error:\n${e}`)
+      return diagramText
+    }
+    const message = `Preprocessing of Vega-Lite view specification failed, because reading the referenced local file '${data.url}' caused an error:\n${e}`
+    throw addCauseToError(new Error(message), e)
   }
 
   if (!data.format) {
@@ -42,5 +51,32 @@ module.exports.preprocessVegaLite = function (diagramText, context) {
     data.format = { type: type }
   }
   data.url = undefined
-  return JSON.stringify(diagramObject, undefined, 2)
+  // reconsider once #42 is fixed:
+  // return JSON.stringify(diagramObject, undefined, 2)
+  return JSON.stringify(diagramObject)
+}
+
+/**
+ * @param {Error} error
+ * @param {any} causedBy
+ * @returns {Error}
+ */
+function addCauseToError (error, causedBy) {
+  if (causedBy.stack) {
+    error.stack += '\nCaused by: ' + causedBy.stack
+  }
+  return error
+}
+
+/**
+ * @param {string} string
+ * @returns {boolean}
+ */
+function isRemoteUrl (string) {
+  try {
+    const url = new URL(string)
+    return url.protocol !== 'file:'
+  } catch (_) {
+    return false
+  }
 }
