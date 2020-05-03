@@ -8,7 +8,7 @@
   ],
   "scripts": {
     "test": "npm run test:node && npm run test:browser",
-    "test:node": "mocha test/test.js",
+    "test:node": "mocha test/*.js",
     "test:browser": "node test/browser/run.js",
     "lint": "standard src/**.js test/**.js",
     "clean": "rm -rf dist/*",
@@ -17,6 +17,7 @@
     "dist:node": "mkdir -p dist/node && cp src/**.js dist/node/"
   },
   "dependencies": {
+    "json5": "^2.1.3",
     "mkdirp": "^1.0.4",
     "pako": "^1.0.10",
     "rusha": "^0.8.13",
@@ -57,5 +58,8 @@
   "homepage": "https://github.com/Mogztter/asciidoctor-kroki#readme",
   "publishConfig": {
     "access": "public"
+  },
+  "engines": {
+    "node": ">=10"
   }
 }

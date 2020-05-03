@@ -1,3 +1,4 @@
+// @ts-check
 const pako = require('pako')
 
 function UnsupportedFormatError (message) {
@@ -53,6 +54,9 @@ const processKroki = (processor, parent, attrs, diagramType, diagramText, contex
   const subs = attrs.subs
   if (subs) {
     diagramText = parent.applySubstitutions(diagramText, parent.$resolve_subs(subs))
+  }
+  if (diagramType === 'vegalite') {
+    diagramText = require('./preprocess').preprocessVegaLite(diagramText, context)
   }
   const blockId = attrs.id
   const title = attrs.title
