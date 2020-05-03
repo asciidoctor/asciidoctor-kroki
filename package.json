@@ -58,5 +58,8 @@
   "homepage": "https://github.com/Mogztter/asciidoctor-kroki#readme",
   "publishConfig": {
     "access": "public"
+  },
+  "engines": {
+    "node": ">=10"
   }
 }
