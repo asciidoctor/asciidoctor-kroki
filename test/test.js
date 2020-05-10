@@ -1,4 +1,7 @@
 /* global describe it before */
+const fs = require('fs')
+const rusha = require('rusha')
+const pako = require('pako')
 const chai = require('chai')
 const sinon = require('sinon')
 const rimraf = require('rimraf')
@@ -31,6 +34,19 @@ describe('Conversion', () => {
     rimraf.sync(`${__dirname}/../.asciidoctor/kroki/*`)
   })
 
+  function encode (file) {
+    const text = fs.readFileSync(file, 'utf8')
+    return encodeText(text)
+  }
+
+  function encodeText (text) {
+    const data = Buffer.from(text, 'utf8')
+    const compressed = pako.deflate(data, { level: 9 })
+    return Buffer.from(compressed)
+      .toString('base64')
+      .replace(/\+/g, '-').replace(/\//g, '_')
+  }
+
   describe('When extension is registered', () => {
     it('should convert a diagram to an image', () => {
       const input = `
@@ -46,11 +62,12 @@ alice -> bob
       expect(html).to.contain('<div class="imageblock sequence kroki-format-svg kroki">')
     })
     it('should convert a diagram with an absolute path to an image', () => {
-      const input = `plantuml::${__dirname}/fixtures/alice.puml[svg,role=sequence]`
+      const file = `${__dirname}/fixtures/alice.puml`
+      const input = `plantuml::${file}[svg,role=sequence]`
       const registry = asciidoctor.Extensions.create()
       asciidoctorKroki.register(registry)
       const html = asciidoctor.convert(input, { extension_registry: registry })
-      expect(html).to.contain('https://kroki.io/plantuml/svg/eNpzKC5JLCopzc3hSszJTE5V0LVTSMpP4nJIzUsBCQIAr3EKfA==')
+      expect(html).to.contain(`https://kroki.io/plantuml/svg/${encode(file)}`)
       expect(html).to.contain('<div class="imageblock sequence kroki-format-svg kroki">')
     })
     it('should convert a diagram with a relative path to an image', () => {
@@ -62,7 +79,9 @@ plantuml::test/fixtures/alice.puml[svg,role=sequence]
       const registry = asciidoctor.Extensions.create()
       asciidoctorKroki.register(registry)
       const html = asciidoctor.convert(input, { extension_registry: registry, attributes: { 'kroki-fetch-diagram': true } })
-      expect(html).to.contain('<img src=".asciidoctor/kroki/diag-3b6025d05a9642fd93791b9eed064448bee17803.svg" alt="diagram">')
+      const file = `${__dirname}/fixtures/alice.puml`
+      const hash = rusha.createHash().update(`https://kroki.io/plantuml/svg/${encode(file)}`).digest('hex')
+      expect(html).to.contain(`<img src=".asciidoctor/kroki/diag-${hash}.svg" alt="diagram">`)
     })
     it('should download and save an image to a local folder', () => {
       const input = `
@@ -109,7 +128,9 @@ plantuml::{fixtures-dir}/alice.puml[svg,role=sequence]
       const registry = asciidoctor.Extensions.create()
       asciidoctorKroki.register(registry)
       const html = asciidoctor.convert(input, { extension_registry: registry, attributes: { 'kroki-fetch-diagram': true } })
-      expect(html).to.contain('<img src=".asciidoctor/kroki/diag-3b6025d05a9642fd93791b9eed064448bee17803.svg" alt="diagram">')
+      const file = `${__dirname}/fixtures/alice.puml`
+      const hash = rusha.createHash().update(`https://kroki.io/plantuml/svg/${encode(file)}`).digest('hex')
+      expect(html).to.contain(`<img src=".asciidoctor/kroki/diag-${hash}.svg" alt="diagram">`)
     })
     it('should not download twice the same image', () => {
       const input = `
@@ -229,7 +250,9 @@ plantuml::test/fixtures/alice.puml[svg,role=sequence,opts=interactive]
       const registry = asciidoctor.Extensions.create()
       asciidoctorKroki.register(registry)
       const html = asciidoctor.convert(input, { safe: 'safe', extension_registry: registry, attributes: { 'kroki-fetch-diagram': true } })
-      expect(html).to.contain('<object type="image/svg+xml" data=".asciidoctor/kroki/diag-3b6025d05a9642fd93791b9eed064448bee17803.svg"><span class="alt">diagram</span></object>')
+      const file = `${__dirname}/fixtures/alice.puml`
+      const hash = rusha.createHash().update(`https://kroki.io/plantuml/svg/${encode(file)}`).digest('hex')
+      expect(html).to.contain(`<object type="image/svg+xml" data=".asciidoctor/kroki/diag-${hash}.svg"><span class="alt">diagram</span></object>`)
     })
     it('should convert a PacketDiag diagram to an image', () => {
       const input = `
@@ -565,7 +588,32 @@ rackdiag {
       const registry = asciidoctor.Extensions.create()
       asciidoctorKroki.register(registry)
       const html = asciidoctor.convert(input, { extension_registry: registry })
-      expect(html).to.contain('https://kroki.io/vegalite/svg/eNpdjd1OwzAMRt_F4jJt08IE2u1egxs39VpDfkrjRkzT3p2kQ-rgzj4-n78rPEUzkUM4wiQyx2PTJBqxHlmmta85NPf7RivLQk16qT9i8KBgQMnBKyS0K8X8AlWvzLvvdKcr3Vb6oHT9rE7tjtqCXv-gzTqoU_fPettQrjmHxaGUIrnMlGtMTHC7KSBvwsB-LCcTbFjKcGayQ5Fy8tf3wbFHCzny_ajgrgi5OSx35_Lo9LvztaIXFhROtPU7XD4zt-zz_gNJZ2R8')
+      const values = fs.readFileSync(`${__dirname}/fixtures/vegalite-data.csv`, 'utf8')
+      const text = JSON.stringify({
+        $schema: 'https://vega.github.io/schema/vega-lite/v4.json',
+        data: {
+          values,
+          format: {
+            type: 'csv'
+          }
+        },
+        encoding: {
+          color: {
+            field: 'c',
+            type: 'nominal'
+          },
+          x: {
+            field: 'a',
+            type: 'temporal'
+          },
+          y: {
+            field: 'b',
+            type: 'quantitative'
+          }
+        },
+        mark: 'line'
+      })
+      expect(html).to.contain(`https://kroki.io/vegalite/svg/${encodeText(text)}`)
       expect(html).to.contain('<div class="imageblock kroki">')
     })
     it('should convert a WaveDrom diagram to an image', () => {

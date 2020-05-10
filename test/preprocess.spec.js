@@ -1,5 +1,6 @@
 /* global describe it */
 // @ts-check
+const fs = require('fs')
 const chai = require('chai')
 const expect = chai.expect
 const dirtyChai = require('dirty-chai')
@@ -62,16 +63,22 @@ Error: ENOENT: no such file or directory, open 'unexisting.csv'`
     "url": "test/fixtures/vegalite-data.csv"
   }
 }`
-    const inlinedLocalCsvFile = String.raw`{"data":{"values":"a,b,c\n2020-01-05,0.3,C1\n2020-01-15,0.7,C1\n2020-01-05,0.5,C2\n2020-01-15,0.8,C2\n","format":{"type":"csv"}}}`
+    const values = fs.readFileSync(`${__dirname}/fixtures/vegalite-data.csv`, 'utf8')
+    const inlinedLocalCsvFile = JSON.stringify({
+      data: {
+        values,
+        format: {
+          type: 'csv'
+        }
+      }
+    })
     expect(preprocessVegaLite(referencedLocalCsvFile, {})).to.be.equal(inlinedLocalCsvFile)
   })
 
-  // TODO "url" should be https://raw.githubusercontent.com/Mogztter/asciidoctor-kroki/master/test/fixtures/vegalite-data.csv
-  // or could be deleted
   it('should return diagramText with inlined remote file referenced with "data.url"', () => {
     const referencedRemoteCsvFile = `{
   "data": {
-    "url": "https://raw.githubusercontent.com/stenzengel/asciidoctor-kroki/issue-53-inline-referenced-vegalite-data-file/test/fixtures/vegalite-data.csv"
+    "url": "https://raw.githubusercontent.com/Mogztter/asciidoctor-kroki/master/test/fixtures/vegalite-data.csv"
   }
 }`
     const inlinedRemoteCsvFile = String.raw`{"data":{"values":"a,b,c\n2020-01-05,0.3,C1\n2020-01-15,0.7,C1\n2020-01-05,0.5,C2\n2020-01-15,0.8,C2\n","format":{"type":"csv"}}}`
