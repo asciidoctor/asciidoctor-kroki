@@ -62,7 +62,7 @@ plantuml::test/fixtures/alice.puml[svg,role=sequence]
       const registry = asciidoctor.Extensions.create()
       asciidoctorKroki.register(registry)
       const html = asciidoctor.convert(input, { extension_registry: registry, attributes: { 'kroki-fetch-diagram': true } })
-      expect(html).to.contain('<img src=".asciidoctor/kroki/3b6025d05a9642fd93791b9eed064448bee17803.svg" alt="diagram">')
+      expect(html).to.contain('<img src=".asciidoctor/kroki/diag-3b6025d05a9642fd93791b9eed064448bee17803.svg" alt="diagram">')
     })
     it('should download and save an image to a local folder', () => {
       const input = `
@@ -76,7 +76,7 @@ Hello -> World
       const registry = asciidoctor.Extensions.create()
       asciidoctorKroki.register(registry)
       const html = asciidoctor.convert(input, { extension_registry: registry, attributes: { 'kroki-fetch-diagram': true } })
-      expect(html).to.contain('<img src=".asciidoctor/kroki/7a123c0b2909750ca5526554cd8620774ccf6cd9.svg" alt="hello-world">')
+      expect(html).to.contain('<img src=".asciidoctor/kroki/diag-7a123c0b2909750ca5526554cd8620774ccf6cd9.svg" alt="hello-world">')
     })
     it('should apply substitutions in diagram block', () => {
       const input = `
@@ -109,7 +109,7 @@ plantuml::{fixtures-dir}/alice.puml[svg,role=sequence]
       const registry = asciidoctor.Extensions.create()
       asciidoctorKroki.register(registry)
       const html = asciidoctor.convert(input, { extension_registry: registry, attributes: { 'kroki-fetch-diagram': true } })
-      expect(html).to.contain('<img src=".asciidoctor/kroki/3b6025d05a9642fd93791b9eed064448bee17803.svg" alt="diagram">')
+      expect(html).to.contain('<img src=".asciidoctor/kroki/diag-3b6025d05a9642fd93791b9eed064448bee17803.svg" alt="diagram">')
     })
     it('should not download twice the same image', () => {
       const input = `
@@ -125,7 +125,7 @@ AsciiDoc -> HTML5: convert
         const registry = asciidoctor.Extensions.create()
         asciidoctorKroki.register(registry)
         const html = asciidoctor.convert(input, { extension_registry: registry, attributes: { 'kroki-fetch-diagram': true } })
-        expect(html).to.contain('<img src=".asciidoctor/kroki/ea85be88a0e4e5fb02f59602af7fe207feb5b904.svg" alt="asciidoc-html5">')
+        expect(html).to.contain('<img src=".asciidoctor/kroki/diag-ea85be88a0e4e5fb02f59602af7fe207feb5b904.svg" alt="asciidoc-html5">')
         expect(http.get.calledOnce).to.be.true()
       } finally {
         http.get.restore()
@@ -229,7 +229,7 @@ plantuml::test/fixtures/alice.puml[svg,role=sequence,opts=interactive]
       const registry = asciidoctor.Extensions.create()
       asciidoctorKroki.register(registry)
       const html = asciidoctor.convert(input, { safe: 'safe', extension_registry: registry, attributes: { 'kroki-fetch-diagram': true } })
-      expect(html).to.contain('<object type="image/svg+xml" data=".asciidoctor/kroki/3b6025d05a9642fd93791b9eed064448bee17803.svg"><span class="alt">diagram</span></object>')
+      expect(html).to.contain('<object type="image/svg+xml" data=".asciidoctor/kroki/diag-3b6025d05a9642fd93791b9eed064448bee17803.svg"><span class="alt">diagram</span></object>')
     })
     it('should convert a PacketDiag diagram to an image', () => {
       const input = `
