@@ -83,7 +83,7 @@ plantuml::test/fixtures/alice.puml[svg,role=sequence]
       const hash = rusha.createHash().update(`https://kroki.io/plantuml/svg/${encode(file)}`).digest('hex')
       expect(html).to.contain(`<img src=".asciidoctor/kroki/diag-${hash}.svg" alt="diagram">`)
     })
-    it('should download and save an image to a local folder', () => {
+    it('should download and save an image to a local folder and target name', () => {
       const input = `
 :imagesdir: .asciidoctor/kroki
 
@@ -95,7 +95,21 @@ Hello -> World
       const registry = asciidoctor.Extensions.create()
       asciidoctorKroki.register(registry)
       const html = asciidoctor.convert(input, { extension_registry: registry, attributes: { 'kroki-fetch-diagram': true } })
-      expect(html).to.contain('<img src=".asciidoctor/kroki/diag-7a123c0b2909750ca5526554cd8620774ccf6cd9.svg" alt="hello-world">')
+      expect(html).to.contain('<img src=".asciidoctor/kroki/hello-world.svg" alt="hello-world">')
+    })
+    it('should download and save an image to a local folder and generated name', () => {
+      const input = `
+:imagesdir: .asciidoctor/kroki
+
+[plantuml,"",svg,role=sequence]
+....
+Hello -> World
+....
+`
+      const registry = asciidoctor.Extensions.create()
+      asciidoctorKroki.register(registry)
+      const html = asciidoctor.convert(input, { extension_registry: registry, attributes: { 'kroki-fetch-diagram': true } })
+      expect(html).to.contain('<img src=".asciidoctor/kroki/diag-7a123c0b2909750ca5526554cd8620774ccf6cd9.svg" alt="diagram">')
     })
     it('should apply substitutions in diagram block', () => {
       const input = `
@@ -132,7 +146,27 @@ plantuml::{fixtures-dir}/alice.puml[svg,role=sequence]
       const hash = rusha.createHash().update(`https://kroki.io/plantuml/svg/${encode(file)}`).digest('hex')
       expect(html).to.contain(`<img src=".asciidoctor/kroki/diag-${hash}.svg" alt="diagram">`)
     })
-    it('should not download twice the same image', () => {
+    it('should not download twice the same image with generated name', () => {
+      const input = `
+:imagesdir: .asciidoctor/kroki
+
+[plantuml,"",svg,role=sequence]
+....
+AsciiDoc -> HTML5: convert
+....
+`
+      sinon.spy(http, 'get')
+      try {
+        const registry = asciidoctor.Extensions.create()
+        asciidoctorKroki.register(registry)
+        const html = asciidoctor.convert(input, { extension_registry: registry, attributes: { 'kroki-fetch-diagram': true } })
+        expect(html).to.contain('<img src=".asciidoctor/kroki/diag-ea85be88a0e4e5fb02f59602af7fe207feb5b904.svg" alt="diagram">')
+        expect(http.get.calledOnce).to.be.true()
+      } finally {
+        http.get.restore()
+      }
+    })
+    it('should not download twice the same image with target name', () => {
       const input = `
 :imagesdir: .asciidoctor/kroki
 
@@ -146,7 +180,7 @@ AsciiDoc -> HTML5: convert
         const registry = asciidoctor.Extensions.create()
         asciidoctorKroki.register(registry)
         const html = asciidoctor.convert(input, { extension_registry: registry, attributes: { 'kroki-fetch-diagram': true } })
-        expect(html).to.contain('<img src=".asciidoctor/kroki/diag-ea85be88a0e4e5fb02f59602af7fe207feb5b904.svg" alt="asciidoc-html5">')
+        expect(html).to.contain('<img src=".asciidoctor/kroki/asciidoc-html5.svg" alt="asciidoc-html5">')
         expect(http.get.calledOnce).to.be.true()
       } finally {
         http.get.restore()
