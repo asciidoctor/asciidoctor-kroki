@@ -1,4 +1,4 @@
-/* global it, describe, mocha, chai, Asciidoctor, AsciidoctorKroki, mochaOpts */
+/* global it, describe, mocha, chai, Asciidoctor, AsciidoctorKroki, mochaOpts, pako */
 const httpGet = (uri, encoding = 'utf8') => {
   let data = ''
   let status = -1
@@ -54,6 +54,12 @@ const httpGet = (uri, encoding = 'utf8') => {
   parts.pop()
   const baseDir = parts.join('/')
 
+  function encodeText (text) {
+    const compressed = pako.deflate(text, { to: 'string', level: 9 })
+    return window.btoa(compressed)
+      .replace(/\+/g, '-').replace(/\//g, '_')
+  }
+
   describe('Conversion', () => {
     describe('When extension is registered', () => {
       it('should convert a diagram to an image', () => {
@@ -85,8 +91,9 @@ alice -> bob
             }
           }
         })
+        const text = httpGet(`${baseDir}/test/fixtures/alice.puml`, 'utf8')
         const html = asciidoctor.convert(input, { extension_registry: registry, safe: 'safe', attributes: { 'allow-uri-read': true } })
-        expect(html).to.contain('<img src="https://kroki.io/plantuml/svg/eNpzKC5JLCopzc3hSszJTE5V0LVTSMpP4nJIzUsBCQIAr3EKfA==" alt="diagram">')
+        expect(html).to.contain(`<img src="https://kroki.io/plantuml/svg/${encodeText(text)}" alt="diagram">`)
       })
     })
   })
