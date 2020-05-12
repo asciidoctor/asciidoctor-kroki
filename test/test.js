@@ -2,6 +2,8 @@
 const fs = require('fs')
 const rusha = require('rusha')
 const pako = require('pako')
+const delDir = require('./delDir')
+const path = require('path')
 const chai = require('chai')
 const sinon = require('sinon')
 const rimraf = require('rimraf')
@@ -83,7 +85,25 @@ plantuml::test/fixtures/alice.puml[svg,role=sequence]
       const hash = rusha.createHash().update(`https://kroki.io/plantuml/svg/${encode(file)}`).digest('hex')
       expect(html).to.contain(`<img src=".asciidoctor/kroki/diag-${hash}.svg" alt="diagram">`)
     })
-    it('should download and save an image to a local folder and target name', () => {
+    it('should create diagrams in imagesdir if kroki-fetch-diagram is set', function (done) {
+      const registry = asciidoctor.Extensions.create()
+      asciidoctorKroki.register(registry)
+      const file = `${__dirname}/fixtures/fetch/doc.adoc`
+      const doc = asciidoctor.convertFile(file, { extension_registry: registry, safe: 'unsafe' })
+      fs.unlinkSync(doc.getAttributes().outfile)
+      const imageLocation = path.join(doc.base_dir, doc.getAttributes().imagesdir)
+      fs.readdir(imageLocation, (err, files) => {
+        if (err) {
+          done(`Image location: ${imageLocation} does not exist`)
+        }
+        if (files.length === 1) {
+          // tidy up
+          delDir.deleteDirWithFiles(imageLocation)
+          done()
+        }
+      })
+    })
+    it('should download and save an image to a local folder', () => {
       const input = `
 :imagesdir: .asciidoctor/kroki
 

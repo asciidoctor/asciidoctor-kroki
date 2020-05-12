@@ -1,0 +1,8 @@
+:imagesdir: media
+:kroki-server-url: https://kroki.io
+:kroki-fetch-diagram:
+
+[plantuml,alice-bob,svg]
+....
+alice -> bob
+....
