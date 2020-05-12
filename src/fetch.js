@@ -17,7 +17,12 @@ module.exports.save = function (diagramUrl, doc, target, format, vfs) {
   } else {
     dirPath = path.join(baseDir, imagesDir)
   }
-  const diagramName = `diag-${rusha.createHash().update(diagramUrl).digest('hex')}.${format}`
+  let diagramName
+  if (target) {
+    diagramName = `${target}.${format}`
+  } else {
+    diagramName = `diag-${rusha.createHash().update(diagramUrl).digest('hex')}.${format}`
+  }
   let exists
   if (typeof vfs === 'undefined' || typeof vfs.exists !== 'function') {
     exists = require('./node-fs').exists
