@@ -93,10 +93,12 @@ plantuml::test/fixtures/alice.puml[svg,role=sequence]
       const doc = asciidoctor.convertFile(file, { extension_registry: registry, safe: 'unsafe' })
       fs.unlinkSync(doc.getAttributes().outfile)
       const imageLocation = path.join(doc.base_dir, doc.getAttributes().imagesdir)
-      await fsPromises.readdir(imageLocation).then((files) => {
+      try {
+        const files = await fsPromises.readdir(imageLocation)
         expect(files).to.have.lengthOf(1)
+      } finally {
         delDir.deleteDirWithFiles(imageLocation)
-      })
+      }
     })
     it('should download and save an image to a local folder', () => {
       const input = `
