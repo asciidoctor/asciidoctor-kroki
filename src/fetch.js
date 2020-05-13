@@ -5,7 +5,7 @@ module.exports.save = function (diagramUrl, doc, target, format, vfs) {
   const imagesOutputDir = doc.getAttribute('imagesoutdir')
   const outDir = doc.getAttribute('outdir')
   const toDir = doc.getAttribute('to_dir')
-  const baseDir = doc.getAttribute('base_dir') || ''
+  const baseDir = doc.getBaseDir()
   const imagesDir = doc.getAttribute('imagesdir') || ''
   let dirPath
   if (imagesOutputDir) {
