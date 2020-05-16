@@ -42,7 +42,7 @@ const httpGet = (uri, encoding = 'utf8') => {
   }
   mocha.setup({
     ui: 'bdd',
-    ignoreLeaks: true,
+    checkLeaks: false,
     reporter: reporter
   })
 

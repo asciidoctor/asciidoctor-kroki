@@ -1,5 +1,6 @@
 // @ts-check
-const pako = require('pako')
+const path = require('path')
+const { KrokiDiagram, KrokiClient } = require('./kroki-client.js')
 
 function UnsupportedFormatError (message) {
   this.name = 'UnsupportedFormatError'
@@ -19,32 +20,38 @@ function InvalidConfigurationError (message) {
 // eslint-disable-next-line new-parens
 InvalidConfigurationError.prototype = new Error
 
-const getServerUrl = (doc) => doc.getAttribute('kroki-server-url') || 'https://kroki.io'
-
-const getTextContent = (doc, text, type, format, vfs) => {
-  const serverUrl = getServerUrl(doc)
-  const data = Buffer.from(text, 'utf8')
-  const compressed = pako.deflate(data, { level: 9 })
-  const base64 = Buffer.from(compressed)
-    .toString('base64')
-    .replace(/\+/g, '-').replace(/\//g, '_')
-  const diagramUrl = `${serverUrl}/${type}/${format}/${base64}`
-  return require('./fetch').getTextContent(diagramUrl, vfs)
+const isBrowser = () => {
+  return typeof window === 'object' && typeof window.XMLHttpRequest === 'object'
 }
 
-const createImageSrc = (doc, text, type, target, format, vfs) => {
-  const serverUrl = getServerUrl(doc)
-  const shouldFetch = doc.isAttribute('kroki-fetch-diagram')
-  const data = Buffer.from(text, 'utf8')
-  const compressed = pako.deflate(data, { level: 9 })
-  const base64 = Buffer.from(compressed)
-    .toString('base64')
-    .replace(/\+/g, '-').replace(/\//g, '_')
-  let diagramUrl = `${serverUrl}/${type}/${format}/${base64}`
-  if (shouldFetch) {
-    diagramUrl = require('./fetch').save(diagramUrl, doc, target, format, vfs)
+const getDirPath = (doc) => {
+  const imagesOutputDir = doc.getAttribute('imagesoutdir')
+  const outDir = doc.getAttribute('outdir')
+  const toDir = doc.getAttribute('to_dir')
+  const baseDir = doc.getBaseDir()
+  const imagesDir = doc.getAttribute('imagesdir') || ''
+  let dirPath
+  if (imagesOutputDir) {
+    dirPath = imagesOutputDir
+  } else if (outDir) {
+    dirPath = path.join(outDir, imagesDir)
+  } else if (toDir) {
+    dirPath = path.join(toDir, imagesDir)
+  } else {
+    dirPath = path.join(baseDir, imagesDir)
   }
-  return diagramUrl
+  return dirPath
+}
+
+const createImageSrc = (doc, krokiDiagram, target, vfs, krokiClient) => {
+  const shouldFetch = doc.isAttribute('kroki-fetch-diagram')
+  let imageUrl
+  if (shouldFetch) {
+    imageUrl = require('./fetch.js').save(krokiDiagram, getDirPath(doc), target, vfs, krokiClient)
+  } else {
+    imageUrl = krokiDiagram.getDiagramUri(krokiClient.getServerUrl())
+  }
+  return imageUrl
 }
 
 const processKroki = (processor, parent, attrs, diagramType, diagramText, context) => {
@@ -56,7 +63,7 @@ const processKroki = (processor, parent, attrs, diagramType, diagramText, contex
     diagramText = parent.applySubstitutions(diagramText, parent.$resolve_subs(subs))
   }
   if (diagramType === 'vegalite') {
-    diagramText = require('./preprocess').preprocessVegaLite(diagramText, context)
+    diagramText = require('./preprocess.js').preprocessVegaLite(diagramText, context)
   }
   const blockId = attrs.id
   const title = attrs.title
@@ -87,12 +94,15 @@ const processKroki = (processor, parent, attrs, diagramType, diagramText, contex
   if (blockId) {
     blockAttrs.id = blockId
   }
+  const krokiDiagram = new KrokiDiagram(diagramType, format, diagramText)
+  const httpClient = isBrowser() ? require('./http/browser-http.js') : require('./http/node-http.js')
+  const krokiClient = new KrokiClient(doc, httpClient)
   if (format === 'txt' || format === 'atxt' || format === 'utxt') {
-    const content = getTextContent(doc, diagramText, diagramType, format, context.vfs)
-    return processor.createBlock(parent, 'literal', content, blockAttrs, {})
+    const textContent = krokiClient.getTextContent(krokiDiagram)
+    return processor.createBlock(parent, 'literal', textContent, blockAttrs, {})
   } else {
     const target = attrs.target
-    const imageUrl = createImageSrc(doc, diagramText, diagramType, target, format, context.vfs)
+    const imageUrl = createImageSrc(doc, krokiDiagram, target, context.vfs, krokiClient)
     const imageBlockAttrs = Object.assign({}, blockAttrs, {
       target: imageUrl,
       alt: target || 'diagram'
@@ -128,7 +138,7 @@ function diagramBlockMacro (name, context) {
     self.process((parent, target, attrs) => {
       let vfs = context.vfs
       if (typeof vfs === 'undefined' || typeof vfs.read !== 'function') {
-        vfs = require('./node-fs')
+        vfs = require('./node-fs.js')
       }
       const role = attrs.role
       const diagramType = name
@@ -148,7 +158,7 @@ function diagramBlockMacro (name, context) {
 module.exports.register = function register (registry, context = {}) {
   // patch context in case of Antora
   if (typeof context.contentCatalog !== 'undefined' && typeof context.contentCatalog.addFile === 'function' && typeof context.file !== 'undefined') {
-    context.vfs = require('./antora-adapter')(context.file, context.contentCatalog, context.vfs)
+    context.vfs = require('./antora-adapter.js')(context.file, context.contentCatalog, context.vfs)
   }
   const names = ['plantuml', 'ditaa', 'graphviz', 'blockdiag', 'seqdiag', 'actdiag', 'nwdiag', 'packetdiag', 'rackdiag', 'c4plantuml', 'erd', 'mermaid', 'nomnoml', 'svgbob', 'umlet', 'vega', 'vegalite', 'wavedrom', 'bytefield', 'bpmn']
   if (typeof registry.register === 'function') {

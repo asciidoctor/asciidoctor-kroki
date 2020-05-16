@@ -2,7 +2,7 @@ const fs = require('fs')
 const path = require('path')
 const mkdirp = require('mkdirp')
 
-const http = require('./node-http')
+const http = require('./http/node-http.js')
 
 module.exports = {
   add: (image) => {

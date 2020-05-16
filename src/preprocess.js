@@ -24,7 +24,7 @@ ${diagramText}
 
   let vfs = context.vfs
   if (typeof vfs === 'undefined' || typeof vfs.read !== 'function') {
-    vfs = require('./node-fs')
+    vfs = require('./node-fs.js')
   }
   const data = diagramObject.data
   try {

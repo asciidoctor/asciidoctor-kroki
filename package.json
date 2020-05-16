@@ -8,7 +8,7 @@
   ],
   "scripts": {
     "test": "npm run test:node && npm run test:browser",
-    "test:node": "mocha test/*.js",
+    "test:node": "mocha test/**.spec.js",
     "test:browser": "node test/browser/run.js",
     "lint": "standard src/**.js test/**.js",
     "clean": "rm -rf dist/*",
@@ -21,7 +21,7 @@
     "mkdirp": "^1.0.4",
     "pako": "^1.0.10",
     "rusha": "^0.8.13",
-    "unxhr": "1.0.1"
+    "unxhr": "1.0.4"
   },
   "devDependencies": {
     "@asciidoctor/core": "^2.0.3",
