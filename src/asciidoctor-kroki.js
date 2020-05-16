@@ -117,12 +117,13 @@ function diagramBlockMacro (name, context) {
     self.named(name)
     self.process((parent, target, attrs) => {
       let vfs = context.vfs
+      target = parent.applySubstitutions(target, ['attributes'])
       if (typeof vfs === 'undefined' || typeof vfs.read !== 'function') {
         vfs = require('./node-fs.js')
+        target = parent.getDocument().normalizeSystemPath(target)
       }
       const role = attrs.role
       const diagramType = name
-      target = parent.applySubstitutions(target, ['attributes'])
       try {
         const diagramText = vfs.read(target)
         return processKroki(this, parent, attrs, diagramType, diagramText, context)
