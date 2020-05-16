@@ -1,7 +1,7 @@
 const rusha = require('rusha')
 const path = require('path')
 
-module.exports.save = function (diagramUrl, doc, target, format, vfs) {
+function getDirPath (doc) {
   const imagesOutputDir = doc.getAttribute('imagesoutdir')
   const outDir = doc.getAttribute('outdir')
   const toDir = doc.getAttribute('to_dir')
@@ -17,26 +17,18 @@ module.exports.save = function (diagramUrl, doc, target, format, vfs) {
   } else {
     dirPath = path.join(baseDir, imagesDir)
   }
-  let diagramName
-  if (target) {
-    diagramName = `${target}.${format}`
-  } else {
-    diagramName = `diag-${rusha.createHash().update(diagramUrl).digest('hex')}.${format}`
-  }
-  let exists
-  if (typeof vfs === 'undefined' || typeof vfs.exists !== 'function') {
-    exists = require('./node-fs').exists
-  } else {
-    exists = vfs.exists
-  }
-  let read
-  if (typeof vfs === 'undefined' || typeof vfs.read !== 'function') {
-    read = require('./node-fs').read
-  } else {
-    read = vfs.read
-  }
+  return dirPath
+}
+
+module.exports.save = function (diagramUrl, doc, target, format, vfs) {
+  const exists = typeof vfs !== 'undefined' && typeof vfs.exists === 'function' ? vfs.exists : require('./node-fs').exists
+  const read = typeof vfs !== 'undefined' && typeof vfs.read === 'function' ? vfs.read : require('./node-fs').read
+  const add = typeof vfs !== 'undefined' && typeof vfs.add === 'function' ? vfs.add : require('./node-fs').add
+
+  const dirPath = getDirPath(doc)
+  const diagramName = target ? `${target}.${format}` : `diag-${rusha.createHash().update(diagramUrl).digest('hex')}.${format}`
   const filePath = path.format({ dir: dirPath, base: diagramName })
-  let encoding = 'utf8'
+  let encoding
   let mediaType
   if (format === 'txt' || format === 'atxt' || format === 'utxt') {
     mediaType = 'text/plain; charset=utf-8'
@@ -48,19 +40,8 @@ module.exports.save = function (diagramUrl, doc, target, format, vfs) {
     mediaType = 'image/png'
     encoding = 'binary'
   }
-  let contents
-  if (exists(filePath)) {
-    // file already exists on the file system
-    contents = read(filePath, encoding)
-  } else {
-    contents = read(diagramUrl, encoding)
-  }
-  let add
-  if (typeof vfs === 'undefined' || typeof vfs.add !== 'function') {
-    add = require('./node-fs').add
-  } else {
-    add = vfs.add
-  }
+  // file is either (already) on the file system or we should read it from Kroki
+  const contents = exists(filePath) ? read(filePath, encoding) : read(diagramUrl, encoding)
   add({
     relative: dirPath,
     basename: diagramName,
