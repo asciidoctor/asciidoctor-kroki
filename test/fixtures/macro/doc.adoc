@@ -1,0 +1,3 @@
+:kroki-server-url: https://kroki.io
+
+plantuml::../alice.puml[svg,role=sequence]

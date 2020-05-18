@@ -87,6 +87,14 @@ plantuml::test/fixtures/alice.puml[svg,role=sequence]
       const hash = rusha.createHash().update(`https://kroki.io/plantuml/svg/${encode(file)}`).digest('hex')
       expect(html).to.contain(`<img src=".asciidoctor/kroki/diag-${hash}.svg" alt="diagram">`)
     })
+    it('should convert a file containing the macro form using a relative path to a diagram', () => {
+      const registry = asciidoctor.Extensions.create()
+      asciidoctorKroki.register(registry)
+      const file = `${__dirname}/fixtures/macro/doc.adoc`
+      const html = asciidoctor.loadFile(file, { extension_registry: registry, 'safe': 'unsafe' }).convert()
+      expect(html).to.contain(`https://kroki.io/plantuml/svg/eNpzKC5JLCopzc3hSszJTE5V0LVTSMpP4nJIzUsBCQIAr3EKfA==`)
+      expect(html).to.contain('<div class="imageblock sequence kroki-format-svg kroki">')
+    })
     it('should create diagrams in imagesdir if kroki-fetch-diagram is set', async () => {
       const registry = asciidoctor.Extensions.create()
       asciidoctorKroki.register(registry)
