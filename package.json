@@ -2,8 +2,9 @@
   "name": "asciidoctor-kroki",
   "version": "0.8.2",
   "description": "Asciidoctor extension to convert diagrams to images using Kroki",
-  "main": "dist/node/asciidoctor-kroki.js",
+  "main": "src/asciidoctor-kroki.js",
   "files": [
+    "src",
     "dist"
   ],
   "scripts": {
@@ -12,9 +13,8 @@
     "test:browser": "node test/browser/run.js",
     "lint": "standard src/**.js test/**.js",
     "clean": "rm -rf dist/*",
-    "dist": "npm run clean && npm run dist:browser && npm run dist:node",
-    "dist:browser": "mkdir -p dist/browser && browserify src/asciidoctor-kroki.js -u ./fetch -u ./antora-adapter --standalone AsciidoctorKroki -o dist/browser/asciidoctor-kroki.js",
-    "dist:node": "mkdir -p dist/node && cp src/**.js dist/node/"
+    "dist": "npm run clean && npm run dist:browser",
+    "dist:browser": "mkdir -p dist/browser && browserify src/asciidoctor-kroki.js --exclude ./node-fs.js --exclude ./fetch.js --exclude ./antora-adapter.js --standalone AsciidoctorKroki -o dist/browser/asciidoctor-kroki.js"
   },
   "dependencies": {
     "json5": "^2.1.3",

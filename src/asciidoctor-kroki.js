@@ -1,5 +1,4 @@
 // @ts-check
-const path = require('path')
 const { KrokiDiagram, KrokiClient } = require('./kroki-client.js')
 
 function UnsupportedFormatError (message) {
@@ -24,30 +23,11 @@ const isBrowser = () => {
   return typeof window === 'object' && typeof window.XMLHttpRequest === 'object'
 }
 
-const getDirPath = (doc) => {
-  const imagesOutputDir = doc.getAttribute('imagesoutdir')
-  const outDir = doc.getAttribute('outdir')
-  const toDir = doc.getAttribute('to_dir')
-  const baseDir = doc.getBaseDir()
-  const imagesDir = doc.getAttribute('imagesdir') || ''
-  let dirPath
-  if (imagesOutputDir) {
-    dirPath = imagesOutputDir
-  } else if (outDir) {
-    dirPath = path.join(outDir, imagesDir)
-  } else if (toDir) {
-    dirPath = path.join(toDir, imagesDir)
-  } else {
-    dirPath = path.join(baseDir, imagesDir)
-  }
-  return dirPath
-}
-
 const createImageSrc = (doc, krokiDiagram, target, vfs, krokiClient) => {
   const shouldFetch = doc.isAttribute('kroki-fetch-diagram')
   let imageUrl
   if (shouldFetch) {
-    imageUrl = require('./fetch.js').save(krokiDiagram, getDirPath(doc), target, vfs, krokiClient)
+    imageUrl = require('./fetch.js').save(krokiDiagram, doc, target, vfs, krokiClient)
   } else {
     imageUrl = krokiDiagram.getDiagramUri(krokiClient.getServerUrl())
   }
