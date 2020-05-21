@@ -100,7 +100,7 @@ Kroki currently supports the following diagram libraries:
 * Vega-Lite: `vegalite`
 * WaveDrom: `wavedrom`
 
-In your AsciiDoc document, you can either declare your diagram inline or reference a diagram file using the corresponding macro or using the `include` directive. 
+In your AsciiDoc document, you can either declare your diagram inline or reference a diagram file using the corresponding macro or using the `include` directive.
 
 Here's an example where we declare a GraphViz diagram directly in our AsciiDoc document using the block syntax:
 
@@ -118,7 +118,7 @@ digraph foo {
 ....
 ```
 
-![alt text](examples/graphviz.png)
+![GraphViz diagram](https://raw.githubusercontent.com/Mogztter/asciidoctor-kroki/docs-attrs/examples/graphviz.png)
 
 In the example below, we are using the `vegalite` macro to reference a file named *chart.vlite*:
 
@@ -126,7 +126,7 @@ In the example below, we are using the `vegalite` macro to reference a file name
 vegalite::chart.vlite[svg,role=chart,opts=interactive]
 ```
 
-![alt text](examples/chart.png)
+![Vega-Lite chart diagram](https://raw.githubusercontent.com/Mogztter/asciidoctor-kroki/docs-attrs/examples/chart.png)
 
 
 Finally, we can use the `include` directive to reference a diagram file:
@@ -138,7 +138,7 @@ include::alice-bob.puml[]
 ....
 ```
 
-![alt text](examples/alice-bob.png)
+![PlantUML diagram](https://raw.githubusercontent.com/Mogztter/asciidoctor-kroki/docs-attrs/examples/alice-bob.png)
 
 ## Configuration
 
