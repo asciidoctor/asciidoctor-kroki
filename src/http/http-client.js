@@ -1,10 +1,9 @@
-const httpGet = (uri, encoding = 'utf8') => {
+const httpRequest = (XMLHttpRequest, uri, method, encoding = 'utf8', body) => {
   let data = ''
   let status = -1
   try {
-    const XMLHttpRequest = require('unxhr').XMLHttpRequest
     const xhr = new XMLHttpRequest()
-    xhr.open('GET', uri, false)
+    xhr.open(method, uri, false)
     if (encoding === 'binary') {
       xhr.responseType = 'arraybuffer'
     }
@@ -22,17 +21,30 @@ const httpGet = (uri, encoding = 'utf8') => {
         }
       }
     })
-    xhr.send()
+    if (body) {
+      xhr.send(body)
+    } else {
+      xhr.send()
+    }
   } catch (e) {
-    throw new Error(`Error reading file: ${uri}; reason: ${e.message}`)
+    throw new Error(`${method} ${uri} - error; reason: ${e.message}`)
   }
   // assume that no data means it doesn't exist
   if (status === 404 || !data) {
-    throw new Error(`No such file: ${uri}`)
+    throw new Error(`${method} ${uri} - server returns an empty response or a 404 status code`)
   }
   return data
 }
 
+const httpPost = (XMLHttpRequest, uri, body, encoding = 'utf8') => {
+  return httpRequest(XMLHttpRequest, uri, 'POST', encoding, body)
+}
+
+const httpGet = (XMLHttpRequest, uri, encoding = 'utf8') => {
+  return httpRequest(XMLHttpRequest, uri, 'GET', encoding)
+}
+
 module.exports = {
-  get: httpGet
+  get: httpGet,
+  post: httpPost
 }

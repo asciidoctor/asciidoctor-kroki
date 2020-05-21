@@ -1,7 +1,7 @@
 const rusha = require('rusha')
 const path = require('path')
 
-function getDirPath (doc) {
+const getDirPath = (doc) => {
   const imagesOutputDir = doc.getAttribute('imagesoutdir')
   const outDir = doc.getAttribute('outdir')
   const toDir = doc.getAttribute('to_dir')
@@ -20,12 +20,14 @@ function getDirPath (doc) {
   return dirPath
 }
 
-module.exports.save = function (diagramUrl, doc, target, format, vfs) {
-  const exists = typeof vfs !== 'undefined' && typeof vfs.exists === 'function' ? vfs.exists : require('./node-fs').exists
-  const read = typeof vfs !== 'undefined' && typeof vfs.read === 'function' ? vfs.read : require('./node-fs').read
-  const add = typeof vfs !== 'undefined' && typeof vfs.add === 'function' ? vfs.add : require('./node-fs').add
+module.exports.save = function (krokiDiagram, doc, target, vfs, krokiClient) {
+  const exists = typeof vfs !== 'undefined' && typeof vfs.exists === 'function' ? vfs.exists : require('./node-fs.js').exists
+  const read = typeof vfs !== 'undefined' && typeof vfs.read === 'function' ? vfs.read : require('./node-fs.js').read
+  const add = typeof vfs !== 'undefined' && typeof vfs.add === 'function' ? vfs.add : require('./node-fs.js').add
 
   const dirPath = getDirPath(doc)
+  const diagramUrl = krokiDiagram.getDiagramUri(krokiClient.getServerUrl())
+  const format = krokiDiagram.format
   const diagramName = target ? `${target}.${format}` : `diag-${rusha.createHash().update(diagramUrl).digest('hex')}.${format}`
   const filePath = path.format({ dir: dirPath, base: diagramName })
   let encoding
@@ -41,7 +43,7 @@ module.exports.save = function (diagramUrl, doc, target, format, vfs) {
     encoding = 'binary'
   }
   // file is either (already) on the file system or we should read it from Kroki
-  const contents = exists(filePath) ? read(filePath, encoding) : read(diagramUrl, encoding)
+  const contents = exists(filePath) ? read(filePath, encoding) : krokiClient.getImage(krokiDiagram, encoding)
   add({
     relative: dirPath,
     basename: diagramName,
@@ -49,14 +51,4 @@ module.exports.save = function (diagramUrl, doc, target, format, vfs) {
     contents: Buffer.from(contents, encoding)
   })
   return diagramName
-}
-
-module.exports.getTextContent = function (diagramUrl, vfs) {
-  let read
-  if (typeof vfs === 'undefined' || typeof vfs.read !== 'function') {
-    read = require('./node-fs').read
-  } else {
-    read = vfs.read
-  }
-  return read(diagramUrl, 'utf8')
 }

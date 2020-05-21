@@ -8,7 +8,7 @@ const path = require('path')
 const chai = require('chai')
 const sinon = require('sinon')
 const rimraf = require('rimraf')
-const http = require('../src/node-http')
+const http = require('../src/http/node-http')
 const expect = chai.expect
 const dirtyChai = require('dirty-chai')
 
@@ -47,7 +47,8 @@ describe('Conversion', () => {
     const compressed = pako.deflate(data, { level: 9 })
     return Buffer.from(compressed)
       .toString('base64')
-      .replace(/\+/g, '-').replace(/\//g, '_')
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
   }
 
   describe('When extension is registered', () => {
