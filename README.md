@@ -118,7 +118,7 @@ digraph foo {
 ....
 ```
 
-![GraphViz diagram](https://raw.githubusercontent.com/Mogztter/asciidoctor-kroki/docs-attrs/examples/graphviz.png)
+![GraphViz diagram](https://kroki.io/graphviz/png/eNo9jjEOwjAMRfee4itzGKBzuEjVIaldWsnEVQBBVXp3AqQdLFlP_32bxkvy04BeFUsFRCVGc7vPwi7pIxJTW_Ax88FP7IK-NnZC048inYomN7OIPi3-tim6_QaYTOY_m0Z_1bi31ltr4k4TWYgPLM4s8Hgj5Omwmrbanzicy-Wy1NX6AUS2QVQ=)
 
 In the example below, we are using the `vegalite` macro to reference a file named *chart.vlite*:
 
@@ -126,7 +126,7 @@ In the example below, we are using the `vegalite` macro to reference a file name
 vegalite::chart.vlite[svg,role=chart,opts=interactive]
 ```
 
-![Vega-Lite chart diagram](https://raw.githubusercontent.com/Mogztter/asciidoctor-kroki/docs-attrs/examples/chart.png)
+![Vega-Lite chart diagram](https://kroki.io/vegalite/png/eNrtVktz2yAQvvtXMEyOqt9pnNz6To-d6c3jA5ZWEg0CF7Ba26P_3gVb2JJSN8mhTWdyMIb92CffCnY9QuiFiXMoGL0hNLd2ZW4GgxIy1s-4zdfLPleD_QYvfSW4hUE57X8zStLI6SdgYs1XlqMAbdwqzbdKWibEhsRKxsyCxF9C4pxpa4jNmSUmVz9IwtMUNEhL7GYFhqgURWgMLN9ymRETMwGmf3DDrItxh3NclUysweB67teE7KjP4A2NCF3ibDyroib0toYuL9vQuxqaTtrQ-xq6HrWhDzU060Afg6-OwU81NLpuQ7fB4FUb-hwMjiuPLHD0m2i-L3Koxe6gSQum75xuzHUsgNYWKchYJVjfUE0v3TSWKEg5iMTpL4Oql7uzcmKpCi6ZaIJGaReJXAvRkLOf3LQcOFM8vnPilAkDURNLVMG4_A1ouRVw8HOCVGFeHRWo4Vt4bHLf10yiE2Z5Ca0MHSnvSaWhiA7_GFashNJ_P65WJbegFeJWr-E04oZpARnI5L7j258C_XI-6d7p_8H0C0v_PUtFhw2aycxtmM-GERm9xmE8xWEyxmE6HC6eJam7afgLy-8oWIZX26OZnSpd-E8qTWh0lvTihfT_C-ltrgHfHaJzpCGf-QR5fjVcnOuK8XDfEM-tF56c3bFZSq45PsDo0y-CryGIhzQFjj4YikpKlMfkOrmGWlIuE1hhEPhqPLbNgUYNMLioelXvF-H7eDo=)
 
 
 Finally, we can use the `include` directive to reference a diagram file:
@@ -138,7 +138,7 @@ include::alice-bob.puml[]
 ....
 ```
 
-![PlantUML diagram](https://raw.githubusercontent.com/Mogztter/asciidoctor-kroki/docs-attrs/examples/alice-bob.png)
+![PlantUML diagram](https://kroki.io/plantuml/png/eNpzKC5JLCopzc3hSszJTE5V0LVTSMpP4nJIzUsBCgIApPUKcg==)
 
 ## Configuration
 
