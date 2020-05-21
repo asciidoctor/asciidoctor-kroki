@@ -32,12 +32,12 @@ const kroki = require('asciidoctor-kroki')
 
 const input = 'plantuml::hello.puml[svg,role=sequence]'
 
-kroki.register(asciidoctor.Extensions)
-console.log(asciidoctor.convert(input)) // <1>
+kroki.register(asciidoctor.Extensions) // <1>
+console.log(asciidoctor.convert(input))
 
 const registry = asciidoctor.Extensions.create()
-kroki.register(registry)
-console.log(asciidoctor.convert(input, {'extension_registry': registry})) // <2>
+kroki.register(registry) // <2>
+console.log(asciidoctor.convert(input, {'extension_registry': registry}))
 ```
 **<1>** Register the extension in the global registry <br/>
 **<2>** Register the extension in a dedicated registry
@@ -65,24 +65,45 @@ Create a file named `kroki.html` with the following content and open it in your 
       var kroki = AsciidoctorKroki
 
       const registry = asciidoctor.Extensions.create()
-      kroki.register(registry)
+      kroki.register(registry) // <1>
       var result = asciidoctor.convert(input, {'extension_registry': registry})
       document.getElementById('content').innerHTML = result
     </script>
   </body>
 </html>
 ```
-**<1>** Register the extension in the global registry <br/>
-**<2>** Register the extension in a dedicated registry
+**<1>** Register the extension in a dedicated registry
 
 ## Usage
 
-```adoc
-[plantuml,alice-bob,svg,role=sequence]
-....
-alice -> bob
-....
+Kroki currently supports the following diagram libraries:
 
+* ActDiag: `actdiag`
+* BlockDiag: `blockdiag`
+* BPMN: `bpmn`
+* Bytefield: `bytefield`
+* C4 (PlantUML): `c4plantuml`
+* Ditaa: `ditaa`
+* ERD: `erd`
+* GraphViz : `graphviz`
+* Mermaid: `mermaid`
+* Nomnoml: `nomnoml`
+* NwDiag: `nwdiag`
+* PacketDiag: `packetdiag`
+* PlantUML: `plantuml`
+* RackDiag: `rackdiag`
+* SeqDiag: `seqdiag`
+* SVGBob: `svgbob`
+* UMLet: `umlet`
+* Vega: `vega`
+* Vega-Lite: `vegalite`
+* WaveDrom: `wavedrom`
+
+In your AsciiDoc document, you can either declare your diagram inline or reference a diagram file using the `include` directive or the corresponding macro.
+
+Here's an example where we declare a GraphViz diagram directly in our AsciiDoc document using the block syntax:
+
+```adoc
 [graphviz]
 ....
 digraph foo {
@@ -96,6 +117,29 @@ digraph foo {
 ....
 ```
 
+In the example below, we are using the `vegalite` macro to reference a file named *chart.vlite*:
+
+```
+vegalite::chart.vlite[svg,role=chart,opts=interactive]
+```
+
+Finally, we can use the `include` directive to reference a diagram file:
+
+```
+[plantuml,alice-bob,svg,role=sequence]
+....
+include::alice-bob.puml
+....
+```
+
+## Configuration
+
+| Attribute name | Description | Default value  |
+| ---- | ---- | ---- |
+| `kroki-server-url` | The URL of the Kroki server (see "Using Your Own Kroki") | `https://kroki.io`
+| `kroki-fetch-diagram` | Define if we should download (and save on the disk) the images from the Kroki server.<br/>This feature is not available when running in the browser. | `false`
+| `kroki-http-method` | Define how we should get the image from the Kroki server. Possible values:<br/><ul><li>`get`: always use GET requests</li><li>`post`: always use POST requests</li><li>`adaptive`: use a POST request if the URI length is longer than 4096 characters, otherwise use a GET request</li></ul> | `adaptive` |
+
 ## Using Your Own Kroki
 
 By default, this extension sends information and receives diagrams back from https://kroki.io.
@@ -105,7 +149,6 @@ You may choose to use your own server due to:
 * Network restrictions - if Kroki is not available behind your corporate firewall
 * Network latency - you are far from the European public instance
 * Privacy - you don't want to send your diagrams to a remote server on the internet
-
 
 This is done using the `kroki-server-url` attribute.
 Typically, this is at the top of the document (under the title):
