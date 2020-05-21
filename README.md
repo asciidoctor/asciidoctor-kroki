@@ -10,6 +10,7 @@ An extension for [Asciidoctor.js](https://github.com/asciidoctor/asciidoctor.js)
     + [Node.js](#nodejs)
     + [Browser](#browser)
   * [Usage](#usage)
+  * [Configuration](#configuration)
   * [Using Your Own Kroki](#using-your-own-kroki)
   * [Antora Integration](#antora-integration)
   * [Contributing](#contributing)
@@ -117,20 +118,27 @@ digraph foo {
 ....
 ```
 
+![alt text](examples/graphviz.png)
+
 In the example below, we are using the `vegalite` macro to reference a file named *chart.vlite*:
 
 ```
 vegalite::chart.vlite[svg,role=chart,opts=interactive]
 ```
 
+![alt text](examples/chart.png)
+
+
 Finally, we can use the `include` directive to reference a diagram file:
 
 ```
 [plantuml,alice-bob,svg,role=sequence]
 ....
-include::alice-bob.puml
+include::alice-bob.puml[]
 ....
 ```
+
+![alt text](examples/alice-bob.png)
 
 ## Configuration
 
