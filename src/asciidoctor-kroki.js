@@ -44,6 +44,8 @@ const processKroki = (processor, parent, attrs, diagramType, diagramText, contex
   }
   if (diagramType === 'vegalite') {
     diagramText = require('./preprocess.js').preprocessVegaLite(diagramText, context)
+  } else if (diagramType === 'plantuml') {
+    diagramText = require('./preprocess.js').preprocessPlantUML(diagramText, context)
   }
   const blockId = attrs.id
   const title = attrs.title

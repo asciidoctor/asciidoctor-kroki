@@ -1,0 +1,9 @@
+@startuml
+A -> A : stuff1
+B -> B : stuff2
+@enduml
+
+@startuml
+C -> C : stuff3
+D -> D : stuff4
+@enduml

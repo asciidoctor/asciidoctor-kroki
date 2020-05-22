@@ -1,0 +1,12 @@
+@startuml
+A -> A : stuff1
+!startsub BASIC
+B -> B : stuff2
+B -> B : stuff2.1
+!endsub
+C -> C : stuff3
+!startsub BASIC
+D -> D : stuff4
+D -> D : stuff4.1
+!endsub
+@enduml
