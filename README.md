@@ -100,7 +100,7 @@ Kroki currently supports the following diagram libraries:
 * Vega-Lite: `vegalite`
 * WaveDrom: `wavedrom`
 
-In your AsciiDoc document, you can either declare your diagram inline or reference a diagram file using the corresponding macro or using the `include` directive.
+In your AsciiDoc document, you can either write your diagram inline or alternatively you can make a reference to the diagram file using macro form or with the `include` directive.
 
 Here's an example where we declare a GraphViz diagram directly in our AsciiDoc document using the block syntax:
 
