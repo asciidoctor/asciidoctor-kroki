@@ -9,10 +9,11 @@ An extension for [Asciidoctor.js](https://github.com/asciidoctor/asciidoctor.js)
   * [Install](#install)
     + [Node.js](#nodejs)
     + [Browser](#browser)
+    + [Antora Integration](#antora-integration)
   * [Usage](#usage)
+    + [Supported diagram types](#supported-diagram-types)
   * [Configuration](#configuration)
   * [Using Your Own Kroki](#using-your-own-kroki)
-  * [Antora Integration](#antora-integration)
   * [Contributing](#contributing)
     + [Setup](#setup)
     + [Building](#building)
@@ -23,7 +24,7 @@ An extension for [Asciidoctor.js](https://github.com/asciidoctor/asciidoctor.js)
 
 Install the dependencies:
 
-    $ npm install asciidoctor asciidoctor-kroki
+    $ npm i asciidoctor asciidoctor-kroki
 
 Create a file named `kroki.js` with following content and run it:
 
@@ -47,7 +48,7 @@ console.log(asciidoctor.convert(input, {'extension_registry': registry}))
 
 Install the dependencies:
 
-    $ npm install asciidoctor asciidoctor-kroki
+    $ npm i asciidoctor asciidoctor-kroki
 
 Create a file named `kroki.html` with the following content and open it in your browser:
 
@@ -74,6 +75,36 @@ Create a file named `kroki.html` with the following content and open it in your 
 </html>
 ```
 **<1>** Register the extension in a dedicated registry
+
+### Antora Integration
+
+If you are using [Antora](https://antora.org/), you can integrate Kroki in your documentation site.
+
+1. Install the extension in your playbook project:
+
+       $ npm i asciidoctor-kroki
+
+2. Register the extension in your playbook file:
+
+    ```yaml
+    asciidoc:
+      extensions:
+        - asciidoctor-kroki
+    ```
+
+    https://docs.antora.org/antora/2.3/playbook/configure-asciidoc/#extensions
+
+3. Enjoy!
+
+**💡 TIP**:
+You can use the `kroki-fetch-diagram` option to download the images from Kroki at build time.
+In other words, while viewing pages you won't rely on Kroki anymore.
+
+```yaml
+asciidoc:
+  attributes:
+    kroki-fetch-diagram: true
+```
 
 ## Usage
 
@@ -182,36 +213,6 @@ You can also set this attribute using the Javascript API, for instance:
 
 ```js
 asciidoctor.convertFile('file.adoc', { attributes: { 'kroki-server-url': 'http://my-server-url:port' } })
-```
-
-## Antora Integration
-
-If you are using [Antora](https://antora.org/), you can integrate Kroki in your documentation site.
-
-1. Install the extension in your playbook project:
-
-       $ npm i asciidoctor-kroki
-
-2. Register the extension in your playbook file:
-
-    ```yaml
-    asciidoc:
-      extensions:
-        - asciidoctor-kroki
-    ```
-
-    https://docs.antora.org/antora/2.2/playbook/configure-asciidoc/#extensions
-
-3. Enjoy!
-
-**💡 TIP**:
-You can use the `kroki-fetch-diagram` option to download the images from Kroki at build time.
-In other words, while viewing pages you won't rely on Kroki anymore.
-
-```yaml
-asciidoc:
-  attributes:
-    kroki-fetch-diagram: true
 ```
 
 ## Contributing
