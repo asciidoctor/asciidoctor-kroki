@@ -39,7 +39,7 @@ console.log(asciidoctor.convert(input))
 
 const registry = asciidoctor.Extensions.create()
 kroki.register(registry) // <2>
-console.log(asciidoctor.convert(input, {'extension_registry': registry}))
+console.log(asciidoctor.convert(input, { extension_registry: registry }))
 ```
 **<1>** Register the extension in the global registry <br/>
 **<2>** Register the extension in a dedicated registry
@@ -53,28 +53,55 @@ Install the dependencies:
 Create a file named `kroki.html` with the following content and open it in your browser:
 
 ```html
-<html>
+<html lang="en">
   <head>
+    <title>Asciidoctor x Kroki</title>
+    <meta charset="utf-8">
     <script src="node_modules/@asciidoctor/core/dist/browser/asciidoctor.js"></script>
     <script src="node_modules/asciidoctor-kroki/dist/browser/asciidoctor-kroki.js"></script>
   </head>
   <body>
     <div id="content"></div>
     <script>
-      var input = 'plantuml::hello.puml[svg,role=sequence]'
+      const input = `Let's take an example with a _GraphViz_ "Hello World":
 
-      var asciidoctor = Asciidoctor()
-      var kroki = AsciidoctorKroki
+[graphviz]
+....
+digraph G {
+  Hello->World
+}
+....`
+
+      const asciidoctor = Asciidoctor()
 
       const registry = asciidoctor.Extensions.create()
-      kroki.register(registry) // <1>
-      var result = asciidoctor.convert(input, {'extension_registry': registry})
+      AsciidoctorKroki.register(registry) // <1>
+      const result = asciidoctor.convert(input, { extension_registry: registry })
       document.getElementById('content').innerHTML = result
     </script>
   </body>
 </html>
 ```
 **<1>** Register the extension in a dedicated registry
+
+**❗ IMPORTANT:**
+If you want to reference a diagram file in a browser environment you will need to define the base directory using the `base_dir` option.
+In addition, you will also need to provide an implementation to read a binary file **synchronously** for a given path.
+You can find an implementation based on `XMLHttpRequest` in the source code: https://github.com/Mogztter/asciidoctor-kroki/blob/9585b969014a1894d0c9fb76df10e1e8c66ce2b2/test/browser/test.js#L2-L34.
+Once `httpGet` is defined, here's how we should configure the extension:
+
+```js
+const registry = asciidoctor.Extensions.create()
+AsciidoctorKroki.register(registry, {
+  vfs: {
+    read: (path, encoding = 'utf8') => httpGet(path, encoding),
+    exists: (_) => false,
+    add: (_) => { /* no-op */ }
+  }
+})
+const input = 'plantuml::hello.puml[svg,role=sequence]'
+asciidoctor.convert(input, { base_dir: window.location.origin, safe: 'safe', extension_registry: registry })
+```
 
 ### Antora Integration
 
@@ -108,7 +135,7 @@ asciidoc:
 
 ## Usage
 
-In your AsciiDoc document, you can either write your diagram inline or alternatively you can make a reference to the diagram file using macro form or with the `include` directive.
+In your AsciiDoc document, you can either write your diagram inline or, alternatively, you can make a reference to the diagram file using macro form or with the `include` directive.
 
 Here's an example where we declare a GraphViz diagram directly in our AsciiDoc document using the block syntax:
 
