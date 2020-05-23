@@ -94,7 +94,7 @@ alice -> bob
         const text = httpGet(`${baseDir}/test/fixtures/alice.puml`, 'utf8')
         const html = asciidoctor.convert(input, { extension_registry: registry, safe: 'safe', attributes: { 'allow-uri-read': true } })
         expect(html).to.contain(`<img src="https://kroki.io/plantuml/svg/${encodeText(text)}" alt="diagram">`)
-      })
+      }).timeout(5000)
     })
   })
 

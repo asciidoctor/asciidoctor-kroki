@@ -51,7 +51,7 @@ describe('Kroki HTTP client', () => {
         .replace(/\r/, '')
         .replace(/\n/, '')
       expect(image).to.equal(expected)
-    })
+    }).timeout(5000)
     it('should get an image with POST request if the URI length is > 4096', () => {
       const doc = asciidoctor.load('')
       const krokiClient = new KrokiClient(doc, httpClient)
