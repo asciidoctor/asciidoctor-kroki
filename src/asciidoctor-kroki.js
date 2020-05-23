@@ -119,7 +119,10 @@ function diagramBlockMacro (name, context) {
       let vfs = context.vfs
       target = parent.applySubstitutions(target, ['attributes'])
       if (typeof vfs === 'undefined' || typeof vfs.read !== 'function') {
-        vfs = require('./node-fs.js')
+        vfs = require('./node-fs')
+      }
+      if (!(typeof context.contentCatalog !== 'undefined' && typeof context.contentCatalog.addFile === 'function' && typeof context.file !== 'undefined')) {
+        // not an Antora context
         target = parent.getDocument().normalizeSystemPath(target)
       }
       const role = attrs.role
