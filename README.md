@@ -77,29 +77,6 @@ Create a file named `kroki.html` with the following content and open it in your 
 
 ## Usage
 
-Kroki currently supports the following diagram libraries:
-
-* ActDiag: `actdiag`
-* BlockDiag: `blockdiag`
-* BPMN: `bpmn`
-* Bytefield: `bytefield`
-* C4 (PlantUML): `c4plantuml`
-* Ditaa: `ditaa`
-* ERD: `erd`
-* GraphViz : `graphviz`
-* Mermaid: `mermaid`
-* Nomnoml: `nomnoml`
-* NwDiag: `nwdiag`
-* PacketDiag: `packetdiag`
-* PlantUML: `plantuml`
-* RackDiag: `rackdiag`
-* SeqDiag: `seqdiag`
-* SVGBob: `svgbob`
-* UMLet: `umlet`
-* Vega: `vega`
-* Vega-Lite: `vegalite`
-* WaveDrom: `wavedrom`
-
 In your AsciiDoc document, you can either write your diagram inline or alternatively you can make a reference to the diagram file using macro form or with the `include` directive.
 
 Here's an example where we declare a GraphViz diagram directly in our AsciiDoc document using the block syntax:
@@ -139,6 +116,34 @@ include::alice-bob.puml[]
 ```
 
 ![PlantUML diagram](https://kroki.io/plantuml/png/eNpzKC5JLCopzc3hSszJTE5V0LVTSMpP4nJIzUsBCgIApPUKcg==)
+
+### Supported diagram types
+
+Kroki currently supports the following diagram libraries:
+
+* [ActDiag](https://github.com/blockdiag/actdiag): `actdiag`
+* [BlockDiag](https://github.com/blockdiag/blockdiag): `blockdiag`
+* [BPMN](https://github.com/bpmn-io/bpmn-js): `bpmn`
+* [Bytefield](https://github.com/Deep-Symmetry/bytefield-svg/): `bytefield`
+* [C4 (PlantUML)](https://github.com/RicardoNiepel/C4-PlantUML): `c4plantuml`
+* [Ditaa](http://ditaa.sourceforge.net): `ditaa`
+* [ERD](https://github.com/BurntSushi/erd): `erd`
+* [GraphViz](https://www.graphviz.org/): `graphviz`
+* [Mermaid](https://github.com/knsv/mermaid): `mermaid`
+* [Nomnoml](https://github.com/skanaar/nomnoml): `nomnoml`
+* [NwDiag](https://github.com/blockdiag/nwdiag): `nwdiag`
+* [PacketDiag](https://github.com/blockdiag/nwdiag): `packetdiag`
+* [PlantUML](https://github.com/plantuml/plantuml): `plantuml`
+* [RackDiag](https://github.com/blockdiag/nwdiag): `rackdiag`
+* [SeqDiag](https://github.com/blockdiag/seqdiag): `seqdiag`
+* [SVGBob](https://github.com/ivanceras/svgbob): `svgbob`
+* [UMLet](https://github.com/umlet/umlet): `umlet`
+* [Vega](https://github.com/vega/vega): `vega`
+* [Vega-Lite](https://github.com/vega/vega-lite): `vegalite`
+* [WaveDrom](https://github.com/wavedrom/wavedrom): `wavedrom`
+
+Each diagram libraries support one or more output format.
+Consult the [Kroki documentation](https://kroki.io/#support) to find out which format are supported.
 
 ## Configuration
 
