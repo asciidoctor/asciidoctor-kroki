@@ -173,7 +173,7 @@ Kroki currently supports the following diagram libraries:
 * [Vega-Lite](https://github.com/vega/vega-lite): `vegalite`
 * [WaveDrom](https://github.com/wavedrom/wavedrom): `wavedrom`
 
-Each diagram libraries support one or more output format.
+Each diagram libraries support one or more output formats.
 Consult the [Kroki documentation](https://kroki.io/#support) to find out which formats are supported.
 
 ## Configuration
