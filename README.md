@@ -174,7 +174,7 @@ Kroki currently supports the following diagram libraries:
 * [WaveDrom](https://github.com/wavedrom/wavedrom): `wavedrom`
 
 Each diagram libraries support one or more output format.
-Consult the [Kroki documentation](https://kroki.io/#support) to find out which format are supported.
+Consult the [Kroki documentation](https://kroki.io/#support) to find out which formats are supported.
 
 ## Configuration
 
