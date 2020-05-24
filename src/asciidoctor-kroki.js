@@ -117,12 +117,22 @@ function diagramBlockMacro (name, context) {
     self.named(name)
     self.process((parent, target, attrs) => {
       let vfs = context.vfs
-      if (typeof vfs === 'undefined' || typeof vfs.read !== 'function') {
-        vfs = require('./node-fs.js')
+      target = parent.applySubstitutions(target, ['attributes'])
+      if (isBrowser()) {
+        if (!['file://', 'https://', 'http://'].some(prefix => target.startsWith(prefix))) {
+          // if not an absolute URL, prefix with baseDir in the browser environment
+          const baseDir = parent.getDocument().getBaseDir()
+          const startDir = typeof baseDir !== 'undefined' ? baseDir : '.'
+          target = startDir !== '.' ? parent.getDocument().normalizeWebPath(target, startDir) : target
+        }
+      } else {
+        if (typeof vfs === 'undefined' || typeof vfs.read !== 'function') {
+          vfs = require('./node-fs.js')
+          target = parent.normalizeSystemPath(target)
+        }
       }
       const role = attrs.role
       const diagramType = name
-      target = parent.applySubstitutions(target, ['attributes'])
       try {
         const diagramText = vfs.read(target)
         return processKroki(this, parent, attrs, diagramType, diagramText, context)

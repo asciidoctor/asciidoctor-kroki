@@ -75,7 +75,7 @@ alice -> bob
         expect(html).to.contain('https://kroki.io/plantuml/png/eNpLzMlMTlXQtVNIyk8CABoDA90=')
         expect(html).to.contain('<div class="imageblock sequence kroki-format-png kroki">')
       })
-      it('should convert a diagram with a relative path to an image', () => {
+      it('should convert a diagram with an absolute path to an image', () => {
         const input = `plantuml::${baseDir}/test/fixtures/alice.puml[svg,role=sequence]`
         const registry = asciidoctor.Extensions.create()
         AsciidoctorKroki.register(registry, {
@@ -92,7 +92,27 @@ alice -> bob
           }
         })
         const text = httpGet(`${baseDir}/test/fixtures/alice.puml`, 'utf8')
-        const html = asciidoctor.convert(input, { extension_registry: registry, safe: 'safe', attributes: { 'allow-uri-read': true } })
+        const html = asciidoctor.convert(input, { extension_registry: registry })
+        expect(html).to.contain(`<img src="https://kroki.io/plantuml/svg/${encodeText(text)}" alt="diagram">`)
+      }).timeout(5000)
+      it('should convert a diagram with a relative path to an image', () => {
+        const input = `plantuml::../fixtures/alice.puml[svg,role=sequence]`
+        const registry = asciidoctor.Extensions.create()
+        AsciidoctorKroki.register(registry, {
+          vfs: {
+            read: (path, encoding = 'utf8') => {
+              return httpGet(path, encoding)
+            },
+            exists: (_) => {
+              return false
+            },
+            add: (_) => {
+              // no-op
+            }
+          }
+        })
+        const text = httpGet(`${baseDir}/test/fixtures/alice.puml`, 'utf8')
+        const html = asciidoctor.convert(input, { extension_registry: registry })
         expect(html).to.contain(`<img src="https://kroki.io/plantuml/svg/${encodeText(text)}" alt="diagram">`)
       }).timeout(5000)
     })
