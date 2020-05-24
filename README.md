@@ -9,9 +9,11 @@ An extension for [Asciidoctor.js](https://github.com/asciidoctor/asciidoctor.js)
   * [Install](#install)
     + [Node.js](#nodejs)
     + [Browser](#browser)
+    + [Antora Integration](#antora-integration)
   * [Usage](#usage)
+    + [Supported diagram types](#supported-diagram-types)
+  * [Configuration](#configuration)
   * [Using Your Own Kroki](#using-your-own-kroki)
-  * [Antora Integration](#antora-integration)
   * [Contributing](#contributing)
     + [Setup](#setup)
     + [Building](#building)
@@ -22,7 +24,7 @@ An extension for [Asciidoctor.js](https://github.com/asciidoctor/asciidoctor.js)
 
 Install the dependencies:
 
-    $ npm install asciidoctor asciidoctor-kroki
+    $ npm i asciidoctor asciidoctor-kroki
 
 Create a file named `kroki.js` with following content and run it:
 
@@ -32,12 +34,12 @@ const kroki = require('asciidoctor-kroki')
 
 const input = 'plantuml::hello.puml[svg,role=sequence]'
 
-kroki.register(asciidoctor.Extensions)
-console.log(asciidoctor.convert(input)) // <1>
+kroki.register(asciidoctor.Extensions) // <1>
+console.log(asciidoctor.convert(input))
 
 const registry = asciidoctor.Extensions.create()
-kroki.register(registry)
-console.log(asciidoctor.convert(input, {'extension_registry': registry})) // <2>
+kroki.register(registry) // <2>
+console.log(asciidoctor.convert(input, { extension_registry: registry }))
 ```
 **<1>** Register the extension in the global registry <br/>
 **<2>** Register the extension in a dedicated registry
@@ -46,43 +48,98 @@ console.log(asciidoctor.convert(input, {'extension_registry': registry})) // <2>
 
 Install the dependencies:
 
-    $ npm install asciidoctor asciidoctor-kroki
+    $ npm i asciidoctor asciidoctor-kroki
 
 Create a file named `kroki.html` with the following content and open it in your browser:
 
 ```html
-<html>
+<html lang="en">
   <head>
+    <title>Asciidoctor x Kroki</title>
+    <meta charset="utf-8">
     <script src="node_modules/@asciidoctor/core/dist/browser/asciidoctor.js"></script>
     <script src="node_modules/asciidoctor-kroki/dist/browser/asciidoctor-kroki.js"></script>
   </head>
   <body>
     <div id="content"></div>
     <script>
-      var input = 'plantuml::hello.puml[svg,role=sequence]'
+      const input = `Let's take an example with a _GraphViz_ "Hello World":
 
-      var asciidoctor = Asciidoctor()
-      var kroki = AsciidoctorKroki
+[graphviz]
+....
+digraph G {
+  Hello->World
+}
+....`
+
+      const asciidoctor = Asciidoctor()
 
       const registry = asciidoctor.Extensions.create()
-      kroki.register(registry)
-      var result = asciidoctor.convert(input, {'extension_registry': registry})
+      AsciidoctorKroki.register(registry) // <1>
+      const result = asciidoctor.convert(input, { extension_registry: registry })
       document.getElementById('content').innerHTML = result
     </script>
   </body>
 </html>
 ```
-**<1>** Register the extension in the global registry <br/>
-**<2>** Register the extension in a dedicated registry
+**<1>** Register the extension in a dedicated registry
+
+**❗ IMPORTANT:**
+If you want to reference a diagram file in a browser environment you will need to define the base directory using the `base_dir` option.
+In addition, you will also need to provide an implementation to read a binary file **synchronously** for a given path.
+You can find an implementation based on `XMLHttpRequest` in the source code: https://github.com/Mogztter/asciidoctor-kroki/blob/9585b969014a1894d0c9fb76df10e1e8c66ce2b2/test/browser/test.js#L2-L34.
+Once `httpGet` is defined, here's how we should configure the extension:
+
+```js
+const registry = asciidoctor.Extensions.create()
+AsciidoctorKroki.register(registry, {
+  vfs: {
+    read: (path, encoding = 'utf8') => httpGet(path, encoding),
+    exists: (_) => false,
+    add: (_) => { /* no-op */ }
+  }
+})
+const input = 'plantuml::hello.puml[svg,role=sequence]'
+asciidoctor.convert(input, { base_dir: window.location.origin, safe: 'safe', extension_registry: registry })
+```
+
+### Antora Integration
+
+If you are using [Antora](https://antora.org/), you can integrate Kroki in your documentation site.
+
+1. Install the extension in your playbook project:
+
+       $ npm i asciidoctor-kroki
+
+2. Register the extension in your playbook file:
+
+    ```yaml
+    asciidoc:
+      extensions:
+        - asciidoctor-kroki
+    ```
+
+    https://docs.antora.org/antora/2.3/playbook/configure-asciidoc/#extensions
+
+3. Enjoy!
+
+**💡 TIP**:
+You can use the `kroki-fetch-diagram` option to download the images from Kroki at build time.
+In other words, while viewing pages you won't rely on Kroki anymore.
+
+```yaml
+asciidoc:
+  attributes:
+    kroki-fetch-diagram: true
+```
 
 ## Usage
 
-```adoc
-[plantuml,alice-bob,svg,role=sequence]
-....
-alice -> bob
-....
+In your AsciiDoc document, you can either write your diagram inline or, alternatively, you can make a reference to the diagram file using macro form or with the `include` directive.
 
+Here's an example where we declare a GraphViz diagram directly in our AsciiDoc document using the block syntax:
+
+```adoc
 [graphviz]
 ....
 digraph foo {
@@ -96,6 +153,64 @@ digraph foo {
 ....
 ```
 
+![GraphViz diagram](https://kroki.io/graphviz/png/eNo9jjEOwjAMRfee4itzGKBzuEjVIaldWsnEVQBBVXp3AqQdLFlP_32bxkvy04BeFUsFRCVGc7vPwi7pIxJTW_Ax88FP7IK-NnZC048inYomN7OIPi3-tim6_QaYTOY_m0Z_1bi31ltr4k4TWYgPLM4s8Hgj5Omwmrbanzicy-Wy1NX6AUS2QVQ=)
+
+In the example below, we are using the `vegalite` macro to reference a file named *chart.vlite*:
+
+```
+vegalite::chart.vlite[svg,role=chart,opts=interactive]
+```
+
+![Vega-Lite chart diagram](https://kroki.io/vegalite/png/eNrtVktz2yAQvvtXMEyOqt9pnNz6To-d6c3jA5ZWEg0CF7Ba26P_3gVb2JJSN8mhTWdyMIb92CffCnY9QuiFiXMoGL0hNLd2ZW4GgxIy1s-4zdfLPleD_QYvfSW4hUE57X8zStLI6SdgYs1XlqMAbdwqzbdKWibEhsRKxsyCxF9C4pxpa4jNmSUmVz9IwtMUNEhL7GYFhqgURWgMLN9ymRETMwGmf3DDrItxh3NclUysweB67teE7KjP4A2NCF3ibDyroib0toYuL9vQuxqaTtrQ-xq6HrWhDzU060Afg6-OwU81NLpuQ7fB4FUb-hwMjiuPLHD0m2i-L3Koxe6gSQum75xuzHUsgNYWKchYJVjfUE0v3TSWKEg5iMTpL4Oql7uzcmKpCi6ZaIJGaReJXAvRkLOf3LQcOFM8vnPilAkDURNLVMG4_A1ouRVw8HOCVGFeHRWo4Vt4bHLf10yiE2Z5Ca0MHSnvSaWhiA7_GFashNJ_P65WJbegFeJWr-E04oZpARnI5L7j258C_XI-6d7p_8H0C0v_PUtFhw2aycxtmM-GERm9xmE8xWEyxmE6HC6eJam7afgLy-8oWIZX26OZnSpd-E8qTWh0lvTihfT_C-ltrgHfHaJzpCGf-QR5fjVcnOuK8XDfEM-tF56c3bFZSq45PsDo0y-CryGIhzQFjj4YikpKlMfkOrmGWlIuE1hhEPhqPLbNgUYNMLioelXvF-H7eDo=)
+
+
+Finally, we can use the `include` directive to reference a diagram file:
+
+```
+[plantuml,alice-bob,svg,role=sequence]
+....
+include::alice-bob.puml[]
+....
+```
+
+![PlantUML diagram](https://kroki.io/plantuml/png/eNpzKC5JLCopzc3hSszJTE5V0LVTSMpP4nJIzUsBCgIApPUKcg==)
+
+### Supported diagram types
+
+Kroki currently supports the following diagram libraries:
+
+* [ActDiag](https://github.com/blockdiag/actdiag): `actdiag`
+* [BlockDiag](https://github.com/blockdiag/blockdiag): `blockdiag`
+* [BPMN](https://github.com/bpmn-io/bpmn-js): `bpmn`
+* [Bytefield](https://github.com/Deep-Symmetry/bytefield-svg/): `bytefield`
+* [C4 (PlantUML)](https://github.com/RicardoNiepel/C4-PlantUML): `c4plantuml`
+* [Ditaa](http://ditaa.sourceforge.net): `ditaa`
+* [ERD](https://github.com/BurntSushi/erd): `erd`
+* [GraphViz](https://www.graphviz.org/): `graphviz`
+* [Mermaid](https://github.com/knsv/mermaid): `mermaid`
+* [Nomnoml](https://github.com/skanaar/nomnoml): `nomnoml`
+* [NwDiag](https://github.com/blockdiag/nwdiag): `nwdiag`
+* [PacketDiag](https://github.com/blockdiag/nwdiag): `packetdiag`
+* [PlantUML](https://github.com/plantuml/plantuml): `plantuml`
+* [RackDiag](https://github.com/blockdiag/nwdiag): `rackdiag`
+* [SeqDiag](https://github.com/blockdiag/seqdiag): `seqdiag`
+* [SVGBob](https://github.com/ivanceras/svgbob): `svgbob`
+* [UMLet](https://github.com/umlet/umlet): `umlet`
+* [Vega](https://github.com/vega/vega): `vega`
+* [Vega-Lite](https://github.com/vega/vega-lite): `vegalite`
+* [WaveDrom](https://github.com/wavedrom/wavedrom): `wavedrom`
+
+Each diagram libraries support one or more output formats.
+Consult the [Kroki documentation](https://kroki.io/#support) to find out which formats are supported.
+
+## Configuration
+
+| Attribute name | Description | Default value  |
+| ---- | ---- | ---- |
+| `kroki-server-url` | The URL of the Kroki server (see "Using Your Own Kroki") | `https://kroki.io`
+| `kroki-fetch-diagram` | Define if we should download (and save on the disk) the images from the Kroki server.<br/>This feature is not available when running in the browser. | `false`
+| `kroki-http-method` | Define how we should get the image from the Kroki server. Possible values:<br/><ul><li>`get`: always use GET requests</li><li>`post`: always use POST requests</li><li>`adaptive`: use a POST request if the URI length is longer than 4096 characters, otherwise use a GET request</li></ul> | `adaptive` |
+
 ## Using Your Own Kroki
 
 By default, this extension sends information and receives diagrams back from https://kroki.io.
@@ -105,7 +220,6 @@ You may choose to use your own server due to:
 * Network restrictions - if Kroki is not available behind your corporate firewall
 * Network latency - you are far from the European public instance
 * Privacy - you don't want to send your diagrams to a remote server on the internet
-
 
 This is done using the `kroki-server-url` attribute.
 Typically, this is at the top of the document (under the title):
@@ -126,36 +240,6 @@ You can also set this attribute using the Javascript API, for instance:
 
 ```js
 asciidoctor.convertFile('file.adoc', { attributes: { 'kroki-server-url': 'http://my-server-url:port' } })
-```
-
-## Antora Integration
-
-If you are using [Antora](https://antora.org/), you can integrate Kroki in your documentation site.
-
-1. Install the extension in your playbook project:
-
-       $ npm i asciidoctor-kroki
-
-2. Register the extension in your playbook file:
-
-    ```yaml
-    asciidoc:
-      extensions:
-        - asciidoctor-kroki
-    ```
-
-    https://docs.antora.org/antora/2.2/playbook/configure-asciidoc/#extensions
-
-3. Enjoy!
-
-**💡 TIP**:
-You can use the `kroki-fetch-diagram` option to download the images from Kroki at build time.
-In other words, while viewing pages you won't rely on Kroki anymore.
-
-```yaml
-asciidoc:
-  attributes:
-    kroki-fetch-diagram: true
 ```
 
 ## Contributing
