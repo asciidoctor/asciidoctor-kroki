@@ -118,12 +118,18 @@ function diagramBlockMacro (name, context) {
     self.process((parent, target, attrs) => {
       let vfs = context.vfs
       target = parent.applySubstitutions(target, ['attributes'])
-      if (typeof vfs === 'undefined' || typeof vfs.read !== 'function') {
-        vfs = require('./node-fs.js')
-      }
-      if (!(typeof context.contentCatalog !== 'undefined' && typeof context.contentCatalog.addFile === 'function' && typeof context.file !== 'undefined')) {
-        // not an Antora context
-        target = parent.normalizeSystemPath(target)
+      if (isBrowser()) {
+        if (!['file://', 'https://', 'http://'].some(prefix => target.startsWith(prefix))) {
+          // if not an absolute URL, prefix with baseDir in the browser environment
+          const baseDir = parent.getDocument().getBaseDir()
+          const startDir = typeof baseDir !== 'undefined' ? baseDir : '.'
+          target = startDir !== '.' ? parent.getDocument().normalizeWebPath(target, startDir) : target
+        }
+      } else {
+        if (typeof vfs === 'undefined' || typeof vfs.read !== 'function') {
+          vfs = require('./node-fs.js')
+          target = parent.normalizeSystemPath(target)
+        }
       }
       const role = attrs.role
       const diagramType = name
