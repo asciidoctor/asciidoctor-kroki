@@ -73,7 +73,7 @@ alice -> bob
       const html = asciidoctor.convert(input, { extension_registry: registry })
       expect(html).to.contain(`https://kroki.io/plantuml/svg/${encode(file)}`)
       expect(html).to.contain('<div class="imageblock sequence kroki-format-svg kroki">')
-    })
+    }).timeout(5000)
     it('should convert a diagram with a relative path to an image', () => {
       const input = `
 :imagesdir: .asciidoctor/kroki
@@ -86,7 +86,7 @@ plantuml::test/fixtures/alice.puml[svg,role=sequence]
       const file = `${__dirname}/fixtures/alice.puml`
       const hash = rusha.createHash().update(`https://kroki.io/plantuml/svg/${encode(file)}`).digest('hex')
       expect(html).to.contain(`<img src=".asciidoctor/kroki/diag-${hash}.svg" alt="diagram">`)
-    })
+    }).timeout(5000)
     it('should convert a file containing the macro form using a relative path to a diagram', () => {
       const registry = asciidoctor.Extensions.create()
       asciidoctorKroki.register(registry)
