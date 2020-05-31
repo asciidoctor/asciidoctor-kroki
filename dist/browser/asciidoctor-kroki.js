@@ -18061,7 +18061,7 @@ const processKroki = (processor, parent, attrs, diagramType, diagramText, contex
   if (diagramType === 'vegalite') {
     diagramText = require('./preprocess.js').preprocessVegaLite(diagramText, context)
   } else if (diagramType === 'plantuml') {
-    diagramText = require('./preprocess.js').preprocessPlantUML(diagramText, context)
+    diagramText = require('./preprocess.js').preprocessPlantUML(diagramText, context, doc.getBaseDir())
   }
   const blockId = attrs.id
   const title = attrs.title
@@ -18392,12 +18392,13 @@ ${diagramText}
 /**
  * @param {string} diagramText
  * @param {any} context
+ * @param {string} baseDir - base directory
  * @returns {string}
  */
-module.exports.preprocessPlantUML = function (diagramText, context) {
+module.exports.preprocessPlantUML = function (diagramText, context, baseDir = '.') {
   const includeOnce = []
   const includeStack = []
-  return preprocessPlantUmlIncludes(diagramText, '.', includeOnce, includeStack, context.vfs)
+  return preprocessPlantUmlIncludes(diagramText, baseDir, includeOnce, includeStack, context.vfs)
 }
 
 /**
@@ -18410,46 +18411,61 @@ module.exports.preprocessPlantUML = function (diagramText, context) {
  */
 function preprocessPlantUmlIncludes (diagramText, dirPath, includeOnce, includeStack, vfs) {
   // see: http://plantuml.com/en/preprocessing
-  const regExCommentMultiLine = new RegExp('/\'([\\s\\S]*?)\'/', 'g') // only the block comment is removed
-  const regExCommentSingleLine = new RegExp('.*\'.*\'.*(\\r\\n|\\n)', 'g') // the whole line is removed
-  const regExInclude = new RegExp('^\\s*!(include(?:_many|_once|url|sub)?)\\s+((?:(?<=\\\\)[ ]|[^ ])+)(.*)')
-  const diagramLines = diagramText.replace(regExCommentMultiLine, '').replace(regExCommentSingleLine, '').split('\n')
-  const diagramProcessed = diagramLines.map(line => line.replace(
-    regExInclude,
-    (match, ...args) => {
-      const include = args[0].toLowerCase()
-      const urlSub = args[1].trim().split('!')
-      const url = urlSub[0].replace(/\\ /g, ' ')
-      const sub = urlSub[1]
-      const result = readPlantUmlInclude(url, dirPath, includeStack, vfs)
-      if (result.skip) {
-        return line
-      } else {
-        if (include === 'include_once') {
-          checkIncludeOnce(result.text, result.filePath, includeOnce)
-        }
-        let text = result.text
-        if (sub !== undefined && sub !== null && sub !== '') {
-          if (include === 'includesub') {
-            text = getPlantUmlTextFromSub(text, sub)
-          } else {
-            const index = parseInt(sub, 10)
-            if (isNaN(index)) {
-              text = getPlantUmlTextFromId(text, sub)
-            } else {
-              text = getPlantUmlTextFromIndex(text, index)
-            }
+  const regExInclude = /^\s*!(include(?:_many|_once|url|sub)?)\s+((?:(?<=\\)[ ]|[^ ])+)(.*)/
+  const regExTrailingComment = /^\s+[#|\\/']/
+  const diagramLines = diagramText.split('\n')
+  let insideCommentBlock = false
+  const diagramProcessed = diagramLines.map(line => {
+    let result = line
+    // replace the !include directive unless inside a comment block
+    if (!insideCommentBlock) {
+      result = line.replace(
+        regExInclude,
+        (match, ...args) => {
+          const include = args[0].toLowerCase()
+          const urlSub = args[1].trim().split('!')
+          const trailingContent = args[2]
+          const url = urlSub[0].replace(/\\ /g, ' ')
+          const sub = urlSub[1]
+          const result = readPlantUmlInclude(url, dirPath, includeStack, vfs)
+          if (result.skip) {
+            return line
           }
-        } else {
-          text = getPlantUmlTextOrFirstBlock(text)
-        }
-        includeStack.push(result.filePath)
-        text = preprocessPlantUmlIncludes(text, path.dirname(result.filePath), includeOnce, includeStack, vfs)
-        includeStack.pop()
-        return text
-      }
-    })
-  )
+          if (include === 'include_once') {
+            checkIncludeOnce(result.text, result.filePath, includeOnce)
+          }
+          let text = result.text
+          if (sub !== undefined && sub !== null && sub !== '') {
+            if (include === 'includesub') {
+              text = getPlantUmlTextFromSub(text, sub)
+            } else {
+              const index = parseInt(sub, 10)
+              if (isNaN(index)) {
+                text = getPlantUmlTextFromId(text, sub)
+              } else {
+                text = getPlantUmlTextFromIndex(text, index)
+              }
+            }
+          } else {
+            text = getPlantUmlTextOrFirstBlock(text)
+          }
+          includeStack.push(result.filePath)
+          text = preprocessPlantUmlIncludes(text, path.dirname(result.filePath), includeOnce, includeStack, vfs)
+          includeStack.pop()
+          if (trailingContent.match(regExTrailingComment)) {
+            return text + trailingContent
+          }
+          return text
+        })
+    }
+    if (line.includes('/\'')) {
+      insideCommentBlock = true
+    }
+    if (insideCommentBlock && line.includes('\'/')) {
+      insideCommentBlock = false
+    }
+    return result
+  })
   return diagramProcessed.join('\n')
 }
 
