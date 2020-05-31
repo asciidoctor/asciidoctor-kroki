@@ -77,7 +77,7 @@ alice -> bob
     it('should convert a PlantUML diagram and resolve include relative to base directory', () => {
       const file = `${__dirname}/fixtures/alice-with-styles.puml`
       const diagramText = fs.readFileSync(file, 'utf8')
-        .replace(/^!include(.*)$/m, fs.readFileSync(`${__dirname}/fixtures/plantuml/style-general.iuml`, 'utf8'))
+        .replace(/^!include (.*)\r?\n/m, fs.readFileSync(`${__dirname}/fixtures/plantuml/style-general.iuml`, 'utf8') + '\n')
       const input = `plantuml::${file}[svg,role=sequence]`
       const registry = asciidoctor.Extensions.create()
       asciidoctorKroki.register(registry)

@@ -510,8 +510,6 @@ D -> D : stuff4
 skinparam Handwritten true
 skinparam DefaultFontName "Neucha"
 skinparam BackgroundColor black
-
-
       alice -> bob
     @enduml`
     expect(preprocessPlantUML(diagramTextWithExistingIncludeFileWithIndex, {})
@@ -530,8 +528,6 @@ skinparam BackgroundColor black
 skinparam Handwritten true
 skinparam DefaultFontName "Neucha"
 skinparam BackgroundColor black
-
-
       alice -> bob
     @enduml`
     expect(preprocessPlantUML(diagramTextWithExistingIncludeFileWithIndex, {})
