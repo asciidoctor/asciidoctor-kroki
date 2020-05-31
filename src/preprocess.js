@@ -23,14 +23,11 @@ ${diagramText}
   if (!diagramObject || !diagramObject.data || !diagramObject.data.url) {
     return diagramText
   }
-
-  let vfs = context.vfs
-  if (typeof vfs === 'undefined' || typeof vfs.read !== 'function') {
-    vfs = require('./node-fs.js')
-  }
+  const vfs = context.vfs
+  const read = typeof vfs !== 'undefined' && typeof vfs.read === 'function' ? vfs.read : require('./node-fs.js').read
   const data = diagramObject.data
   try {
-    data.values = vfs.read(data.url)
+    data.values = read(data.url)
   } catch (e) {
     if (isRemoteUrl(data.url)) {
       // Only warn and do not throw an error, because the data file can perhaps be found by kroki server (https://github.com/yuzutech/kroki/issues/60)
@@ -64,13 +61,9 @@ ${diagramText}
  * @returns {string}
  */
 module.exports.preprocessPlantUML = function (diagramText, context) {
-  let vfs = context.vfs
-  if (typeof vfs === 'undefined' || typeof vfs.read !== 'function' || typeof vfs.exists !== 'function') {
-    vfs = require('./node-fs.js')
-  }
   const includeOnce = []
   const includeStack = []
-  return preprocessPlantUmlIncludes(diagramText, '.', includeOnce, includeStack, vfs)
+  return preprocessPlantUmlIncludes(diagramText, '.', includeOnce, includeStack, context.vfs)
 }
 
 /**
@@ -134,6 +127,8 @@ function preprocessPlantUmlIncludes (diagramText, dirPath, includeOnce, includeS
  * @returns {any}
  */
 function readPlantUmlInclude (url, dirPath, includeStack, vfs) {
+  const exists = typeof vfs !== 'undefined' && typeof vfs.exists === 'function' ? vfs.exists : require('./node-fs.js').exists
+  const read = typeof vfs !== 'undefined' && typeof vfs.read === 'function' ? vfs.read : require('./node-fs.js').read
   let skip = false
   let text = ''
   let filePath = url
@@ -147,7 +142,7 @@ function readPlantUmlInclude (url, dirPath, includeStack, vfs) {
   } else {
     if (isRemoteUrl(url)) {
       try {
-        text = vfs.read(url)
+        text = read(url)
       } catch (e) {
         // Only warn and do not throw an error, because the data file can perhaps be found by kroki server (https://github.com/yuzutech/kroki/issues/60)
         console.warn(`Skipping preprocessing of PlantUML include, because reading the referenced remote file '${url}' caused an error:\n${e}`)
@@ -155,7 +150,7 @@ function readPlantUmlInclude (url, dirPath, includeStack, vfs) {
       }
     } else {
       filePath = path.join(dirPath, url)
-      if (!vfs.exists(filePath)) {
+      if (!exists(filePath)) {
         filePath = url
       }
       if (includeStack.includes(filePath)) {
@@ -163,7 +158,7 @@ function readPlantUmlInclude (url, dirPath, includeStack, vfs) {
         throw new Error(message)
       } else {
         try {
-          text = vfs.read(filePath)
+          text = read(filePath)
         } catch (e) {
           const message = `Preprocessing of PlantUML include failed, because reading the referenced local file '${filePath}' caused an error:\n${e}`
           throw addCauseToError(new Error(message), e)

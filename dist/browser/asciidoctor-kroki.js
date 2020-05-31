@@ -2559,7 +2559,7 @@ function validateParams (params) {
   return params
 }
 
-},{"http":32,"url":53}],7:[function(require,module,exports){
+},{"http":33,"url":54}],7:[function(require,module,exports){
 exports.read = function (buffer, offset, isLE, mLen, nBytes) {
   var e, m
   var eLen = (nBytes * 8) - mLen - 1
@@ -11199,6 +11199,312 @@ function ZStream() {
 module.exports = ZStream;
 
 },{}],26:[function(require,module,exports){
+(function (process){
+// .dirname, .basename, and .extname methods are extracted from Node.js v8.11.1,
+// backported and transplited with Babel, with backwards-compat fixes
+
+// Copyright Joyent, Inc. and other Node contributors.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to permit
+// persons to whom the Software is furnished to do so, subject to the
+// following conditions:
+//
+// The above copyright notice and this permission notice shall be included
+// in all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
+// NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+// USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+// resolves . and .. elements in a path array with directory names there
+// must be no slashes, empty elements, or device names (c:\) in the array
+// (so also no leading and trailing slashes - it does not distinguish
+// relative and absolute paths)
+function normalizeArray(parts, allowAboveRoot) {
+  // if the path tries to go above the root, `up` ends up > 0
+  var up = 0;
+  for (var i = parts.length - 1; i >= 0; i--) {
+    var last = parts[i];
+    if (last === '.') {
+      parts.splice(i, 1);
+    } else if (last === '..') {
+      parts.splice(i, 1);
+      up++;
+    } else if (up) {
+      parts.splice(i, 1);
+      up--;
+    }
+  }
+
+  // if the path is allowed to go above the root, restore leading ..s
+  if (allowAboveRoot) {
+    for (; up--; up) {
+      parts.unshift('..');
+    }
+  }
+
+  return parts;
+}
+
+// path.resolve([from ...], to)
+// posix version
+exports.resolve = function() {
+  var resolvedPath = '',
+      resolvedAbsolute = false;
+
+  for (var i = arguments.length - 1; i >= -1 && !resolvedAbsolute; i--) {
+    var path = (i >= 0) ? arguments[i] : process.cwd();
+
+    // Skip empty and invalid entries
+    if (typeof path !== 'string') {
+      throw new TypeError('Arguments to path.resolve must be strings');
+    } else if (!path) {
+      continue;
+    }
+
+    resolvedPath = path + '/' + resolvedPath;
+    resolvedAbsolute = path.charAt(0) === '/';
+  }
+
+  // At this point the path should be resolved to a full absolute path, but
+  // handle relative paths to be safe (might happen when process.cwd() fails)
+
+  // Normalize the path
+  resolvedPath = normalizeArray(filter(resolvedPath.split('/'), function(p) {
+    return !!p;
+  }), !resolvedAbsolute).join('/');
+
+  return ((resolvedAbsolute ? '/' : '') + resolvedPath) || '.';
+};
+
+// path.normalize(path)
+// posix version
+exports.normalize = function(path) {
+  var isAbsolute = exports.isAbsolute(path),
+      trailingSlash = substr(path, -1) === '/';
+
+  // Normalize the path
+  path = normalizeArray(filter(path.split('/'), function(p) {
+    return !!p;
+  }), !isAbsolute).join('/');
+
+  if (!path && !isAbsolute) {
+    path = '.';
+  }
+  if (path && trailingSlash) {
+    path += '/';
+  }
+
+  return (isAbsolute ? '/' : '') + path;
+};
+
+// posix version
+exports.isAbsolute = function(path) {
+  return path.charAt(0) === '/';
+};
+
+// posix version
+exports.join = function() {
+  var paths = Array.prototype.slice.call(arguments, 0);
+  return exports.normalize(filter(paths, function(p, index) {
+    if (typeof p !== 'string') {
+      throw new TypeError('Arguments to path.join must be strings');
+    }
+    return p;
+  }).join('/'));
+};
+
+
+// path.relative(from, to)
+// posix version
+exports.relative = function(from, to) {
+  from = exports.resolve(from).substr(1);
+  to = exports.resolve(to).substr(1);
+
+  function trim(arr) {
+    var start = 0;
+    for (; start < arr.length; start++) {
+      if (arr[start] !== '') break;
+    }
+
+    var end = arr.length - 1;
+    for (; end >= 0; end--) {
+      if (arr[end] !== '') break;
+    }
+
+    if (start > end) return [];
+    return arr.slice(start, end - start + 1);
+  }
+
+  var fromParts = trim(from.split('/'));
+  var toParts = trim(to.split('/'));
+
+  var length = Math.min(fromParts.length, toParts.length);
+  var samePartsLength = length;
+  for (var i = 0; i < length; i++) {
+    if (fromParts[i] !== toParts[i]) {
+      samePartsLength = i;
+      break;
+    }
+  }
+
+  var outputParts = [];
+  for (var i = samePartsLength; i < fromParts.length; i++) {
+    outputParts.push('..');
+  }
+
+  outputParts = outputParts.concat(toParts.slice(samePartsLength));
+
+  return outputParts.join('/');
+};
+
+exports.sep = '/';
+exports.delimiter = ':';
+
+exports.dirname = function (path) {
+  if (typeof path !== 'string') path = path + '';
+  if (path.length === 0) return '.';
+  var code = path.charCodeAt(0);
+  var hasRoot = code === 47 /*/*/;
+  var end = -1;
+  var matchedSlash = true;
+  for (var i = path.length - 1; i >= 1; --i) {
+    code = path.charCodeAt(i);
+    if (code === 47 /*/*/) {
+        if (!matchedSlash) {
+          end = i;
+          break;
+        }
+      } else {
+      // We saw the first non-path separator
+      matchedSlash = false;
+    }
+  }
+
+  if (end === -1) return hasRoot ? '/' : '.';
+  if (hasRoot && end === 1) {
+    // return '//';
+    // Backwards-compat fix:
+    return '/';
+  }
+  return path.slice(0, end);
+};
+
+function basename(path) {
+  if (typeof path !== 'string') path = path + '';
+
+  var start = 0;
+  var end = -1;
+  var matchedSlash = true;
+  var i;
+
+  for (i = path.length - 1; i >= 0; --i) {
+    if (path.charCodeAt(i) === 47 /*/*/) {
+        // If we reached a path separator that was not part of a set of path
+        // separators at the end of the string, stop now
+        if (!matchedSlash) {
+          start = i + 1;
+          break;
+        }
+      } else if (end === -1) {
+      // We saw the first non-path separator, mark this as the end of our
+      // path component
+      matchedSlash = false;
+      end = i + 1;
+    }
+  }
+
+  if (end === -1) return '';
+  return path.slice(start, end);
+}
+
+// Uses a mixed approach for backwards-compatibility, as ext behavior changed
+// in new Node.js versions, so only basename() above is backported here
+exports.basename = function (path, ext) {
+  var f = basename(path);
+  if (ext && f.substr(-1 * ext.length) === ext) {
+    f = f.substr(0, f.length - ext.length);
+  }
+  return f;
+};
+
+exports.extname = function (path) {
+  if (typeof path !== 'string') path = path + '';
+  var startDot = -1;
+  var startPart = 0;
+  var end = -1;
+  var matchedSlash = true;
+  // Track the state of characters (if any) we see before our first dot and
+  // after any path separator we find
+  var preDotState = 0;
+  for (var i = path.length - 1; i >= 0; --i) {
+    var code = path.charCodeAt(i);
+    if (code === 47 /*/*/) {
+        // If we reached a path separator that was not part of a set of path
+        // separators at the end of the string, stop now
+        if (!matchedSlash) {
+          startPart = i + 1;
+          break;
+        }
+        continue;
+      }
+    if (end === -1) {
+      // We saw the first non-path separator, mark this as the end of our
+      // extension
+      matchedSlash = false;
+      end = i + 1;
+    }
+    if (code === 46 /*.*/) {
+        // If this is our first dot, mark it as the start of our extension
+        if (startDot === -1)
+          startDot = i;
+        else if (preDotState !== 1)
+          preDotState = 1;
+    } else if (startDot !== -1) {
+      // We saw a non-dot and non-path separator before our dot, so we should
+      // have a good chance at having a non-empty extension
+      preDotState = -1;
+    }
+  }
+
+  if (startDot === -1 || end === -1 ||
+      // We saw a non-dot character immediately before the dot
+      preDotState === 0 ||
+      // The (right-most) trimmed path component is exactly '..'
+      preDotState === 1 && startDot === end - 1 && startDot === startPart + 1) {
+    return '';
+  }
+  return path.slice(startDot, end);
+};
+
+function filter (xs, f) {
+    if (xs.filter) return xs.filter(f);
+    var res = [];
+    for (var i = 0; i < xs.length; i++) {
+        if (f(xs[i], i, xs)) res.push(xs[i]);
+    }
+    return res;
+}
+
+// String.prototype.substr - negative index don't work in IE8
+var substr = 'ab'.substr(-1) === 'b'
+    ? function (str, start, len) { return str.substr(start, len) }
+    : function (str, start, len) {
+        if (start < 0) start = str.length + start;
+        return str.substr(start, len);
+    }
+;
+
+}).call(this,require('_process'))
+},{"_process":27}],27:[function(require,module,exports){
 // shim for using process in browser
 var process = module.exports = {};
 
@@ -11384,7 +11690,7 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}],27:[function(require,module,exports){
+},{}],28:[function(require,module,exports){
 (function (global){
 /*! https://mths.be/punycode v1.4.1 by @mathias */
 ;(function(root) {
@@ -11921,7 +12227,7 @@ process.umask = function() { return 0; };
 }(this));
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],28:[function(require,module,exports){
+},{}],29:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -12007,7 +12313,7 @@ var isArray = Array.isArray || function (xs) {
   return Object.prototype.toString.call(xs) === '[object Array]';
 };
 
-},{}],29:[function(require,module,exports){
+},{}],30:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -12094,13 +12400,13 @@ var objectKeys = Object.keys || function (obj) {
   return res;
 };
 
-},{}],30:[function(require,module,exports){
+},{}],31:[function(require,module,exports){
 'use strict';
 
 exports.decode = exports.parse = require('./decode');
 exports.encode = exports.stringify = require('./encode');
 
-},{"./decode":28,"./encode":29}],31:[function(require,module,exports){
+},{"./decode":29,"./encode":30}],32:[function(require,module,exports){
 /* eslint-disable node/no-deprecated-api */
 var buffer = require('buffer')
 var Buffer = buffer.Buffer
@@ -12166,7 +12472,7 @@ SafeBuffer.allocUnsafeSlow = function (size) {
   return buffer.SlowBuffer(size)
 }
 
-},{"buffer":3}],32:[function(require,module,exports){
+},{"buffer":3}],33:[function(require,module,exports){
 (function (global){
 var ClientRequest = require('./lib/request')
 var response = require('./lib/response')
@@ -12254,7 +12560,7 @@ http.METHODS = [
 	'UNSUBSCRIBE'
 ]
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./lib/request":34,"./lib/response":35,"builtin-status-codes":4,"url":53,"xtend":56}],33:[function(require,module,exports){
+},{"./lib/request":35,"./lib/response":36,"builtin-status-codes":4,"url":54,"xtend":57}],34:[function(require,module,exports){
 (function (global){
 exports.fetch = isFunction(global.fetch) && isFunction(global.ReadableStream)
 
@@ -12317,7 +12623,7 @@ function isFunction (value) {
 xhr = null // Help gc
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],34:[function(require,module,exports){
+},{}],35:[function(require,module,exports){
 (function (process,global,Buffer){
 var capability = require('./capability')
 var inherits = require('inherits')
@@ -12636,7 +12942,7 @@ var unsafeHeaders = [
 ]
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer)
-},{"./capability":33,"./response":35,"_process":26,"buffer":3,"inherits":8,"readable-stream":50}],35:[function(require,module,exports){
+},{"./capability":34,"./response":36,"_process":27,"buffer":3,"inherits":8,"readable-stream":51}],36:[function(require,module,exports){
 (function (process,global,Buffer){
 var capability = require('./capability')
 var inherits = require('inherits')
@@ -12847,7 +13153,7 @@ IncomingMessage.prototype._onXHRProgress = function () {
 }
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer)
-},{"./capability":33,"_process":26,"buffer":3,"inherits":8,"readable-stream":50}],36:[function(require,module,exports){
+},{"./capability":34,"_process":27,"buffer":3,"inherits":8,"readable-stream":51}],37:[function(require,module,exports){
 'use strict';
 
 function _inheritsLoose(subClass, superClass) { subClass.prototype = Object.create(superClass.prototype); subClass.prototype.constructor = subClass; subClass.__proto__ = superClass; }
@@ -12976,7 +13282,7 @@ createErrorType('ERR_UNKNOWN_ENCODING', function (arg) {
 createErrorType('ERR_STREAM_UNSHIFT_AFTER_END_EVENT', 'stream.unshift() after end event');
 module.exports.codes = codes;
 
-},{}],37:[function(require,module,exports){
+},{}],38:[function(require,module,exports){
 (function (process){
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -13118,7 +13424,7 @@ Object.defineProperty(Duplex.prototype, 'destroyed', {
   }
 });
 }).call(this,require('_process'))
-},{"./_stream_readable":39,"./_stream_writable":41,"_process":26,"inherits":8}],38:[function(require,module,exports){
+},{"./_stream_readable":40,"./_stream_writable":42,"_process":27,"inherits":8}],39:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -13158,7 +13464,7 @@ function PassThrough(options) {
 PassThrough.prototype._transform = function (chunk, encoding, cb) {
   cb(null, chunk);
 };
-},{"./_stream_transform":40,"inherits":8}],39:[function(require,module,exports){
+},{"./_stream_transform":41,"inherits":8}],40:[function(require,module,exports){
 (function (process,global){
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -14285,7 +14591,7 @@ function indexOf(xs, x) {
   return -1;
 }
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../errors":36,"./_stream_duplex":37,"./internal/streams/async_iterator":42,"./internal/streams/buffer_list":43,"./internal/streams/destroy":44,"./internal/streams/from":46,"./internal/streams/state":48,"./internal/streams/stream":49,"_process":26,"buffer":3,"events":5,"inherits":8,"string_decoder/":51,"util":2}],40:[function(require,module,exports){
+},{"../errors":37,"./_stream_duplex":38,"./internal/streams/async_iterator":43,"./internal/streams/buffer_list":44,"./internal/streams/destroy":45,"./internal/streams/from":47,"./internal/streams/state":49,"./internal/streams/stream":50,"_process":27,"buffer":3,"events":5,"inherits":8,"string_decoder/":52,"util":2}],41:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -14487,7 +14793,7 @@ function done(stream, er, data) {
   if (stream._transformState.transforming) throw new ERR_TRANSFORM_ALREADY_TRANSFORMING();
   return stream.push(null);
 }
-},{"../errors":36,"./_stream_duplex":37,"inherits":8}],41:[function(require,module,exports){
+},{"../errors":37,"./_stream_duplex":38,"inherits":8}],42:[function(require,module,exports){
 (function (process,global){
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -15187,7 +15493,7 @@ Writable.prototype._destroy = function (err, cb) {
   cb(err);
 };
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../errors":36,"./_stream_duplex":37,"./internal/streams/destroy":44,"./internal/streams/state":48,"./internal/streams/stream":49,"_process":26,"buffer":3,"inherits":8,"util-deprecate":55}],42:[function(require,module,exports){
+},{"../errors":37,"./_stream_duplex":38,"./internal/streams/destroy":45,"./internal/streams/state":49,"./internal/streams/stream":50,"_process":27,"buffer":3,"inherits":8,"util-deprecate":56}],43:[function(require,module,exports){
 (function (process){
 'use strict';
 
@@ -15397,7 +15703,7 @@ var createReadableStreamAsyncIterator = function createReadableStreamAsyncIterat
 
 module.exports = createReadableStreamAsyncIterator;
 }).call(this,require('_process'))
-},{"./end-of-stream":45,"_process":26}],43:[function(require,module,exports){
+},{"./end-of-stream":46,"_process":27}],44:[function(require,module,exports){
 'use strict';
 
 function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
@@ -15608,7 +15914,7 @@ function () {
 
   return BufferList;
 }();
-},{"buffer":3,"util":2}],44:[function(require,module,exports){
+},{"buffer":3,"util":2}],45:[function(require,module,exports){
 (function (process){
 'use strict'; // undocumented cb() API, needed for core, not for public API
 
@@ -15716,7 +16022,7 @@ module.exports = {
   errorOrDestroy: errorOrDestroy
 };
 }).call(this,require('_process'))
-},{"_process":26}],45:[function(require,module,exports){
+},{"_process":27}],46:[function(require,module,exports){
 // Ported from https://github.com/mafintosh/end-of-stream with
 // permission from the author, Mathias Buus (@mafintosh).
 'use strict';
@@ -15821,12 +16127,12 @@ function eos(stream, opts, callback) {
 }
 
 module.exports = eos;
-},{"../../../errors":36}],46:[function(require,module,exports){
+},{"../../../errors":37}],47:[function(require,module,exports){
 module.exports = function () {
   throw new Error('Readable.from is not available in the browser')
 };
 
-},{}],47:[function(require,module,exports){
+},{}],48:[function(require,module,exports){
 // Ported from https://github.com/mafintosh/pump with
 // permission from the author, Mathias Buus (@mafintosh).
 'use strict';
@@ -15924,7 +16230,7 @@ function pipeline() {
 }
 
 module.exports = pipeline;
-},{"../../../errors":36,"./end-of-stream":45}],48:[function(require,module,exports){
+},{"../../../errors":37,"./end-of-stream":46}],49:[function(require,module,exports){
 'use strict';
 
 var ERR_INVALID_OPT_VALUE = require('../../../errors').codes.ERR_INVALID_OPT_VALUE;
@@ -15952,10 +16258,10 @@ function getHighWaterMark(state, options, duplexKey, isDuplex) {
 module.exports = {
   getHighWaterMark: getHighWaterMark
 };
-},{"../../../errors":36}],49:[function(require,module,exports){
+},{"../../../errors":37}],50:[function(require,module,exports){
 module.exports = require('events').EventEmitter;
 
-},{"events":5}],50:[function(require,module,exports){
+},{"events":5}],51:[function(require,module,exports){
 exports = module.exports = require('./lib/_stream_readable.js');
 exports.Stream = exports;
 exports.Readable = exports;
@@ -15966,7 +16272,7 @@ exports.PassThrough = require('./lib/_stream_passthrough.js');
 exports.finished = require('./lib/internal/streams/end-of-stream.js');
 exports.pipeline = require('./lib/internal/streams/pipeline.js');
 
-},{"./lib/_stream_duplex.js":37,"./lib/_stream_passthrough.js":38,"./lib/_stream_readable.js":39,"./lib/_stream_transform.js":40,"./lib/_stream_writable.js":41,"./lib/internal/streams/end-of-stream.js":45,"./lib/internal/streams/pipeline.js":47}],51:[function(require,module,exports){
+},{"./lib/_stream_duplex.js":38,"./lib/_stream_passthrough.js":39,"./lib/_stream_readable.js":40,"./lib/_stream_transform.js":41,"./lib/_stream_writable.js":42,"./lib/internal/streams/end-of-stream.js":46,"./lib/internal/streams/pipeline.js":48}],52:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -16263,7 +16569,7 @@ function simpleWrite(buf) {
 function simpleEnd(buf) {
   return buf && buf.length ? this.write(buf) : '';
 }
-},{"safe-buffer":31}],52:[function(require,module,exports){
+},{"safe-buffer":32}],53:[function(require,module,exports){
 (function (process,Buffer,__dirname){
 /**
  * Wrapper for built-in http.js to emulate the browser XMLHttpRequest object.
@@ -16863,7 +17169,7 @@ exports.XMLHttpRequest = function () {
 }
 
 }).call(this,require('_process'),require("buffer").Buffer,"/node_modules/unxhr/lib")
-},{"_process":26,"buffer":3,"child_process":2,"fs":2,"http":32,"https":6,"url":53}],53:[function(require,module,exports){
+},{"_process":27,"buffer":3,"child_process":2,"fs":2,"http":33,"https":6,"url":54}],54:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -17597,7 +17903,7 @@ Url.prototype.parseHost = function() {
   if (host) this.hostname = host;
 };
 
-},{"./util":54,"punycode":27,"querystring":30}],54:[function(require,module,exports){
+},{"./util":55,"punycode":28,"querystring":31}],55:[function(require,module,exports){
 'use strict';
 
 module.exports = {
@@ -17615,7 +17921,7 @@ module.exports = {
   }
 };
 
-},{}],55:[function(require,module,exports){
+},{}],56:[function(require,module,exports){
 (function (global){
 
 /**
@@ -17686,7 +17992,7 @@ function config (name) {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],56:[function(require,module,exports){
+},{}],57:[function(require,module,exports){
 module.exports = extend
 
 var hasOwnProperty = Object.prototype.hasOwnProperty;
@@ -17707,7 +18013,7 @@ function extend() {
     return target
 }
 
-},{}],57:[function(require,module,exports){
+},{}],58:[function(require,module,exports){
 // @ts-check
 const { KrokiDiagram, KrokiClient } = require('./kroki-client.js')
 
@@ -17754,6 +18060,8 @@ const processKroki = (processor, parent, attrs, diagramType, diagramText, contex
   }
   if (diagramType === 'vegalite') {
     diagramText = require('./preprocess.js').preprocessVegaLite(diagramText, context)
+  } else if (diagramType === 'plantuml') {
+    diagramText = require('./preprocess.js').preprocessPlantUML(diagramText, context)
   }
   const blockId = attrs.id
   const title = attrs.title
@@ -17877,7 +18185,7 @@ module.exports.register = function register (registry, context = {}) {
   return registry
 }
 
-},{"./antora-adapter.js":undefined,"./fetch.js":undefined,"./http/browser-http.js":58,"./http/node-http.js":60,"./kroki-client.js":61,"./node-fs.js":undefined,"./preprocess.js":62}],58:[function(require,module,exports){
+},{"./antora-adapter.js":undefined,"./fetch.js":undefined,"./http/browser-http.js":59,"./http/node-http.js":61,"./kroki-client.js":62,"./node-fs.js":undefined,"./preprocess.js":63}],59:[function(require,module,exports){
 /* global XMLHttpRequest */
 const httpClient = require('./http-client.js')
 
@@ -17889,7 +18197,7 @@ module.exports = {
   post: httpPost
 }
 
-},{"./http-client.js":59}],59:[function(require,module,exports){
+},{"./http-client.js":60}],60:[function(require,module,exports){
 const httpRequest = (XMLHttpRequest, uri, method, encoding = 'utf8', body) => {
   let data = ''
   let status = -1
@@ -17941,7 +18249,7 @@ module.exports = {
   post: httpPost
 }
 
-},{}],60:[function(require,module,exports){
+},{}],61:[function(require,module,exports){
 const XMLHttpRequest = require('unxhr').XMLHttpRequest
 const httpClient = require('./http-client.js')
 
@@ -17953,7 +18261,7 @@ module.exports = {
   post: httpPost
 }
 
-},{"./http-client.js":59,"unxhr":52}],61:[function(require,module,exports){
+},{"./http-client.js":60,"unxhr":53}],62:[function(require,module,exports){
 (function (Buffer){
 const pako = require('pako')
 
@@ -18023,7 +18331,9 @@ module.exports.KrokiClient = class KrokiClient {
 }
 
 }).call(this,require("buffer").Buffer)
-},{"buffer":3,"pako":10}],62:[function(require,module,exports){
+},{"buffer":3,"pako":10}],63:[function(require,module,exports){
+const path = require('path')
+
 // @ts-check
 /**
  * @param {string} diagramText
@@ -18047,14 +18357,11 @@ ${diagramText}
   if (!diagramObject || !diagramObject.data || !diagramObject.data.url) {
     return diagramText
   }
-
-  let vfs = context.vfs
-  if (typeof vfs === 'undefined' || typeof vfs.read !== 'function') {
-    vfs = require('./node-fs.js')
-  }
+  const vfs = context.vfs
+  const read = typeof vfs !== 'undefined' && typeof vfs.read === 'function' ? vfs.read : require('./node-fs.js').read
   const data = diagramObject.data
   try {
-    data.values = vfs.read(data.url)
+    data.values = read(data.url)
   } catch (e) {
     if (isRemoteUrl(data.url)) {
       // Only warn and do not throw an error, because the data file can perhaps be found by kroki server (https://github.com/yuzutech/kroki/issues/60)
@@ -18083,6 +18390,207 @@ ${diagramText}
 }
 
 /**
+ * @param {string} diagramText
+ * @param {any} context
+ * @returns {string}
+ */
+module.exports.preprocessPlantUML = function (diagramText, context) {
+  const includeOnce = []
+  const includeStack = []
+  return preprocessPlantUmlIncludes(diagramText, '.', includeOnce, includeStack, context.vfs)
+}
+
+/**
+ * @param {string} diagramText
+ * @param {string} dirPath
+ * @param {string[]} includeOnce
+ * @param {string[]} includeStack
+ * @param {any} vfs
+ * @returns {string}
+ */
+function preprocessPlantUmlIncludes (diagramText, dirPath, includeOnce, includeStack, vfs) {
+  // see: http://plantuml.com/en/preprocessing
+  const regExCommentMultiLine = new RegExp('/\'([\\s\\S]*?)\'/', 'g') // only the block comment is removed
+  const regExCommentSingleLine = new RegExp('.*\'.*\'.*(\\r\\n|\\n)', 'g') // the whole line is removed
+  const regExInclude = new RegExp('^\\s*!(include(?:_many|_once|url|sub)?)\\s+((?:(?<=\\\\)[ ]|[^ ])+)(.*)')
+  const diagramLines = diagramText.replace(regExCommentMultiLine, '').replace(regExCommentSingleLine, '').split('\n')
+  const diagramProcessed = diagramLines.map(line => line.replace(
+    regExInclude,
+    (match, ...args) => {
+      const include = args[0].toLowerCase()
+      const urlSub = args[1].trim().split('!')
+      const url = urlSub[0].replace(/\\ /g, ' ')
+      const sub = urlSub[1]
+      const result = readPlantUmlInclude(url, dirPath, includeStack, vfs)
+      if (result.skip) {
+        return line
+      } else {
+        if (include === 'include_once') {
+          checkIncludeOnce(result.text, result.filePath, includeOnce)
+        }
+        let text = result.text
+        if (sub !== undefined && sub !== null && sub !== '') {
+          if (include === 'includesub') {
+            text = getPlantUmlTextFromSub(text, sub)
+          } else {
+            const index = parseInt(sub, 10)
+            if (isNaN(index)) {
+              text = getPlantUmlTextFromId(text, sub)
+            } else {
+              text = getPlantUmlTextFromIndex(text, index)
+            }
+          }
+        } else {
+          text = getPlantUmlTextOrFirstBlock(text)
+        }
+        includeStack.push(result.filePath)
+        text = preprocessPlantUmlIncludes(text, path.dirname(result.filePath), includeOnce, includeStack, vfs)
+        includeStack.pop()
+        return text
+      }
+    })
+  )
+  return diagramProcessed.join('\n')
+}
+
+/**
+ * @param {string} url
+ * @param {string} dirPath
+ * @param {string[]} includeStack
+ * @param {any} vfs
+ * @returns {any}
+ */
+function readPlantUmlInclude (url, dirPath, includeStack, vfs) {
+  const exists = typeof vfs !== 'undefined' && typeof vfs.exists === 'function' ? vfs.exists : require('./node-fs.js').exists
+  const read = typeof vfs !== 'undefined' && typeof vfs.read === 'function' ? vfs.read : require('./node-fs.js').read
+  let skip = false
+  let text = ''
+  let filePath = url
+  if (url.startsWith('<')) {
+    // Only warn and do not throw an error, because the std-lib includes can perhaps be found by kroki server
+    console.warn(`Skipping preprocessing of PlantUML standard library include file '${url}'`)
+    skip = true
+  } else if (includeStack.includes(url)) {
+    const message = `Preprocessing of PlantUML include failed, because recursive reading already included referenced file '${url}'`
+    throw new Error(message)
+  } else {
+    if (isRemoteUrl(url)) {
+      try {
+        text = read(url)
+      } catch (e) {
+        // Only warn and do not throw an error, because the data file can perhaps be found by kroki server (https://github.com/yuzutech/kroki/issues/60)
+        console.warn(`Skipping preprocessing of PlantUML include, because reading the referenced remote file '${url}' caused an error:\n${e}`)
+        skip = true
+      }
+    } else {
+      filePath = path.join(dirPath, url)
+      if (!exists(filePath)) {
+        filePath = url
+      }
+      if (includeStack.includes(filePath)) {
+        const message = `Preprocessing of PlantUML include failed, because recursive reading already included referenced file '${filePath}'`
+        throw new Error(message)
+      } else {
+        try {
+          text = read(filePath)
+        } catch (e) {
+          const message = `Preprocessing of PlantUML include failed, because reading the referenced local file '${filePath}' caused an error:\n${e}`
+          throw addCauseToError(new Error(message), e)
+        }
+      }
+    }
+  }
+  return { skip: skip, text: text, filePath: filePath }
+}
+
+/**
+ * @param {string} text
+ * @param {string} sub
+ * @returns {string}
+ */
+function getPlantUmlTextFromSub (text, sub) {
+  const regEx = new RegExp(`!startsub\\s+${sub}(?:\\r\\n|\\n)([\\s\\S]*?)(?:\\r\\n|\\n)!endsub`, 'gm')
+  return getPlantUmlTextRegEx(text, regEx)
+}
+
+/**
+ * @param {string} text
+ * @param {string} id
+ * @returns {string}
+ */
+function getPlantUmlTextFromId (text, id) {
+  const regEx = new RegExp(`@startuml\\(id=${id}\\)(?:\\r\\n|\\n)([\\s\\S]*?)(?:\\r\\n|\\n)@enduml`, 'gm')
+  return getPlantUmlTextRegEx(text, regEx)
+}
+
+/**
+ * @param {string} text
+ * @param {RegExp} regEx
+ * @returns {string}
+ */
+function getPlantUmlTextRegEx (text, regEx) {
+  let matchedStrings = ''
+  let match = regEx.exec(text)
+  if (match != null) {
+    matchedStrings += match[1]
+    match = regEx.exec(text)
+    while (match != null) {
+      matchedStrings += '\n' + match[1]
+      match = regEx.exec(text)
+    }
+  }
+  return matchedStrings
+}
+
+/**
+ * @param {string} text
+ * @param {int} index
+ * @returns {string}
+ */
+function getPlantUmlTextFromIndex (text, index) {
+  const regEx = new RegExp('@startuml(?:\\r\\n|\\n)([\\s\\S]*?)(?:\\r\\n|\\n)@enduml', 'gm')
+  let idx = -1
+  let matchedStrings = ''
+  let match = regEx.exec(text)
+  while (match != null && idx < index) {
+    if (++idx === index) {
+      matchedStrings += match[1]
+    } else {
+      match = regEx.exec(text)
+    }
+  }
+  return matchedStrings
+}
+
+/**
+ * @param {string} text
+ * @returns {string}
+ */
+function getPlantUmlTextOrFirstBlock (text) {
+  const regEx = new RegExp('@startuml(?:\\r\\n|\\n)([\\s\\S]*?)(?:\\r\\n|\\n)@enduml', 'gm')
+  let matchedStrings = text
+  const match = regEx.exec(text)
+  if (match != null) {
+    matchedStrings = match[1]
+  }
+  return matchedStrings
+}
+
+/**
+ * @param {string} text
+ * @param {string} filePath
+ * @param {string[]} includeOnce
+ */
+function checkIncludeOnce (text, filePath, includeOnce) {
+  if (includeOnce.includes(filePath)) {
+    const message = `Preprocessing of PlantUML include failed, because including multiple times referenced file '${filePath}' with '!include_once' guard`
+    throw new Error(message)
+  } else {
+    includeOnce.push(filePath)
+  }
+}
+
+/**
  * @param {Error} error
  * @param {any} causedBy
  * @returns {Error}
@@ -18107,5 +18615,5 @@ function isRemoteUrl (string) {
   }
 }
 
-},{"./node-fs.js":undefined,"json5":9}]},{},[57])(57)
+},{"./node-fs.js":undefined,"json5":9,"path":26}]},{},[58])(58)
 });
