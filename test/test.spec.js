@@ -74,6 +74,17 @@ alice -> bob
       expect(html).to.contain(`https://kroki.io/plantuml/svg/${encode(file)}`)
       expect(html).to.contain('<div class="imageblock sequence kroki-format-svg kroki">')
     }).timeout(5000)
+    it('should convert a PlantUML diagram and resolve include relative to base directory', () => {
+      const file = `${__dirname}/fixtures/alice-with-styles.puml`
+      const diagramText = fs.readFileSync(file, 'utf8')
+        .replace(/^!include(.*)$/m, fs.readFileSync(`${__dirname}/fixtures/plantuml/style-general.iuml`, 'utf8'))
+      const input = `plantuml::${file}[svg,role=sequence]`
+      const registry = asciidoctor.Extensions.create()
+      asciidoctorKroki.register(registry)
+      const html = asciidoctor.convert(input, { extension_registry: registry, base_dir: `${__dirname}/fixtures` })
+      expect(html).to.contain(`https://kroki.io/plantuml/svg/${encodeText(diagramText)}`)
+      expect(html).to.contain('<div class="imageblock sequence kroki-format-svg kroki">')
+    }).timeout(5000)
     it('should convert a diagram with a relative path to an image', () => {
       const input = `
 :imagesdir: .asciidoctor/kroki

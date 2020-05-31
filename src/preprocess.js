@@ -58,12 +58,13 @@ ${diagramText}
 /**
  * @param {string} diagramText
  * @param {any} context
+ * @param {string} baseDir - base directory
  * @returns {string}
  */
-module.exports.preprocessPlantUML = function (diagramText, context) {
+module.exports.preprocessPlantUML = function (diagramText, context, baseDir = '.') {
   const includeOnce = []
   const includeStack = []
-  return preprocessPlantUmlIncludes(diagramText, '.', includeOnce, includeStack, context.vfs)
+  return preprocessPlantUmlIncludes(diagramText, baseDir, includeOnce, includeStack, context.vfs)
 }
 
 /**

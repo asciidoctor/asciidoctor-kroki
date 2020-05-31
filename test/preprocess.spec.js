@@ -499,10 +499,30 @@ D -> D : stuff4
     expect(preprocessPlantUML(diagramTextWithExistingIncludeFileWithIndex, {}).replace(/\r\n/g, '\n')).to.be.equal(diagramTextWithIncludedText)
   })
 
-  it('should return include relative to included file', () => {
+  it('should resolve include path relative to the included file', () => {
     const diagramTextWithExistingIncludeFileWithIndex = `
     @startuml
       !include test/fixtures/plantuml/dir/subdir/handwritten.iuml
+      alice -> bob
+    @enduml`
+    const diagramTextWithIncludedText = `
+    @startuml
+skinparam Handwritten true
+skinparam DefaultFontName "Neucha"
+skinparam BackgroundColor black
+
+
+      alice -> bob
+    @enduml`
+    expect(preprocessPlantUML(diagramTextWithExistingIncludeFileWithIndex, {})
+      .replace(/\r\n/g, '\n'))
+      .to.be.equal(diagramTextWithIncludedText)
+  })
+
+  it('should include a PlantUML file from an absolute path', () => {
+    const diagramTextWithExistingIncludeFileWithIndex = `
+    @startuml
+      !include ${__dirname}/fixtures/plantuml/dir/subdir/handwritten.iuml
       alice -> bob
     @enduml`
     const diagramTextWithIncludedText = `
