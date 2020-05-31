@@ -176,7 +176,7 @@ ${includedText}
     const includedText = fs.readFileSync(`${localExistingFileNameWithSpacesPath}`, 'utf8')
     const diagramTextWithIncludedText = `
     @startuml
-${includedText}
+${includedText} # this includes general style
       alice -> bob
     @enduml`
     expect(preprocessPlantUML(diagramTextWithExistingLocalIncludeFile, {})).to.be.equal(diagramTextWithIncludedText)
@@ -258,21 +258,42 @@ ${includedText}
     expect(preprocessPlantUML(diagramTextWithExistingLocalIncludeFile, {})).to.be.equal(diagramTextWithIncludedText)
   })
 
-  it('should return diagramText without line and block comments"', () => {
+  it('should return diagramText while preserving inline and block comments"', () => {
     const diagramTextWithExistingLocalIncludeFile = `
     @startuml
-      '!include ${localExistingFilePath}' the whole line is removed
+      '!include ${localExistingFilePath}' the whole line is preserved
       !include ${localExistingFilePath}
       /'
         !include ${localExistingFilePath}
-        the whole block is removed preserving chars before and after
-      '/ alice -> bob /' this also should be removed '/
+        the whole block is preserved
+      '/ alice -> bob /' this also should be preserved '/
     @enduml`
     const includedText = fs.readFileSync(`${localExistingFilePath}`, 'utf8')
     const diagramTextWithIncludedText = `
     @startuml
+      '!include ${localExistingFilePath}' the whole line is preserved
 ${includedText}
-       alice -> bob 
+      /'
+        !include ${localExistingFilePath}
+        the whole block is preserved
+      '/ alice -> bob /' this also should be preserved '/
+    @enduml`
+    expect(preprocessPlantUML(diagramTextWithExistingLocalIncludeFile, {})).to.be.equal(diagramTextWithIncludedText)
+  })
+
+  it('should return diagramText while preserving trailing block comment"', () => {
+    const diagramTextWithExistingLocalIncludeFile = `
+    @startuml
+      !include ${localExistingFilePath} /'
+      this is a trailing block comment
+      '/
+    @enduml`
+    const includedText = fs.readFileSync(`${localExistingFilePath}`, 'utf8')
+    const diagramTextWithIncludedText = `
+    @startuml
+${includedText} /'
+      this is a trailing block comment
+      '/
     @enduml`
     expect(preprocessPlantUML(diagramTextWithExistingLocalIncludeFile, {})).to.be.equal(diagramTextWithIncludedText)
   })
