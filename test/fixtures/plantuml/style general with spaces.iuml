@@ -1,0 +1,4 @@
+skinparam DefaultFontName "Neucha"
+skinparam BackgroundColor transparent
+skinparam Shadowing false
+skinparam Handwritten true
