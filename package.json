@@ -30,7 +30,7 @@
     "dirty-chai": "^2.0.1",
     "libnpmpublish": "^3.0.1",
     "lodash": "^4.17.14",
-    "mocha": "^7.1.0",
+    "mocha": "^8.0.1",
     "puppeteer": "^3.0.1",
     "rimraf": "^3.0.2",
     "sinon": "^9.0.1",
