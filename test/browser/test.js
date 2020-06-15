@@ -93,7 +93,7 @@ alice -> bob
         })
         const text = httpGet(`${baseDir}/test/fixtures/alice.puml`, 'utf8')
         const html = asciidoctor.convert(input, { extension_registry: registry })
-        expect(html).to.contain(`<img src="https://kroki.io/plantuml/svg/${encodeText(text)}" alt="diagram">`)
+        expect(html).to.contain(`<img src="https://kroki.io/plantuml/svg/${encodeText(text)}" alt="Diagram">`)
       }).timeout(5000)
       it('should convert a diagram with a relative path to an image', () => {
         const input = `plantuml::../fixtures/alice.puml[svg,role=sequence]`
@@ -113,7 +113,7 @@ alice -> bob
         })
         const text = httpGet(`${baseDir}/test/fixtures/alice.puml`, 'utf8')
         const html = asciidoctor.convert(input, { extension_registry: registry })
-        expect(html).to.contain(`<img src="https://kroki.io/plantuml/svg/${encodeText(text)}" alt="diagram">`)
+        expect(html).to.contain(`<img src="https://kroki.io/plantuml/svg/${encodeText(text)}" alt="Diagram">`)
       }).timeout(5000)
     })
   })

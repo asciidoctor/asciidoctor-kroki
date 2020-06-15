@@ -18064,8 +18064,9 @@ const processKroki = (processor, parent, attrs, diagramType, diagramText, contex
     diagramText = require('./preprocess.js').preprocessPlantUML(diagramText, context, doc.getBaseDir())
   }
   const blockId = attrs.id
-  const title = attrs.title
   const format = attrs.format || 'svg'
+  const caption = attrs.caption
+  const title = attrs.title
   let role = attrs.role
   if (role) {
     if (format) {
@@ -18076,11 +18077,12 @@ const processKroki = (processor, parent, attrs, diagramType, diagramText, contex
   } else {
     role = 'kroki'
   }
-  const blockAttrs = {
-    role,
-    title,
-    format
-  }
+  const blockAttrs = Object.assign({}, attrs)
+  blockAttrs.role = role
+  blockAttrs.format = format
+  delete blockAttrs.title
+  delete blockAttrs.caption
+  delete blockAttrs.opts
   const inline = attrs['inline-option'] === ''
   if (inline) {
     blockAttrs['inline-option'] = ''
@@ -18095,18 +18097,28 @@ const processKroki = (processor, parent, attrs, diagramType, diagramText, contex
   const krokiDiagram = new KrokiDiagram(diagramType, format, diagramText)
   const httpClient = isBrowser() ? require('./http/browser-http.js') : require('./http/node-http.js')
   const krokiClient = new KrokiClient(doc, httpClient)
+  let block
   if (format === 'txt' || format === 'atxt' || format === 'utxt') {
     const textContent = krokiClient.getTextContent(krokiDiagram)
-    return processor.createBlock(parent, 'literal', textContent, blockAttrs, {})
+    block = processor.createBlock(parent, 'literal', textContent, blockAttrs)
   } else {
-    const target = attrs.target
-    const imageUrl = createImageSrc(doc, krokiDiagram, target, context.vfs, krokiClient)
-    const imageBlockAttrs = Object.assign({}, blockAttrs, {
-      target: imageUrl,
-      alt: target || 'diagram'
-    })
-    return processor.createImageBlock(parent, imageBlockAttrs)
+    let alt
+    if (attrs.title) {
+      alt = attrs.title
+    } else if (attrs.target) {
+      alt = attrs.target
+    } else {
+      alt = 'Diagram'
+    }
+    blockAttrs.target = createImageSrc(doc, krokiDiagram, attrs.target, context.vfs, krokiClient)
+    blockAttrs.alt = alt
+    block = processor.createImageBlock(parent, blockAttrs)
   }
+  if (title) {
+    block.setTitle(title)
+  }
+  block.$assign_caption(caption, 'figure')
+  return block
 }
 
 function diagramBlock (context) {
