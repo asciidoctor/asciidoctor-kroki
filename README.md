@@ -246,7 +246,7 @@ asciidoctor.convertFile('file.adoc', { attributes: { 'kroki-server-url': 'http:/
 
 ### Setup
 
-To build this project, you will need Node.js >= 8.11 and npm (we recommend `nvm` to manage multiple active Node.js versions).
+To build this project, you will need the latest active LTS of Node.js and npm (we recommend `nvm` to manage multiple active Node.js versions).
 
 ### Building
 
