@@ -17,6 +17,7 @@ module.exports = (file, contentCatalog, vfs) => {
             module,
             family: 'image',
             mediaType: image.mediaType,
+            path: image.relative + '/' + image.basename,
             basename: image.basename,
             relative: image.basename
           }
