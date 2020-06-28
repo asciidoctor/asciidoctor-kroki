@@ -175,6 +175,109 @@ include::alice-bob.puml[]
 
 ![PlantUML diagram](https://kroki.io/plantuml/png/eNpzKC5JLCopzc3hSszJTE5V0LVTSMpP4nJIzUsBCgIApPUKcg==)
 
+### Syntax
+
+You can declare positional and named attributes when using the block or the macro form.
+
+**Positional attributes**
+
+When using the block form:
+
+1. The first positional attribute specifies the diagram type (see below for a complete list).
+2. The second optional positional attribute assigns a file name (i.e. target) to the generated diagram. *Currently, the value of this attribute is ignored, and an auto-generated hash will be used as file name for caching purposes (see #48)*.
+3. The third optional positional attribute specifies the image format.
+
+Example:
+
+```
+[mermaid,abcd-flowchart,svg]
+....
+graph TD;
+    A-->B;
+    A-->C;
+    B-->D;
+    C-->D;
+....
+```
+
+In the above example,
+the diagram type is `mermaid`,
+the file name (i.e. target) is `abcd-flowchart`,
+and the image format is `svg`.
+
+When using the macro form:
+
+1. The first optional positional attribute specifies the image format.
+
+Example:
+
+```
+vegalite::chart.vlite[svg]
+```
+
+In the above example,
+the diagram type is `vegalite`,
+the target is `chart.vlite`,
+and the image format is `svg`.
+
+**Named attributes**
+
+You can also use both positional and named attributes. Here's an example:
+
+```adoc
+.PlantUML example
+[plantuml#diagAliceBob,alice-and-bob,svg,role=sequence]
+....
+alice -> bob
+....
+```
+
+As you can see, we specified an id using the syntax `#diagAliceBob` just after the diagram type, and we are also using a named attribute to assign a role using `role=sequence`.
+
+Here's another example using the macro form:
+
+```
+vegalite::chart.vlite[svg,role=chart,opts=interactive]
+```
+
+We are using a positional attribute to declare the image format and two named attributes to define the `role` and `options`.
+
+**Attributes**
+
+It's important to note that not all attributes are used in all converters.
+Here's a list of all attributes used in the built-in HTML 5 converter:
+
+- `target`
+- `width`
+- `height`
+- `format` (default `svg`)
+- `fallback`
+- `link`
+- `float`
+- `align`
+- `role`
+
+**Options**
+
+In addition, the following options are available when using the SVG format:
+
+- `inline`
+- `interactive`
+
+Options can be defined using `options` attribute (or `opts` for short):
+
+```adoc
+[blockdiag,opts=inline]
+....
+blockdiag {
+  Kroki -> generates -> "Block diagrams";
+
+  Kroki [color = "greenyellow"];
+  "Block diagrams" [color = "pink"];
+}
+....
+```
+
 ### Supported diagram types
 
 Kroki currently supports the following diagram libraries:
