@@ -1,3 +1,5 @@
+const ospath = require('path')
+
 module.exports = (file, contentCatalog, vfs) => {
   let baseReadFn
   if (typeof vfs === 'undefined' || typeof vfs.read !== 'function') {
@@ -17,6 +19,7 @@ module.exports = (file, contentCatalog, vfs) => {
             module,
             family: 'image',
             mediaType: image.mediaType,
+            path: ospath.join(image.relative, image.basename),
             basename: image.basename,
             relative: image.basename
           }
