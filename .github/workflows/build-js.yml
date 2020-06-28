@@ -1,4 +1,4 @@
-name: Build
+name: Build JavaScript
 
 on: [push, pull_request]
 

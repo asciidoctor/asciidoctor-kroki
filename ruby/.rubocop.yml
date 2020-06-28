@@ -1,0 +1,14 @@
+Style/Encoding:
+  Enabled: false
+
+Metrics/LineLength:
+  Max: 160
+
+Metrics/MethodLength:
+  Max: 50
+
+Metrics/CyclomaticComplexity:
+  Max : 10
+
+Metrics/AbcSize:
+  Max: 25
