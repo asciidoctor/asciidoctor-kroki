@@ -1,6 +1,8 @@
 // @ts-check
 const { KrokiDiagram, KrokiClient } = require('./kroki-client.js')
 
+const availableOptions = ['inline', 'interactive', 'none']
+
 function UnsupportedFormatError (message) {
   this.name = 'UnsupportedFormatError'
   this.message = message
@@ -34,6 +36,22 @@ const createImageSrc = (doc, krokiDiagram, target, vfs, krokiClient) => {
   return imageUrl
 }
 
+function getOption (attrs, parent) {
+  // `choices` is a list of option value names.
+  // First these are compared with the incoming block/macro attributes.
+  // If there is no match, they are compared with the kroki default settings in the document attributes.
+  for (const option of availableOptions) {
+    if (attrs[`${option}-option`] === '') {
+      return option
+    }
+  }
+  for (const option of availableOptions) {
+    if (parent.document.getAttribute('kroki-default-options') === option) {
+      return option
+    }
+  }
+}
+
 const processKroki = (processor, parent, attrs, diagramType, diagramText, context) => {
   const doc = parent.getDocument()
   // If "subs" attribute is specified, substitute accordingly.
@@ -48,7 +66,7 @@ const processKroki = (processor, parent, attrs, diagramType, diagramText, contex
     diagramText = require('./preprocess.js').preprocessPlantUML(diagramText, context, doc.getBaseDir())
   }
   const blockId = attrs.id
-  const format = attrs.format || 'svg'
+  const format = attrs.format || parent.document.getAttribute('kroki-default-format') || 'svg'
   const caption = attrs.caption
   const title = attrs.title
   let role = attrs.role
@@ -67,14 +85,11 @@ const processKroki = (processor, parent, attrs, diagramType, diagramText, contex
   delete blockAttrs.title
   delete blockAttrs.caption
   delete blockAttrs.opts
-  const inline = attrs['inline-option'] === ''
-  if (inline) {
-    blockAttrs['inline-option'] = ''
+  const option = getOption(attrs, parent)
+  if (option && option !== 'none') {
+    blockAttrs[`${option}-option`] = ''
   }
-  const interactive = attrs['interactive-option'] === ''
-  if (interactive) {
-    blockAttrs['interactive-option'] = ''
-  }
+
   if (blockId) {
     blockAttrs.id = blockId
   }

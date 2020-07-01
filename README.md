@@ -126,6 +126,7 @@ If you are using [Antora](https://antora.org/), you can integrate Kroki in your 
 **💡 TIP**:
 You can use the `kroki-fetch-diagram` option to download the images from Kroki at build time.
 In other words, while viewing pages you won't rely on Kroki anymore.
+However, in Antora, this is not currently compatible with inline svg images.
 
 ```yaml
 asciidoc:
@@ -263,6 +264,7 @@ In addition, the following options are available when using the SVG format:
 
 - `inline`
 - `interactive`
+- `none` (used for cancelling defaults)
 
 Options can be defined using `options` attribute (or `opts` for short):
 
@@ -313,6 +315,46 @@ Consult the [Kroki documentation](https://kroki.io/#support) to find out which f
 | `kroki-server-url` | The URL of the Kroki server (see "Using Your Own Kroki") | `https://kroki.io`
 | `kroki-fetch-diagram` | Define if we should download (and save on the disk) the images from the Kroki server.<br/>This feature is not available when running in the browser. | `false`
 | `kroki-http-method` | Define how we should get the image from the Kroki server. Possible values:<br/><ul><li>`get`: always use GET requests</li><li>`post`: always use POST requests</li><li>`adaptive`: use a POST request if the URI length is longer than 4096 characters, otherwise use a GET request</li></ul> | `adaptive` |
+
+### Default configuration
+
+By default, images are generated as svg when possible.
+To alter this, set `kroki-default-format` as an 'external', document header, or document body attribute:
+
+```adoc
+:kroki-default-format: png
+```
+
+'External' means of setting an attribute vary depending on your environment, but include CLI, API, and Antora playbook and component descriptor attribute settings.
+You can unset this with `:kroki-default-format!:` or `:kroki-default-format: svg`.
+
+ℹ️ NOTE: An AsciiDoc attribute can be defined through the CLI or API, in the document’s header or in the document’s body.
+In addition, if you are using Antora, you can define AsciiDoc attributes in your playbook and/or in your component descriptor.
+
+References:
+
+https://asciidoctor.org/docs/user-manual/#setting-attributes-on-a-document
+https://docs.antora.org/antora/2.3/page/attributes/#custom-attributes
+
+For instance, in an Antora playbook or component descriptor,
+
+```yaml
+asciidoc:
+  attributes:
+    kroki-default-format@: png
+```
+
+(the `@` allows the attribute value to be reset in documents)
+
+By default, Asciidoctor Kroki generates a link, to a Kroki server or a local file.
+To change the default for svg diagrams, set `kroki-default-options` as a external, document header, or document body attribute.
+
+```adoc
+:kroki-default-options: inline
+```
+
+You can unset this with `:kroki-default-options: none` or `:kroki-default-options!:` or specify `opts=none` in a block or macro.
+
 
 ## Using Your Own Kroki
 
