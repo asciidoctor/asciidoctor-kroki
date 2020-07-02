@@ -18115,7 +18115,7 @@ const processKroki = (processor, parent, attrs, diagramType, diagramText, contex
     block = processor.createImageBlock(parent, blockAttrs)
   }
   if (title) {
-    block.setTitle(title)
+    block['$title='](title)
   }
   block.$assign_caption(caption, 'figure')
   return block
