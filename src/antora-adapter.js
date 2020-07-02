@@ -28,7 +28,7 @@ module.exports = (file, contentCatalog, vfs) => {
     },
     read: (resourceId, format) => {
       const target = contentCatalog.resolveResource(resourceId, file.src)
-      return target ? target.contents : baseReadFn(resourceId, format)
+      return target ? target.contents.toString() : baseReadFn(resourceId, format)
     }
   }
 }
