@@ -1,5 +1,6 @@
 /* global describe it beforeEach */
 const fs = require('fs')
+const cheerio = require('cheerio')
 const rimrafSync = require('rimraf')
 const chai = require('chai')
 const expect = chai.expect
@@ -14,7 +15,6 @@ describe('Antora integration', () => {
   })
   it('should generate a site with diagrams', async () => {
     await generateSite([`--playbook=${__dirname}/site.yml`])
-    const cheerio = require('cheerio')
     const $ = cheerio.load(fs.readFileSync(`${__dirname}/public/antora-kroki/sourcelocation.html`))
     const imageElements = $('img')
     expect(imageElements.length).to.equal(6)
@@ -22,5 +22,5 @@ describe('Antora integration', () => {
       const src = $(imageElement).attr('src')
       expect(src).to.startWith('_images/diag-')
     })
-  }).timeout(10000)
+  }).timeout(30000)
 })
