@@ -1,0 +1,6 @@
+* xref:index.adoc[Home Page]
+* xref:sourcelocation.adoc[Choices for source diagram location]
+* xref:embedding.adoc[Choices for generated html]
+* xref:embeddingblockmacro.adoc[Choices for generated html, using the block macro]
+* xref:attributes.adoc[Choices for positional, named, and page/global attributes]
+* xref:topic/index.adoc[Similar diagrams on a topic page]

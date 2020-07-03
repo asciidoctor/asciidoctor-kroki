@@ -1,0 +1,46 @@
+= {page-component-title}
+:kroki-fetch-diagram:
+
+== Choices of diagram source location
+
+`:kroki-fetch-diagram:` is set on this page, so all diagrams are downloaded during the build to local files accessed at `_images`.
+
+=== Diagram Source Embedded
+
+.As svg [plantuml,target=ab-embedded-1,format=svg]
+[plantuml,target=ab-embedded-1,format=svg]
+----
+alice -> bob
+bob -> alice
+----
+
+.As png [plantuml,target=ab-embedded-2,format=png]
+[plantuml,target=ab-embedded-2,format=png]
+----
+alice -> bob
+bob -> alice
+----
+
+=== Entire Diagram in a partial, adoc extension
+
+include::partial$ab-all.adoc[]
+
+=== Diagram contents in a partial, puml extension
+
+.As svg [plantuml,target=ab-partial-1,format=svg]
+[plantuml,target=ab-partial-1,format=svg]
+----
+include::partial$ab.puml[]
+----
+
+=== Entire Diagram in an example, puml extension
+
+include::example$ab-all.puml[]
+
+=== Diagram contents in an example, puml extension
+
+.As svg [plantuml,ab-example-1,svg]
+[plantuml,ab-example-1,svg]
+----
+include::example$ab.puml[]
+----

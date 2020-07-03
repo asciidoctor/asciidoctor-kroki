@@ -1,0 +1,37 @@
+= {page-component-title}
+:plantuml-default-format: svg
+
+== Choices for the generated html.
+
+=== Explicit block attributes
+
+`:kroki-fetch-diagram:` is not yet set on this page, so this uses a remote URL to the plantuml server.
+
+.As svg
+plantuml::partial$ab.puml[]
+
+`:kroki-fetch-diagram:` is now set on this page, so any further links will be to downloaded diagrams in `_images`.
+
+:kroki-fetch-diagram:
+
+.As svg
+plantuml::partial$ab.puml[target=ab-embedded-em1]
+
+Inline/interactive requires unsetting `kroki-fetch-diagram` via `:kroki-fetch-diagram!:`
+
+:kroki-fetch-diagram!:
+
+.As svg inline
+plantuml::partial$ab.puml[options=inline]
+
+.As svg interactive
+plantuml::partial$ab.puml[options=interactive]
+
+=== Default page attribute `:kroki-default-options: inline`
+
+This is not yet implemented
+
+:kroki-default-options: inline
+
+.As svg inline from page attribute
+plantuml::partial$ab.puml[]

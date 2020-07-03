@@ -1,0 +1,45 @@
+= {page-component-title}
+
+== Similar links from a topic page.
+
+`:kroki-fetch-diagram:` is not set on this page, so all diagrams use remote URLs to the plantuml server.
+
+=== Embedded
+
+.As svg
+[plantuml,ab-embedded-svg,svg]
+----
+alice -> bob
+bob -> alice
+----
+
+.As png
+[plantuml,ab-embedded-png,png]
+----
+alice -> bob
+bob -> alice
+----
+
+=== Entire Diagram in a partial
+
+include::partial$ab-all.adoc[]
+
+=== Diagram contents in a partial
+
+.As svg
+[plantuml,target=ab-partial,format=svg]
+----
+include::partial$ab.puml[]
+----
+
+=== Entire Diagram in an example
+
+include::example$ab-all.puml[]
+
+=== Diagram contents in an example
+
+.As png
+[plantuml,ab-example,png]
+----
+include::example$ab.puml[]
+----
