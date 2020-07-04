@@ -18050,6 +18050,30 @@ const createImageSrc = (doc, krokiDiagram, target, vfs, krokiClient) => {
   return imageUrl
 }
 
+/**
+ * Get the option defined on the block or macro.
+ *
+ * First, check if an option is defined as an attribute.
+ * If there is no match, check if an option is defined as a default settings in the document attributes.
+ *
+ * @param attrs - list of attributes
+ * @param document - Asciidoctor document
+ * @returns {string|undefined} - the option name or undefined
+ */
+function getOption (attrs, document) {
+  const availableOptions = ['inline', 'interactive', 'none']
+  for (const option of availableOptions) {
+    if (attrs[`${option}-option`] === '') {
+      return option
+    }
+  }
+  for (const option of availableOptions) {
+    if (document.getAttribute('kroki-default-options') === option) {
+      return option
+    }
+  }
+}
+
 const processKroki = (processor, parent, attrs, diagramType, diagramText, context) => {
   const doc = parent.getDocument()
   // If "subs" attribute is specified, substitute accordingly.
@@ -18064,7 +18088,7 @@ const processKroki = (processor, parent, attrs, diagramType, diagramText, contex
     diagramText = require('./preprocess.js').preprocessPlantUML(diagramText, context, doc.getBaseDir())
   }
   const blockId = attrs.id
-  const format = attrs.format || 'svg'
+  const format = attrs.format || doc.getAttribute('kroki-default-format') || 'svg'
   const caption = attrs.caption
   const title = attrs.title
   let role = attrs.role
@@ -18083,14 +18107,11 @@ const processKroki = (processor, parent, attrs, diagramType, diagramText, contex
   delete blockAttrs.title
   delete blockAttrs.caption
   delete blockAttrs.opts
-  const inline = attrs['inline-option'] === ''
-  if (inline) {
-    blockAttrs['inline-option'] = ''
+  const option = getOption(attrs, doc)
+  if (option && option !== 'none') {
+    blockAttrs[`${option}-option`] = ''
   }
-  const interactive = attrs['interactive-option'] === ''
-  if (interactive) {
-    blockAttrs['interactive-option'] = ''
-  }
+
   if (blockId) {
     blockAttrs.id = blockId
   }
@@ -18151,9 +18172,10 @@ function diagramBlockMacro (name, context) {
       if (isBrowser()) {
         if (!['file://', 'https://', 'http://'].some(prefix => target.startsWith(prefix))) {
           // if not an absolute URL, prefix with baseDir in the browser environment
-          const baseDir = parent.getDocument().getBaseDir()
+          const doc = parent.getDocument()
+          const baseDir = doc.getBaseDir()
           const startDir = typeof baseDir !== 'undefined' ? baseDir : '.'
-          target = startDir !== '.' ? parent.getDocument().normalizeWebPath(target, startDir) : target
+          target = startDir !== '.' ? doc.normalizeWebPath(target, startDir) : target
         }
       } else {
         if (typeof vfs === 'undefined' || typeof vfs.read !== 'function') {

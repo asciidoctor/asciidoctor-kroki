@@ -1,8 +1,6 @@
 // @ts-check
 const { KrokiDiagram, KrokiClient } = require('./kroki-client.js')
 
-const availableOptions = ['inline', 'interactive', 'none']
-
 function UnsupportedFormatError (message) {
   this.name = 'UnsupportedFormatError'
   this.message = message
@@ -36,17 +34,25 @@ const createImageSrc = (doc, krokiDiagram, target, vfs, krokiClient) => {
   return imageUrl
 }
 
-function getOption (attrs, parent) {
-  // `choices` is a list of option value names.
-  // First these are compared with the incoming block/macro attributes.
-  // If there is no match, they are compared with the kroki default settings in the document attributes.
+/**
+ * Get the option defined on the block or macro.
+ *
+ * First, check if an option is defined as an attribute.
+ * If there is no match, check if an option is defined as a default settings in the document attributes.
+ *
+ * @param attrs - list of attributes
+ * @param document - Asciidoctor document
+ * @returns {string|undefined} - the option name or undefined
+ */
+function getOption (attrs, document) {
+  const availableOptions = ['inline', 'interactive', 'none']
   for (const option of availableOptions) {
     if (attrs[`${option}-option`] === '') {
       return option
     }
   }
   for (const option of availableOptions) {
-    if (parent.document.getAttribute('kroki-default-options') === option) {
+    if (document.getAttribute('kroki-default-options') === option) {
       return option
     }
   }
@@ -66,7 +72,7 @@ const processKroki = (processor, parent, attrs, diagramType, diagramText, contex
     diagramText = require('./preprocess.js').preprocessPlantUML(diagramText, context, doc.getBaseDir())
   }
   const blockId = attrs.id
-  const format = attrs.format || parent.document.getAttribute('kroki-default-format') || 'svg'
+  const format = attrs.format || doc.getAttribute('kroki-default-format') || 'svg'
   const caption = attrs.caption
   const title = attrs.title
   let role = attrs.role
@@ -85,7 +91,7 @@ const processKroki = (processor, parent, attrs, diagramType, diagramText, contex
   delete blockAttrs.title
   delete blockAttrs.caption
   delete blockAttrs.opts
-  const option = getOption(attrs, parent)
+  const option = getOption(attrs, doc)
   if (option && option !== 'none') {
     blockAttrs[`${option}-option`] = ''
   }
@@ -150,9 +156,10 @@ function diagramBlockMacro (name, context) {
       if (isBrowser()) {
         if (!['file://', 'https://', 'http://'].some(prefix => target.startsWith(prefix))) {
           // if not an absolute URL, prefix with baseDir in the browser environment
-          const baseDir = parent.getDocument().getBaseDir()
+          const doc = parent.getDocument()
+          const baseDir = doc.getBaseDir()
           const startDir = typeof baseDir !== 'undefined' ? baseDir : '.'
-          target = startDir !== '.' ? parent.getDocument().normalizeWebPath(target, startDir) : target
+          target = startDir !== '.' ? doc.normalizeWebPath(target, startDir) : target
         }
       } else {
         if (typeof vfs === 'undefined' || typeof vfs.read !== 'function') {
