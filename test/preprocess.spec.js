@@ -10,7 +10,7 @@ chai.use(dirtyChai)
 
 const { preprocessVegaLite } = require('../src/preprocess.js')
 
-describe('preprocessVegaLite', () => {
+describe('Vega-Lite preprocessing', () => {
   it('should throw an error for invalid JSON', () => {
     const errorMessage = `Preprocessing of Vega-Lite view specification failed, because of a parsing error:
 SyntaxError: JSON5: invalid character 'i' at 1:1
@@ -89,7 +89,7 @@ Error: ENOENT: no such file or directory, open 'unexisting.csv'`
 
 const { preprocessPlantUML } = require('../src/preprocess.js')
 
-describe('preprocessPlantUML', () => {
+describe('PlantUML preprocessing', () => {
   // TODO: change after merge to upstream project
   const remoteBasePath = 'https://raw.githubusercontent.com/anb0s/asciidoctor-kroki/plantuml-include/'
   // const remoteBasePath = 'https://raw.githubusercontent.com/Mogztter/asciidoctor-kroki/master/'
