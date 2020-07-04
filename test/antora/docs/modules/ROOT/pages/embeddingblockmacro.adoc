@@ -1,5 +1,5 @@
 = {page-component-title}
-:plantuml-default-format: svg
+:kroki-default-format: svg
 
 == Choices for the generated html.
 
@@ -28,8 +28,6 @@ plantuml::partial$ab.puml[options=inline]
 plantuml::partial$ab.puml[options=interactive]
 
 === Default page attribute `:kroki-default-options: inline`
-
-This is not yet implemented
 
 :kroki-default-options: inline
 
