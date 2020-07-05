@@ -64,7 +64,9 @@ const processKroki = (processor, parent, attrs, diagramType, diagramText, contex
   // Be careful not to specify "specialcharacters" or your diagram code won't be valid anymore!
   const subs = attrs.subs
   if (subs) {
+    context.diagramType = diagramType
     diagramText = parent.applySubstitutions(diagramText, parent.$resolve_subs(subs))
+    delete context.diagramType
   }
   if (diagramType === 'vegalite') {
     diagramText = require('./preprocess.js').preprocessVegaLite(diagramText, context)
@@ -186,9 +188,10 @@ function diagramBlockMacro (name, context) {
 }
 
 module.exports.register = function register (registry, context = {}) {
-  // patch context in case of Antora
+  // patch context in case of Antora. Also register kref
   if (typeof context.contentCatalog !== 'undefined' && typeof context.contentCatalog.addFile === 'function' && typeof context.file !== 'undefined') {
     context.vfs = require('./antora-adapter.js')(context.file, context.contentCatalog, context.vfs)
+    require('./kref/kref').register(registry, context)
   }
   const names = ['plantuml', 'ditaa', 'graphviz', 'blockdiag', 'seqdiag', 'actdiag', 'nwdiag', 'packetdiag', 'rackdiag', 'c4plantuml', 'erd', 'mermaid', 'nomnoml', 'svgbob', 'umlet', 'vega', 'vegalite', 'wavedrom', 'bytefield', 'bpmn']
   if (typeof registry.register === 'function') {
