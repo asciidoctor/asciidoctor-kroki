@@ -4,7 +4,8 @@ const computeRelativeUrlPath = require('./compute-relative-url-path')
 
 const FORMATS = {
   //https://stackoverflow.com/questions/14155773/label-hyperlink-graphviz
-  graphviz: (href, linkText) => `[${href}] [label="${linktext}"]`,
+  // graphviz: (href, linkText) => `[href="${href}"] [label="${linkText}"]`, // This seems to replace node names.
+  graphviz: (href, linkText) => `[href="${href}"]`,
   plantuml: (href, linkText) => `[[${href} ${linkText}]]`,
 }
 
