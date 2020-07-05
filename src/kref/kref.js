@@ -3,6 +3,8 @@
 const computeRelativeUrlPath = require('./compute-relative-url-path')
 
 const FORMATS = {
+  //https://stackoverflow.com/questions/14155773/label-hyperlink-graphviz
+  graphviz: (href, linkText) => `[${href}] [label="${linktext}"]`,
   plantuml: (href, linkText) => `[[${href} ${linkText}]]`,
 }
 
@@ -30,7 +32,24 @@ module.exports.register = function (registry, config_ = {}) {
       }
       const targetFile = !refSpec ? file : contentCatalog.resolveResource(refSpec, file.src)
       const href = computeRelativeUrlPath(file.pub.url, targetFile.pub.url, fragment ? '#' + fragment : '')
-      const linkText = attributes.linkText || fragment ? fragment : targetFile.asciidoc.attributes.doctitle
+      let linkText = attributes.linkText
+      if (!linkText) {
+        if (refSpec) {
+          if (fragment) {
+            linkText = fragment
+          } else {
+            linkText = targetFile.asciidoc.attributes.doctitle
+          }
+        } else {
+          // Catalog only contains ids in the page preceding this kroki usage!
+          if (parent.document.catalog.$$smap.refs.$$smap[fragment]) {
+            linkText = parent.document.catalog.$$smap.refs.$$smap[fragment].converted_title
+          } else {
+            linkText = fragment
+          }
+        }
+      }
+
       const format = FORMATS[config_.diagramType] || FORMATS[attributes.format] || FORMATS[defaultFormat]
       const text = format(href, linkText)
       // console.log('output text', text)
