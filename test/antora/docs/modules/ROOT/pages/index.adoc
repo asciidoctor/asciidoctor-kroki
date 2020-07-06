@@ -2,30 +2,32 @@
 
 == Ways of using link:https://github.com/Mogztter/asciidoctor-kroki[asciidoctor-kroki]
 
-For this example, you must install asciidoctor-kroki so it is accessible to your Antora installation.
+For this example, you must install `asciidoctor-kroki` so it is accessible to your Antora installation.
 If you have installed Antora globally, you can run:
 
-```
+[source]
+----
 npm install -g asciidoctor-kroki
-```
+----
 
-See the package.json for an alternate more self contained installation method.
+See the `package.json` for an alternate more self-contained installation method.
 
-The html pages in a browser will look rather repetitive.
-It is perhaps more interesting to look at the html source to see the effects of the different configurations.
+The HTML pages in a browser will look rather repetitive.
+It is perhaps more interesting to look at the HTML source to see the effects of the different configurations.
 
-Currently this example only explores plantuml source format diagrams.
+Currently, this example only explores PlantUML source format diagrams.
 With the exception of `ditaa` source, for which only `png` output is supported, other diagram types should have similar capabilities and configuration.
 
 === xref:sourcelocation.adoc[Choices for source diagram location]
 
 This page demonstrates the possible locations for the diagram source using a `[plantuml]` block.
 
-=== xref:embedding.adoc[Choices for generated html]
+=== xref:embedding.adoc[Choices for generated HTML]
 
-This page demonstrates some of the choices for the style of generated html. Since `data-uri` is not officially supported by Antora, and currently does not work for `png` impages pending an asciidoctor upgrade, there are no `data-uri` examples.
+This page demonstrates some choices for the style of generated HTML.
+Since `data-uri` is not officially supported by Antora, and currently does not work for `png` impages pending an asciidoctor upgrade, there are no `data-uri` examples.
 
-=== xref:embeddingblockmacro.adoc[Choices for generated html, using the block macro]
+=== xref:embeddingblockmacro.adoc[Choices for generated HTML, using the block macro]
 
 This demonstrates the same choices but using the `plantuml::` block macro with a reference to the diagram source in `partials`
 
