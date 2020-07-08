@@ -3,6 +3,10 @@
 const computeRelativeUrlPath = require('./compute-relative-url-path')
 
 const FORMATS = {
+  //https://bytefield-svg.deepsymmetry.org/bytefield-svg/1.5.0/funcs.html#wrap-link
+  // You need to construct part of this yourself, (wrap-link kref:index.adoc[]
+  //   (draw-box (text "length" [:math] [:sub 1]) {:span 4}))
+  bytefield: (href, linkText) => `"${href}"`,
   //https://stackoverflow.com/questions/14155773/label-hyperlink-graphviz
   // graphviz: (href, linkText) => `[href="${href}"] [label="${linkText}"]`, // This seems to replace node names.
   graphviz: (href, linkText) => `[href="${href}"]`,
