@@ -101,6 +101,16 @@ plantuml::test/fixtures/alice.puml[svg,role=sequence]
       const hash = rusha.createHash().update(`https://kroki.io/plantuml/svg/${encode(file)}`).digest('hex')
       expect(html).to.contain(`<img src=".asciidoctor/kroki/diag-${hash}.svg" alt="Diagram">`)
     }).timeout(5000)
+    it('should include the plantuml-config at the top of the diagram', () => {
+      const file = `${__dirname}/fixtures/alice.puml`
+      const config = `${__dirname}/fixtures/plantuml/base.iuml`
+      const input = `plantuml::${file}[svg,role=sequence]`
+      const registry = asciidoctor.Extensions.create()
+      asciidoctorKroki.register(registry)
+      const html = asciidoctor.convert(input, { extension_registry: registry, attributes: { 'kroki-plantuml-config': config } })
+      expect(html).to.contain('https://kroki.io/plantuml/svg/eNo9yjsOgCAMANCdUzTsXsEQNY7coUBVQqGGz_1lcn15LcXyYsUMB104uJ9SusVMoC0N_6BW7S8b-nRXGSXswlLB8QRlWsfaR2aFHD3BsoITpwyVMPED1gEjAw==')
+      expect(html).to.contain('<div class="imageblock sequence kroki-format-svg kroki">')
+    }).timeout(5000)
     it('should convert a file containing the macro form using a relative path to a diagram', () => {
       const registry = asciidoctor.Extensions.create()
       asciidoctorKroki.register(registry)
