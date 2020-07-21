@@ -52,6 +52,7 @@ module AsciidoctorExtensions
     class << self
       def process(processor, parent, attrs, diagram_type, diagram_text)
         doc = parent.document
+        diagram_text = prepend_plantuml_config(diagram_text, diagram_type, doc)
         # If "subs" attribute is specified, substitute accordingly.
         # Be careful not to specify "specialcharacters" or your diagram code won't be valid anymore!
         if (subs = attrs['subs'])
@@ -73,6 +74,14 @@ module AsciidoctorExtensions
       end
 
       private
+
+      def prepend_plantuml_config(diagram_text, diagram_type, doc)
+        if diagram_type == :plantuml && doc.attributes['kroki-plantuml-config']
+          config = File.read(doc.attributes['kroki-plantuml-config'])
+          diagram_text = config + '\n' + diagram_text
+        end
+        diagram_text
+      end
 
       def get_alt(attrs)
         if (title = attrs['title'])
