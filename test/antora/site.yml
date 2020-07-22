@@ -1,0 +1,28 @@
+runtime:
+  cache_dir: ./.cache/antora
+
+site:
+  title: Antora x Kroki
+  url: http://example.com
+  start_page: antora-kroki::index.adoc
+
+content:
+  sources:
+    - url: ./../..
+      branches: HEAD
+      start_path: test/antora/docs
+
+asciidoc:
+  extensions:
+    - ../../src/asciidoctor-kroki.js
+  attributes:
+    allow-uri-read: true
+
+ui:
+  bundle:
+    url: https://gitlab.com/antora/antora-ui-default/-/jobs/artifacts/master/raw/build/ui-bundle.zip?job=bundle-stable
+    snapshot: true
+
+output:
+  dir: ./public
+  clean: true

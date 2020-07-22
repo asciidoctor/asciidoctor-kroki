@@ -1,0 +1,7 @@
+name: antora-kroki
+title: Antora x Kroki
+version: master
+start_page: ROOT:index.adoc
+nav:
+  - modules/ROOT/nav.adoc
+

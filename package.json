@@ -8,9 +8,10 @@
     "dist"
   ],
   "scripts": {
-    "test": "npm run test:node && npm run test:browser",
+    "test": "npm run test:node && npm run test:browser && npm run test:antora",
     "test:node": "mocha test/**.spec.js",
     "test:browser": "node test/browser/run.js",
+    "test:antora": "mocha test/antora/**.spec.js",
     "lint": "standard src/**.js test/**.js",
     "lint-fix": "npm run lint -- --fix",
     "clean": "rm -rf dist/*",
@@ -25,9 +26,12 @@
     "unxhr": "1.0.4"
   },
   "devDependencies": {
+    "@antora/site-generator-default": "^2.3.3",
     "@asciidoctor/core": "^2.0.3",
     "browserify": "^16.3.0",
     "chai": "^4.2.0",
+    "chai-string": "^1.5.0",
+    "cheerio": "^1.0.0-rc.3",
     "dirty-chai": "^2.0.1",
     "libnpmpublish": "^3.0.1",
     "lodash": "^4.17.14",
