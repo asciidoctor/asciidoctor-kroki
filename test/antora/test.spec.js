@@ -22,5 +22,5 @@ describe('Antora integration', () => {
       const src = $(imageElement).attr('src')
       expect(src).to.startWith('_images/diag-')
     })
-  }).timeout(30000)
+  }).timeout(50000)
 })
