@@ -76,8 +76,8 @@ module AsciidoctorExtensions
       private
 
       def prepend_plantuml_config(diagram_text, diagram_type, doc)
-        if diagram_type == :plantuml && doc.attributes['kroki-plantuml-config']
-          config = File.read(doc.attributes['kroki-plantuml-config'])
+        if diagram_type == :plantuml && doc.attributes['kroki-plantuml-include']
+          config = File.read(doc.attributes['kroki-plantuml-include'])
           diagram_text = config + '\n' + diagram_text
         end
         diagram_text

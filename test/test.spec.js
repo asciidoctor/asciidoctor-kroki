@@ -114,7 +114,7 @@ plantuml::test/fixtures/alice.puml[svg,role=sequence]
       const input = `plantuml::${file}[svg,role=sequence]`
       const registry = asciidoctor.Extensions.create()
       asciidoctorKroki.register(registry)
-      const html = asciidoctor.convert(input, { extension_registry: registry, attributes: { 'kroki-plantuml-config': config } })
+      const html = asciidoctor.convert(input, { extension_registry: registry, attributes: { 'kroki-plantuml-include': config } })
       const diagramText = getDiagramFromHTML(html)
       expect(diagramText).to.contain('skinparam BackgroundColor black')
       expect(diagramText).to.contain('alice -> bob')

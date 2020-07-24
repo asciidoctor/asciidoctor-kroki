@@ -315,7 +315,7 @@ Consult the [Kroki documentation](https://kroki.io/#support) to find out which f
 | `kroki-server-url` | The URL of the Kroki server (see "Using Your Own Kroki") | `https://kroki.io`
 | `kroki-fetch-diagram` | Define if we should download (and save on the disk) the images from the Kroki server.<br/>This feature is not available when running in the browser. | `false`
 | `kroki-http-method` | Define how we should get the image from the Kroki server. Possible values:<br/><ul><li>`get`: always use GET requests</li><li>`post`: always use POST requests</li><li>`adaptive`: use a POST request if the URI length is longer than 4096 characters, otherwise use a GET request</li></ul> | `adaptive` |
-| `kroki-plantuml-config` | A file that will be included at the top of all PlantUML diagrams. This allows you to define a common skin for your diagrams. This can be a path or a URL. |  |
+| `kroki-plantuml-include` | A file that will be included at the top of all PlantUML diagrams as if `!include file` was used. This allows you to define a common skin for your diagrams. This can be a path or a URL. |  |
 
 ### Default configuration
 

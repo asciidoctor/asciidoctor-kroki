@@ -33,14 +33,14 @@ describe ::AsciidoctorExtensions::KrokiBlockProcessor do
 </div>
 </div>)
     end
-    it 'should include the plantuml-config file' do
+    it 'should include the plantuml-include file' do
       input = <<~'ADOC'
         [plantuml]
         ....
         alice -> bob: hello
         ....
       ADOC
-      output = Asciidoctor.convert(input, attributes: { 'env-idea' => '', 'kroki-plantuml-config' => 'spec/fixtures/config.puml' }, standalone: false)
+      output = Asciidoctor.convert(input, attributes: { 'env-idea' => '', 'kroki-plantuml-include' => 'spec/fixtures/config.puml' }, standalone: false)
       (expect output).to eql %(<div class="imageblock kroki">
 <div class="content">
 <img src="https://kroki.io/plantuml/png/eNorzs7MK0gsSsxVyM3Py0_OKMrPTVUoKSpN5YrJS8zJTE5V0LVTSMpPslLISM3JyQcArVsRHA==" alt="Diagram">
