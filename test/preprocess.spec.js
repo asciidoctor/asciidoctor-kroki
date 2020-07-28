@@ -1,90 +1,150 @@
 /* global describe it */
+
 // @ts-check
+// The previous line must be the first non-comment line in the file to enable TypeScript checks:
+// https://www.typescriptlang.org/docs/handbook/intro-to-js-ts.html#ts-check
+
 const fs = require('fs')
 const chai = require('chai')
 const expect = chai.expect
 const dirtyChai = require('dirty-chai')
 const path = require('path')
+const url = require('url')
 
 chai.use(dirtyChai)
 
-const { readFixture } = require('./utils.js')
 const { preprocessVegaLite } = require('../src/preprocess.js')
 
 describe('Vega-Lite preprocessing', () => {
+  const cwd = process.cwd().replace(/\\/g, '/')
+  const relativePath = 'test/fixtures/vegalite-data.csv'
+  const diagramTextWithInlinedCsvFile = JSON.stringify({
+    data: {
+      values: fs.readFileSync(`${__dirname}/fixtures/vegalite-data.csv`, 'utf8'),
+      format: {
+        type: 'csv'
+      }
+    }
+  })
+
+  /**
+   * @param {string} diagramText
+   * @param {string} expectedErrorMessage
+   * @param {string} [baseDir]
+   * @returns {void}
+   */
+  function expectToThrow (diagramText, expectedErrorMessage, baseDir) {
+    expect(() => preprocessVegaLite(diagramText, {}, baseDir)).to.throw(expectedErrorMessage)
+  }
+
+  /**
+   * @param {string} diagramText
+   * @param {string} expectedPreprocessedDiagramText
+   * @param {string} [baseDir]
+   * @returns {void}
+   */
+  function expectToBeEqual (diagramText, expectedPreprocessedDiagramText, baseDir) {
+    expect(preprocessVegaLite(diagramText, {}, baseDir)).to.be.equal(expectedPreprocessedDiagramText)
+  }
+
   it('should throw an error for invalid JSON', () => {
-    const errorMessage = `Preprocessing of Vega-Lite view specification failed, because of a parsing error:
+    expectToThrow('invalid JSON', `Preprocessing of Vega-Lite view specification failed, because of a parsing error:
 SyntaxError: JSON5: invalid character 'i' at 1:1
 The invalid view specification was:
-invalid JSON`
-
-    expect(() => preprocessVegaLite('invalid JSON', {})).to.throw(errorMessage)
+invalid JSON`)
   })
 
   it('should return original diagramText for valid JSON but without "data.url"', () => {
     const validJsonWithoutDataUrl = '{}'
-    expect(preprocessVegaLite(validJsonWithoutDataUrl, {})).to.be.equal(validJsonWithoutDataUrl)
+    expectToBeEqual(validJsonWithoutDataUrl, validJsonWithoutDataUrl)
   })
 
   it('should throw an error for unexisting local file referenced with relative path', () => {
-    const unexistingLocalReferencedFile = `{
+    const diagramText = `{
   "data": {
     "url": "unexisting.csv"
   }
 }`
-    const errorMessage = `Preprocessing of Vega-Lite view specification failed, because reading the referenced local file 'unexisting.csv' caused an error:
+    const errorMessage = `Preprocessing of Vega-Lite view specification failed, because reading the local data file 'unexisting.csv' referenced in the diagram caused an error:
 Error: ENOENT: no such file or directory, open 'unexisting.csv'`
-
-    expect(() => preprocessVegaLite(unexistingLocalReferencedFile, {})).to.throw(errorMessage)
+    expectToThrow(diagramText, errorMessage)
   })
 
-  it('should throw an error for unexisting local file referenced with "file://"', () => {
-    const unexistingLocalReferencedFile = `{
+  it('should throw an error for unexisting file referenced with "file" protocol', () => {
+    const unexistingFileUrl = url.pathToFileURL(cwd + '/unexisting.csv')
+    const diagramText = `{
       "data": {
-        "url": "file://unexisting.csv"
+        "url": "${unexistingFileUrl}"
       }
     }`
-    const errorMessage = `Preprocessing of Vega-Lite view specification failed, because reading the referenced local file 'file://unexisting.csv' caused an error:
-Error: ENOENT: no such file or directory, open 'unexisting.csv'`
-
-    expect(() => preprocessVegaLite(unexistingLocalReferencedFile, {})).to.throw(errorMessage)
+    const unexistingPath = url.fileURLToPath(unexistingFileUrl)
+    const errorMessage = `Preprocessing of Vega-Lite view specification failed, because reading the local data file '${unexistingFileUrl}' referenced in the diagram caused an error:
+Error: ENOENT: no such file or directory, open '${unexistingPath}'`
+    expectToThrow(diagramText, errorMessage)
   })
 
-  it('should warn and return original diagramText for unexisting remote file referenced with "data.url", because it can perhaps be found by kroki server', () => {
-    const unexistingRemoteReferencedFile = `{
+  it('should warn and return original diagramText for unexisting remote file referenced with "http" protocol, because it can perhaps be found by kroki server', () => {
+    const diagramText = `{
   "data": {
     "url": "https://raw.githubusercontent.com/Mogztter/asciidoctor-kroki/master/unexisting.csv"
   }
 }`
-    expect(preprocessVegaLite(unexistingRemoteReferencedFile, {})).to.be.equal(unexistingRemoteReferencedFile)
+    expectToBeEqual(diagramText, diagramText)
   })
 
-  it('should return diagramText with inlined local file referenced with "data.url"', () => {
-    const referencedLocalCsvFile = `{
+  it('should return diagramText with inlined local file referenced with relative path', () => {
+    const diagramText = `{
   "data": {
-    "url": "test/fixtures/vegalite-data.csv"
+    "url": "${relativePath}"
   }
 }`
-    const values = readFixture('vegalite-data.csv')
-    const inlinedLocalCsvFile = JSON.stringify({
-      data: {
-        values,
-        format: {
-          type: 'csv'
-        }
-      }
-    })
-    expect(preprocessVegaLite(referencedLocalCsvFile, {})).to.be.equal(inlinedLocalCsvFile)
+    expectToBeEqual(diagramText, diagramTextWithInlinedCsvFile)
   })
 
-  it('should return diagramText with inlined remote file referenced with "data.url"', () => {
-    const referencedRemoteCsvFile = `{
+  it('should return diagramText with inlined local file referenced with relative path and base dir', () => {
+    const diagramText = `{
   "data": {
-    "url": "https://raw.githubusercontent.com/Mogztter/asciidoctor-kroki/master/test/fixtures/vegalite-data.csv"
+    "url": "vegalite-data.csv"
   }
 }`
-    const inlinedRemoteCsvFile = String.raw`{"data":{"values":"a,b,c\n2020-01-05,0.3,C1\n2020-01-15,0.7,C1\n2020-01-05,0.5,C2\n2020-01-15,0.8,C2","format":{"type":"csv"}}}`
-    expect(preprocessVegaLite(referencedRemoteCsvFile, {})).to.be.equal(inlinedRemoteCsvFile)
+    expectToBeEqual(diagramText, diagramTextWithInlinedCsvFile, 'test/fixtures/')
+  })
+
+  it('should return diagramText with inlined local file referenced with absolute path', () => {
+    const diagramText = `{
+  "data": {
+    "url": "${cwd}/${relativePath}"
+  }
+}`
+    expectToBeEqual(diagramText, diagramTextWithInlinedCsvFile)
+  })
+
+  it('should return diagramText with inlined local file referenced with absolute path and base dir (which should not be used)', () => {
+    const diagramText = `{
+  "data": {
+    "url": "${cwd}/${relativePath}"
+  }
+}`
+    expectToBeEqual(diagramText, diagramTextWithInlinedCsvFile, 'test/fixtures/')
+  })
+
+  it('should return diagramText with inlined local file referenced with "file" protocol and absolute path', () => {
+    const fileUrl = url.pathToFileURL(cwd) + '/' + relativePath
+    const diagramText = `{
+  "data": {
+    "url": "${fileUrl}"
+  }
+}`
+    expectToBeEqual(diagramText, diagramTextWithInlinedCsvFile)
+  })
+
+  it('should return diagramText with inlined remote file referenced with "http" protocol', () => {
+    const diagramText = `{
+  "data": {
+    "url": "https://raw.githubusercontent.com/Mogztter/asciidoctor-kroki/master/${relativePath}"
+  }
+}`
+    expectToBeEqual(diagramText, diagramTextWithInlinedCsvFile)
   })
 })
 

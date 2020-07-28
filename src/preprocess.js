@@ -1,12 +1,15 @@
+// @ts-check
+// The previous line must be the first non-comment line in the file to enable TypeScript checks:
+// https://www.typescriptlang.org/docs/handbook/intro-to-js-ts.html#ts-check
 const path = require('path')
 
-// @ts-check
 /**
  * @param {string} diagramText
  * @param {any} context
+ * @param {string} baseDir
  * @returns {string}
  */
-module.exports.preprocessVegaLite = function (diagramText, context) {
+module.exports.preprocessVegaLite = function (diagramText, context, baseDir = '') {
   let diagramObject
   try {
     const JSON5 = require('json5')
@@ -26,15 +29,16 @@ ${diagramText}
   const vfs = context.vfs
   const read = typeof vfs !== 'undefined' && typeof vfs.read === 'function' ? vfs.read : require('./node-fs.js').read
   const data = diagramObject.data
+  const urlOrPath = data.url
   try {
-    data.values = read(data.url)
+    data.values = read(isLocalAndRelative(urlOrPath) ? baseDir + urlOrPath : urlOrPath)
   } catch (e) {
-    if (isRemoteUrl(data.url)) {
+    if (isRemoteUrl(urlOrPath)) {
       // Only warn and do not throw an error, because the data file can perhaps be found by kroki server (https://github.com/yuzutech/kroki/issues/60)
-      console.warn(`Skipping preprocessing of Vega-Lite view specification, because reading the referenced remote file '${data.url}' caused an error:\n${e}`)
+      console.warn(`Skipping preprocessing of Vega-Lite view specification, because reading the remote data file '${urlOrPath}' referenced in the diagram caused an error:\n${e}`)
       return diagramText
     }
-    const message = `Preprocessing of Vega-Lite view specification failed, because reading the referenced local file '${data.url}' caused an error:\n${e}`
+    const message = `Preprocessing of Vega-Lite view specification failed, because reading the local data file '${urlOrPath}' referenced in the diagram caused an error:\n${e}`
     throw addCauseToError(new Error(message), e)
   }
 
@@ -249,7 +253,7 @@ function getPlantUmlTextRegEx (text, regEx) {
 
 /**
  * @param {string} text
- * @param {int} index
+ * @param {number} index
  * @returns {string}
  */
 function getPlantUmlTextFromIndex (text, index) {
@@ -321,5 +325,24 @@ function isRemoteUrl (string) {
     return url.protocol !== 'file:'
   } catch (_) {
     return false
+  }
+}
+
+/**
+ * @param {string} string
+ * @returns {boolean}
+ */
+function isLocalAndRelative (string) {
+  if (string.startsWith('/')) {
+    return false
+  }
+
+  try {
+    // eslint-disable-next-line no-new
+    new URL(string)
+    // A URL can not be local AND relative: https://stackoverflow.com/questions/7857416/file-uri-scheme-and-relative-files
+    return false
+  } catch (_) {
+    return true
   }
 }
