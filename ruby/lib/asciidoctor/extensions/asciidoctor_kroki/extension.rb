@@ -76,8 +76,10 @@ module AsciidoctorExtensions
       private
 
       def prepend_plantuml_config(diagram_text, diagram_type, doc)
-        if diagram_type == :plantuml && doc.attributes['kroki-plantuml-include']
-          config = File.read(doc.attributes['kroki-plantuml-include'])
+        if diagram_type == :plantuml && doc.attr?('kroki-plantuml-include')
+          # TODO: this behaves different than the JS version
+          # The file should be added by !include #{plantuml_include}" once we have a preprocessor for ruby
+          config = File.read(doc.attr('kroki-plantuml-include'))
           diagram_text = config + '\n' + diagram_text
         end
         diagram_text
