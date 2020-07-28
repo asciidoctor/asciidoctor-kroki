@@ -1,4 +1,2 @@
-@startuml
 !include ./plantuml/style-general.iuml
 alice -> bob
-@enduml

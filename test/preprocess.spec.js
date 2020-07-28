@@ -98,27 +98,21 @@ describe('PlantUML preprocessing', () => {
 
   it('should return original diagramText without "!include ..."', () => {
     const diagramTextWithoutInclude = `
-    @startuml
-      alice -> bob
-    @enduml`
+      alice -> bob`
     expect(preprocessPlantUML(diagramTextWithoutInclude, {})).to.be.equal(diagramTextWithoutInclude)
   })
 
   it('should warn and return original diagramText for standard library file referenced with "!include <std-lib-file>", because it can perhaps be found by kroki server', () => {
     const diagramTextWithStdLibIncludeFile = `
-    @startuml
       !include <std/include.iuml>
-      alice -> bob
-    @enduml`
+      alice -> bob`
     expect(preprocessPlantUML(diagramTextWithStdLibIncludeFile, {})).to.be.equal(diagramTextWithStdLibIncludeFile)
   })
 
   it('should throw an error for unexisting local file referenced with "!include local-file-or-url"', () => {
     const diagramTextWithUnexistingLocalIncludeFile = `
-    @startuml
       !include ${localUnexistingFilePath}
-      alice -> bob
-    @enduml`
+      alice -> bob`
     const errorMessage = `Preprocessing of PlantUML include failed, because reading the referenced local file '${localUnexistingFilePath}' caused an error:
 Error: ENOENT: no such file or directory, open '${localUnexistingFilePath}'`
     expect(() => preprocessPlantUML(diagramTextWithUnexistingLocalIncludeFile, {})).to.throw(errorMessage)
@@ -127,41 +121,31 @@ Error: ENOENT: no such file or directory, open '${localUnexistingFilePath}'`
   it('should warn and return original diagramText for unexisting remote file referenced with "!include remote-url", because it can perhaps be found by kroki server', () => {
     const remoteUnexistingIncludeFilePath = `${remoteBasePath}${localUnexistingFilePath}`
     const diagramTextWithUnexistingRemoteIncludeFile = `
-    @startuml
       !include ${remoteUnexistingIncludeFilePath}
-      alice -> bob
-    @enduml`
+      alice -> bob`
     expect(preprocessPlantUML(diagramTextWithUnexistingRemoteIncludeFile, {})).to.be.equal(diagramTextWithUnexistingRemoteIncludeFile)
   })
 
   it('should return diagramText with inlined local file referenced with "!include local-file-or-url"', () => {
     const diagramTextWithExistingLocalIncludeFile = `
-    @startuml
       !include ${localExistingFilePath}
-      alice -> bob
-    @enduml`
+      alice -> bob`
     const includedText = fs.readFileSync(`${localExistingFilePath}`, 'utf8')
     const diagramTextWithIncludedText = `
-    @startuml
 ${includedText}
-      alice -> bob
-    @enduml`
+      alice -> bob`
     expect(preprocessPlantUML(diagramTextWithExistingLocalIncludeFile, {})).to.be.equal(diagramTextWithIncludedText)
   })
 
   it('should return diagramText with inlined local file referenced with "!include local-file-or-url" and first "@startuml ... @enduml" block', () => {
     const localExistingFileNameWithBlocksPath = 'test/fixtures/plantuml/style-general.puml'
     const diagramTextWithExistingLocalIncludeFile = `
-    @startuml
       !include ${localExistingFileNameWithBlocksPath}
-      alice -> bob
-    @enduml`
+      alice -> bob`
     const includedText = fs.readFileSync(`${localExistingFilePath}`, 'utf8')
     const diagramTextWithIncludedText = `
-    @startuml
 ${includedText}
-      alice -> bob
-    @enduml`
+      alice -> bob`
     expect(preprocessPlantUML(diagramTextWithExistingLocalIncludeFile, {})).to.be.equal(diagramTextWithIncludedText)
   })
 
@@ -169,61 +153,47 @@ ${includedText}
     const localExistingFileNameWithSpacesPath = 'test/fixtures/plantuml/style general with spaces.iuml'
     const localExistingFileNameWithSpacesPathEscaped = localExistingFileNameWithSpacesPath.replace(/ /g, '\\ ')
     const diagramTextWithExistingLocalIncludeFile = `
-    @startuml
       !include ${localExistingFileNameWithSpacesPathEscaped} # this includes general style
-      alice -> bob
-    @enduml`
+      alice -> bob`
     const includedText = fs.readFileSync(`${localExistingFileNameWithSpacesPath}`, 'utf8')
     const diagramTextWithIncludedText = `
-    @startuml
 ${includedText} # this includes general style
-      alice -> bob
-    @enduml`
+      alice -> bob`
     expect(preprocessPlantUML(diagramTextWithExistingLocalIncludeFile, {})).to.be.equal(diagramTextWithIncludedText)
   })
 
   it('should return diagramText with inlined local file(s) referenced multiple times with "!include local-file-or-url"', () => {
     const diagramTextWithExistingLocalIncludeFile = `
-    @startuml
       !include ${localExistingFilePath}
       alice -> bob
-      !include ${localExistingFilePath}
-    @enduml`
+      !include ${localExistingFilePath}`
     const includedText = fs.readFileSync(`${localExistingFilePath}`, 'utf8')
     const diagramTextWithIncludedText = `
-    @startuml
 ${includedText}
       alice -> bob
-${includedText}
-    @enduml`
+${includedText}`
     expect(preprocessPlantUML(diagramTextWithExistingLocalIncludeFile, {})).to.be.equal(diagramTextWithIncludedText)
   })
 
   it('should return diagramText with inlined local file(s) referenced multiple times with "!include_many local-file-or-url"', () => {
     const diagramTextWithExistingLocalIncludeFile = `
-    @startuml
       !include_many ${localExistingFilePath}
       alice -> bob
-      !include_many ${localExistingFilePath}
-    @enduml`
+      !include_many ${localExistingFilePath}`
     const includedText = fs.readFileSync(`${localExistingFilePath}`, 'utf8')
     const diagramTextWithIncludedText = `
-    @startuml
 ${includedText}
       alice -> bob
-${includedText}
-    @enduml`
+${includedText}`
     expect(preprocessPlantUML(diagramTextWithExistingLocalIncludeFile, {})).to.be.equal(diagramTextWithIncludedText)
   })
 
   it('should throw an error for local file(s) referenced multiple times with "!include_once local-file-or-url"', () => {
     const localExistingFilePathNormalized = path.normalize(localExistingFilePath)
     const diagramTextWithExistingLocalIncludeOneFile = `
-    @startuml
       !include_once ${localExistingFilePath}
       alice -> bob
-      !include_once ${localExistingFilePath}
-    @enduml`
+      !include_once ${localExistingFilePath}`
     const errorMessage = `Preprocessing of PlantUML include failed, because including multiple times referenced file '${localExistingFilePathNormalized}' with '!include_once' guard`
     expect(() => preprocessPlantUML(diagramTextWithExistingLocalIncludeOneFile, {})).to.throw(errorMessage)
   })
@@ -232,69 +202,55 @@ ${includedText}
     const localExistingFileNameIncldudeOncePath = 'test/fixtures/plantuml/style-include-once-style-general.iuml'
     const localExistingFilePathNormalized = path.normalize(localExistingFilePath)
     const diagramTextWithExistingLocalIncludeOneFile = `
-    @startuml
       !include_once ${localExistingFilePath}
       alice -> bob
-      !include ${localExistingFileNameIncldudeOncePath}
-    @enduml`
+      !include ${localExistingFileNameIncldudeOncePath}`
     const errorMessage = `Preprocessing of PlantUML include failed, because including multiple times referenced file '${localExistingFilePathNormalized}' with '!include_once' guard`
     expect(() => preprocessPlantUML(diagramTextWithExistingLocalIncludeOneFile, {})).to.throw(errorMessage)
   })
 
   it('should return diagramText with inlined local file(s) referenced multiple times with "!include_once local-file-or-url ... !include local-file-or-url"', () => {
     const diagramTextWithExistingLocalIncludeFile = `
-    @startuml
       !include_once ${localExistingFilePath}
       alice -> bob
-      !include ${localExistingFilePath}
-    @enduml`
+      !include ${localExistingFilePath}`
     const includedText = fs.readFileSync(`${localExistingFilePath}`, 'utf8')
     const diagramTextWithIncludedText = `
-    @startuml
 ${includedText}
       alice -> bob
-${includedText}
-    @enduml`
+${includedText}`
     expect(preprocessPlantUML(diagramTextWithExistingLocalIncludeFile, {})).to.be.equal(diagramTextWithIncludedText)
   })
 
   it('should return diagramText while preserving inline and block comments"', () => {
     const diagramTextWithExistingLocalIncludeFile = `
-    @startuml
       '!include ${localExistingFilePath}' the whole line is preserved
       !include ${localExistingFilePath}
       /'
         !include ${localExistingFilePath}
         the whole block is preserved
-      '/ alice -> bob /' this also should be preserved '/
-    @enduml`
+      '/ alice -> bob /' this also should be preserved '/`
     const includedText = fs.readFileSync(`${localExistingFilePath}`, 'utf8')
     const diagramTextWithIncludedText = `
-    @startuml
       '!include ${localExistingFilePath}' the whole line is preserved
 ${includedText}
       /'
         !include ${localExistingFilePath}
         the whole block is preserved
-      '/ alice -> bob /' this also should be preserved '/
-    @enduml`
+      '/ alice -> bob /' this also should be preserved '/`
     expect(preprocessPlantUML(diagramTextWithExistingLocalIncludeFile, {})).to.be.equal(diagramTextWithIncludedText)
   })
 
   it('should return diagramText while preserving trailing block comment"', () => {
     const diagramTextWithExistingLocalIncludeFile = `
-    @startuml
       !include ${localExistingFilePath} /'
       this is a trailing block comment
-      '/
-    @enduml`
+      '/`
     const includedText = fs.readFileSync(`${localExistingFilePath}`, 'utf8')
     const diagramTextWithIncludedText = `
-    @startuml
 ${includedText} /'
       this is a trailing block comment
-      '/
-    @enduml`
+      '/`
     expect(preprocessPlantUML(diagramTextWithExistingLocalIncludeFile, {})).to.be.equal(diagramTextWithIncludedText)
   })
 
@@ -302,48 +258,36 @@ ${includedText} /'
     const localExistingFileNameWithSpacesPath = 'test/fixtures/plantuml/style general with spaces.iuml'
     const localExistingFileNameWithSpacesPathEscaped = localExistingFileNameWithSpacesPath.replace(/ /g, '\\ ')
     const diagramTextWithExistingLocalIncludeFile = `
-    @startuml
       !include ${localExistingFileNameWithSpacesPathEscaped}
-      alice -> bob
-    @enduml`
+      alice -> bob`
     const includedText = fs.readFileSync(`${localExistingFileNameWithSpacesPath}`, 'utf8')
     const diagramTextWithIncludedText = `
-    @startuml
 ${includedText}
-      alice -> bob
-    @enduml`
+      alice -> bob`
     expect(preprocessPlantUML(diagramTextWithExistingLocalIncludeFile, {})).to.be.equal(diagramTextWithIncludedText)
   })
 
   it('should return diagramText with inlined remote file referenced with "!include remote-url"', () => {
     const remoteIncludeFilePath = `${remoteBasePath}${localExistingFilePath}`
     const diagramTextWithExistingRemoteIncludeFile = `
-    @startuml
       !include ${remoteIncludeFilePath}
-      alice -> bob
-    @enduml`.replace(/\r\n/g, '\n')
+      alice -> bob`.replace(/\r\n/g, '\n')
     const includedText = fs.readFileSync(`${localExistingFilePath}`, 'utf8').replace(/\r\n/g, '\n')
     const diagramTextWithIncludedText = `
-    @startuml
 ${includedText}
-      alice -> bob
-    @enduml`
+      alice -> bob`
     expect(preprocessPlantUML(diagramTextWithExistingRemoteIncludeFile, {})).to.be.equal(diagramTextWithIncludedText)
   })
 
   it('should return diagramText with inlined remote file referenced with "!includeurl remote-url"', () => {
     const remoteIncludeFilePath = `${remoteBasePath}${localExistingFilePath}`
     const diagramTextWithExistingRemoteIncludeFile = `
-    @startuml
       !includeurl ${remoteIncludeFilePath}
-      alice -> bob
-    @enduml`.replace(/\r\n/g, '\n')
+      alice -> bob`.replace(/\r\n/g, '\n')
     const includedText = fs.readFileSync(`${localExistingFilePath}`, 'utf8').replace(/\r\n/g, '\n')
     const diagramTextWithIncludedText = `
-    @startuml
 ${includedText}
-      alice -> bob
-    @enduml`
+      alice -> bob`
     expect(preprocessPlantUML(diagramTextWithExistingRemoteIncludeFile, {})).to.be.equal(diagramTextWithIncludedText)
   })
 
@@ -351,22 +295,18 @@ ${includedText}
     const localExistingFilePath1 = 'test/fixtures/plantuml/style-note.iuml'
     const localExistingFilePath2 = 'test/fixtures/plantuml/style-sequence.iuml'
     const diagramTextWithExistingLocalIncludeFiles = `
-    @startuml
       !include ${localExistingFilePath}
       !include ${localExistingFilePath1}
       !include ${localExistingFilePath2}
-      alice -> bob
-    @enduml`
+      alice -> bob`
     const includedText = fs.readFileSync(`${localExistingFilePath}`, 'utf8')
     const includedText1 = fs.readFileSync(`${localExistingFilePath1}`, 'utf8')
     const includedText2 = fs.readFileSync(`${localExistingFilePath2}`, 'utf8')
     const diagramTextWithIncludedText = `
-    @startuml
 ${includedText}
 ${includedText1}
 ${includedText2}
-      alice -> bob
-    @enduml`
+      alice -> bob`
     expect(preprocessPlantUML(diagramTextWithExistingLocalIncludeFiles, {})).to.be.equal(diagramTextWithIncludedText)
   })
 
@@ -375,20 +315,16 @@ ${includedText2}
     const localExistingFilePath1 = 'test/fixtures/plantuml/style-note.iuml'
     const localExistingFilePath2 = 'test/fixtures/plantuml/style-sequence.iuml'
     const diagramTextWithExistingRecursiveLocalIncludeFile = `
-    @startuml
       !include ${localExistingFilePath0}
-      alice -> bob
-    @enduml`
+      alice -> bob`
     const includedText = fs.readFileSync(`${localExistingFilePath}`, 'utf8')
     const includedText1 = fs.readFileSync(`${localExistingFilePath1}`, 'utf8')
     const includedText2 = fs.readFileSync(`${localExistingFilePath2}`, 'utf8')
     const diagramTextWithIncludedText = `
-    @startuml
 ${includedText}
 ${includedText1}
 ${includedText2}
-      alice -> bob
-    @enduml`
+      alice -> bob`
     expect(preprocessPlantUML(diagramTextWithExistingRecursiveLocalIncludeFile, {})).to.be.equal(diagramTextWithIncludedText)
   })
 
@@ -399,20 +335,16 @@ ${includedText2}
     const localExistingFilePath1 = 'test/fixtures/plantuml/style-note.iuml'
     const localExistingFilePath2 = 'test/fixtures/plantuml/style-sequence.iuml'
     const diagramTextWithExistingRecursiveLocalIncludeFile = `
-    @startuml
       !include ${localExistingFilePath0WithSpacesEscaped}
-      alice -> bob
-    @enduml`
+      alice -> bob`
     const includedText = fs.readFileSync(`${localExistingFileNameWithSpacesPath}`, 'utf8')
     const includedText1 = fs.readFileSync(`${localExistingFilePath1}`, 'utf8')
     const includedText2 = fs.readFileSync(`${localExistingFilePath2}`, 'utf8')
     const diagramTextWithIncludedText = `
-    @startuml
 ${includedText}
 ${includedText1}
 ${includedText2}
-      alice -> bob
-    @enduml`
+      alice -> bob`
     expect(preprocessPlantUML(diagramTextWithExistingRecursiveLocalIncludeFile, {})).to.be.equal(diagramTextWithIncludedText)
   })
 
@@ -420,10 +352,8 @@ ${includedText2}
     const localExistingFileIncludesItselfPath = 'test/fixtures/plantuml/file-include-itself.iuml'
     const localExistingFileIncludesItselfPathNormalized = path.normalize(localExistingFileIncludesItselfPath)
     const diagramTextWithIncludeItself = `
-    @startuml
       !include ${localExistingFileIncludesItselfPath}
-      alice -> bob
-    @enduml`
+      alice -> bob`
     const errorMessage = `Preprocessing of PlantUML include failed, because recursive reading already included referenced file '${localExistingFileIncludesItselfPathNormalized}'`
     expect(() => preprocessPlantUML(diagramTextWithIncludeItself, {})).to.throw(errorMessage)
   })
@@ -433,10 +363,8 @@ ${includedText2}
     const localExistingFileGrandParentPath = 'test/fixtures/plantuml/' + localExistingFileGrandParentName
     const localExistingFileGrandParentPathNormalized = path.normalize(localExistingFileGrandParentPath)
     const diagramTextWithIncludeGrandParent = `
-    @startuml
       !include ${localExistingFileGrandParentPath}
-      alice -> bob
-    @enduml`
+      alice -> bob`
     const errorMessage = `Preprocessing of PlantUML include failed, because recursive reading already included referenced file '${localExistingFileGrandParentPathNormalized}'`
     expect(() => preprocessPlantUML(diagramTextWithIncludeGrandParent, {})).to.throw(errorMessage)
   })
@@ -444,18 +372,14 @@ ${includedText2}
   it('should return diagramText with inlined local file referenced with "!includesub local-file!sub-name"', () => {
     const localExistingFilePathWithSubs = 'test/fixtures/plantuml/file-with-subs.puml!BASIC'
     const diagramTextWithExistingIncludeFileWithSubs = `
-    @startuml
       !includesub ${localExistingFilePathWithSubs}
-      alice -> bob
-    @enduml`
+      alice -> bob`
     const diagramTextWithIncludedText = `
-    @startuml
 B -> B : stuff2
 B -> B : stuff2.1
 D -> D : stuff4
 D -> D : stuff4.1
-      alice -> bob
-    @enduml`
+      alice -> bob`
     expect(preprocessPlantUML(diagramTextWithExistingIncludeFileWithSubs, {}).replace(/\r\n/g, '\n')).to.be.equal(diagramTextWithIncludedText)
   })
 
@@ -463,19 +387,15 @@ D -> D : stuff4.1
     const localExistingFilePathWithID1 = 'test/fixtures/plantuml/file-with-id.puml!MY_OWN_ID1'
     const localExistingFilePathWithID2 = 'test/fixtures/plantuml/file-with-id.puml!MY_OWN_ID2'
     const diagramTextWithExistingIncludeFileWithID = `
-    @startuml
       !include ${localExistingFilePathWithID1}
       !include ${localExistingFilePathWithID2}
-      alice -> bob
-    @enduml`
+      alice -> bob`
     const diagramTextWithIncludedText = `
-    @startuml
 A -> A : stuff1
 B -> B : stuff2
 C -> C : stuff3
 D -> D : stuff4
-      alice -> bob
-    @enduml`
+      alice -> bob`
     expect(preprocessPlantUML(diagramTextWithExistingIncludeFileWithID, {}).replace(/\r\n/g, '\n')).to.be.equal(diagramTextWithIncludedText)
   })
 
@@ -483,35 +403,27 @@ D -> D : stuff4
     const localExistingFilePathWithIndex0 = 'test/fixtures/plantuml/file-with-index.puml!0'
     const localExistingFilePathWithIndex1 = 'test/fixtures/plantuml/file-with-index.puml!1'
     const diagramTextWithExistingIncludeFileWithIndex = `
-    @startuml
       !include ${localExistingFilePathWithIndex0}
       !include ${localExistingFilePathWithIndex1}
-      alice -> bob
-    @enduml`
+      alice -> bob`
     const diagramTextWithIncludedText = `
-    @startuml
 A -> A : stuff1
 B -> B : stuff2
 C -> C : stuff3
 D -> D : stuff4
-      alice -> bob
-    @enduml`
+      alice -> bob`
     expect(preprocessPlantUML(diagramTextWithExistingIncludeFileWithIndex, {}).replace(/\r\n/g, '\n')).to.be.equal(diagramTextWithIncludedText)
   })
 
   it('should resolve include path relative to the included file', () => {
     const diagramTextWithExistingIncludeFileWithIndex = `
-    @startuml
       !include test/fixtures/plantuml/dir/subdir/handwritten.iuml
-      alice -> bob
-    @enduml`
+      alice -> bob`
     const diagramTextWithIncludedText = `
-    @startuml
 skinparam Handwritten true
 skinparam DefaultFontName "Neucha"
 skinparam BackgroundColor black
-      alice -> bob
-    @enduml`
+      alice -> bob`
     expect(preprocessPlantUML(diagramTextWithExistingIncludeFileWithIndex, {})
       .replace(/\r\n/g, '\n'))
       .to.be.equal(diagramTextWithIncludedText)
@@ -519,19 +431,33 @@ skinparam BackgroundColor black
 
   it('should include a PlantUML file from an absolute path', () => {
     const diagramTextWithExistingIncludeFileWithIndex = `
-    @startuml
       !include ${__dirname}/fixtures/plantuml/dir/subdir/handwritten.iuml
-      alice -> bob
-    @enduml`
+      alice -> bob`
     const diagramTextWithIncludedText = `
-    @startuml
 skinparam Handwritten true
 skinparam DefaultFontName "Neucha"
 skinparam BackgroundColor black
-      alice -> bob
-    @enduml`
+      alice -> bob`
     expect(preprocessPlantUML(diagramTextWithExistingIncludeFileWithIndex, {})
       .replace(/\r\n/g, '\n'))
       .to.be.equal(diagramTextWithIncludedText)
+  })
+
+  it('should remove all PlantUml tags', () => {
+    const diagramTextWithTags = `
+      @startuml
+      alice -> bob
+      @enduml
+
+      @startuml(id="another diagram")
+      here -> there
+      @enduml`
+
+    const result = preprocessPlantUML(diagramTextWithTags, {})
+    expect(result).to.not.contain('@startuml')
+    expect(result).to.not.contain('@enduml')
+    expect(result.trim()).to.be.eq(`alice -> bob
+      here -> there`
+    )
   })
 })

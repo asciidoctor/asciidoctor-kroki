@@ -56,6 +56,24 @@ ${diagramText}
 }
 
 /**
+ * Removes all plantuml tags (@startuml/@enduml) from the diagram
+ * It's possible to have more than one diagram in a single file in the cli version of plantuml
+ * This does not work for the server, so recent plantuml versions remove the tags before processing the diagram
+ * We don't want to rely on the server to handle this, so we remove the tags in here before sending the diagram to the server
+ *
+ * Some diagrams have special tags (ie. @startmindmap for mindmap) - these are mandatory, so we can't do much about them...
+ *
+ * @param diagramText
+ * @returns {string} diagramText without any plantuml tags
+ */
+function removePlantUmlTags (diagramText) {
+  if (diagramText) {
+    diagramText = diagramText.replace(/^\s*@(startuml|enduml).*\n?/gm, '')
+  }
+  return diagramText
+}
+
+/**
  * @param {string} diagramText
  * @param {any} context
  * @param {string} baseDir - base directory
@@ -64,7 +82,8 @@ ${diagramText}
 module.exports.preprocessPlantUML = function (diagramText, context, baseDir = '.') {
   const includeOnce = []
   const includeStack = []
-  return preprocessPlantUmlIncludes(diagramText, baseDir, includeOnce, includeStack, context.vfs)
+  diagramText = preprocessPlantUmlIncludes(diagramText, baseDir, includeOnce, includeStack, context.vfs)
+  return removePlantUmlTags(diagramText)
 }
 
 /**
