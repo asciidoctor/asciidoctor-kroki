@@ -124,5 +124,5 @@ alice -> bob
     }
   })
 })().catch(err => {
-  console.error('Unable to start the browser tests suite: ' + err)
+  console.error('Unable to start the browser tests suite', err)
 })
