@@ -51,6 +51,13 @@ describe('Conversion', () => {
       .replace(/\//g, '_')
   }
 
+  function getDiagramFromHTML (html) {
+    const diagrams = html.match(/(?<="https:\/\/kroki\.io\/plantuml\/svg\/)[^"]+/g)
+    if (diagrams) {
+      return pako.inflate(Buffer.from(diagrams[0], 'base64'), { to: 'string' })
+    }
+  }
+
   describe('When extension is registered', () => {
     it('should convert a diagram to an image', () => {
       const input = `
@@ -100,6 +107,18 @@ plantuml::test/fixtures/alice.puml[svg,role=sequence]
       const file = `${__dirname}/fixtures/alice.puml`
       const hash = rusha.createHash().update(`https://kroki.io/plantuml/svg/${encode(file)}`).digest('hex')
       expect(html).to.contain(`<img src=".asciidoctor/kroki/diag-${hash}.svg" alt="Diagram">`)
+    }).timeout(5000)
+    it('should include the plantuml-config at the top of the diagram', () => {
+      const file = `${__dirname}/fixtures/alice.puml`
+      const config = `${__dirname}/fixtures/plantuml/base.iuml`
+      const input = `plantuml::${file}[svg,role=sequence]`
+      const registry = asciidoctor.Extensions.create()
+      asciidoctorKroki.register(registry)
+      const html = asciidoctor.convert(input, { extension_registry: registry, attributes: { 'kroki-plantuml-include': config } })
+      const diagramText = getDiagramFromHTML(html)
+      expect(diagramText).to.contain('skinparam BackgroundColor black')
+      expect(diagramText).to.contain('alice -> bob')
+      expect(html).to.contain('<div class="imageblock sequence kroki-format-svg kroki">')
     }).timeout(5000)
     it('should convert a file containing the macro form using a relative path to a diagram', () => {
       const registry = asciidoctor.Extensions.create()
