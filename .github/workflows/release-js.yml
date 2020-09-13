@@ -20,37 +20,7 @@ jobs:
         run: |
           npm run lint
           npm t
-
-  publish-ruby:
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-ruby@v1
-        with:
-          ruby-version: '2.6'
-      - name: Install and test
-        run: |
-          bundle install
-          bundle exec rake
-        working-directory: ./ruby  
-      - name: Configure credentials
-        run: |
-          mkdir -p $HOME/.gem
-          touch $HOME/.gem/credentials
-          chmod 0600 $HOME/.gem/credentials
-          printf -- "---\n:rubygems_api_key: ${RUBYGEMS_API_KEY}" > $HOME/.gem/credentials
-        env:
-          RUBYGEMS_API_KEY: ${{ secrets.RUBYGEMS_API_KEY }}
-      - name: Build gem
-        run: |
-          bundle exec rake build
-        working-directory: ./ruby
-      - name: Publish to rubygems.org
-        run: |
-          gem push pkg/asciidoctor-kroki-${GITHUB_REF#refs/tags/v}.gem
-        working-directory: ./ruby
-  publish-js:
+  publish:
     needs: build
     runs-on: ubuntu-latest
     steps:
