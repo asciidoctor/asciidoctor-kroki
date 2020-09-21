@@ -195,8 +195,9 @@ function readPlantUmlInclude (url, dirPath, includeStack, vfs) {
         try {
           text = read(filePath)
         } catch (e) {
-          const message = `Preprocessing of PlantUML include failed, because reading the referenced local file '${filePath}' caused an error:\n${e}`
-          throw addCauseToError(new Error(message), e)
+          // Only warn and do not throw an error, because the data file can perhaps be found by kroki server
+          console.warn(`Skipping preprocessing of PlantUML include, because reading the referenced local file '${filePath}' caused an error:\n${e}`)
+          skip = true
         }
       }
     }

@@ -109,13 +109,11 @@ describe('PlantUML preprocessing', () => {
     expect(preprocessPlantUML(diagramTextWithStdLibIncludeFile, {})).to.be.equal(diagramTextWithStdLibIncludeFile)
   })
 
-  it('should throw an error for unexisting local file referenced with "!include local-file-or-url"', () => {
+  it('should warn and return original diagramText for unexisting local file referenced with "!include local-file-or-url", because it can perhaps be found by kroki server', () => {
     const diagramTextWithUnexistingLocalIncludeFile = `
       !include ${localUnexistingFilePath}
       alice -> bob`
-    const errorMessage = `Preprocessing of PlantUML include failed, because reading the referenced local file '${localUnexistingFilePath}' caused an error:
-Error: ENOENT: no such file or directory, open '${localUnexistingFilePath}'`
-    expect(() => preprocessPlantUML(diagramTextWithUnexistingLocalIncludeFile, {})).to.throw(errorMessage)
+    expect(preprocessPlantUML(diagramTextWithUnexistingLocalIncludeFile, {})).to.be.equal(diagramTextWithUnexistingLocalIncludeFile)
   })
 
   it('should warn and return original diagramText for unexisting remote file referenced with "!include remote-url", because it can perhaps be found by kroki server', () => {
