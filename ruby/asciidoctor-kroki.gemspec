@@ -2,7 +2,7 @@
 
 Gem::Specification.new do |s|
   s.name = 'asciidoctor-kroki'
-  s.version = '0.1.1'
+  s.version = '0.1.2'
   s.summary = 'Asciidoctor extension to convert diagrams to images using Kroki'
   s.description = 'An extension for Asciidoctor to convert diagrams to images using https://kroki.io'
 
