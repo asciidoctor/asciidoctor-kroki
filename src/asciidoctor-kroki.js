@@ -154,6 +154,7 @@ function diagramBlockMacro (name, context) {
   return function () {
     const self = this
     self.named(name)
+    self.positionalAttributes(['format'])
     self.process((parent, target, attrs) => {
       let vfs = context.vfs
       target = parent.applySubstitutions(target, ['attributes'])
