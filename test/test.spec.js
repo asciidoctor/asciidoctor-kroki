@@ -96,7 +96,7 @@ alice -> bob
       const input = `
 :imagesdir: .asciidoctor/kroki
 
-plantuml::test/fixtures/alice.puml[svg,role=sequence]
+plantuml::test/fixtures/alice.puml[png,role=sequence]
 `
       const registry = asciidoctor.Extensions.create()
       asciidoctorKroki.register(registry)
@@ -105,8 +105,8 @@ plantuml::test/fixtures/alice.puml[svg,role=sequence]
         attributes: { 'kroki-fetch-diagram': true }
       })
       const file = `${__dirname}/fixtures/alice.puml`
-      const hash = rusha.createHash().update(`https://kroki.io/plantuml/svg/${encode(file)}`).digest('hex')
-      expect(html).to.contain(`<img src=".asciidoctor/kroki/diag-${hash}.svg" alt="Diagram">`)
+      const hash = rusha.createHash().update(`https://kroki.io/plantuml/png/${encode(file)}`).digest('hex')
+      expect(html).to.contain(`<img src=".asciidoctor/kroki/diag-${hash}.png" alt="Diagram">`)
     }).timeout(5000)
     it('should include the plantuml-config at the top of the diagram', () => {
       const file = `${__dirname}/fixtures/alice.puml`
