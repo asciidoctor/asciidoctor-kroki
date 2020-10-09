@@ -2,6 +2,7 @@
 
 [![Build status](https://github.com/Mogztter/asciidoctor-kroki/workflows/Build/badge.svg)](https://github.com/Mogztter/asciidoctor-kroki/actions?query=workflow%3ABuild+branch%3Amaster)
 [![npm version](http://img.shields.io/npm/v/asciidoctor-kroki.svg)](https://www.npmjs.com/package/asciidoctor-kroki)
+[![Gem version](https://img.shields.io/gem/v/asciidoctor-kroki)](https://rubygems.org/gems/asciidoctor-kroki)
 [![Gitter](https://img.shields.io/gitter/room/kroki-project/community)](https://gitter.im/kroki-project/community)
 
 An extension for [Asciidoctor.js](https://github.com/asciidoctor/asciidoctor.js) to convert diagrams to images using [Kroki](https://kroki.io)!
