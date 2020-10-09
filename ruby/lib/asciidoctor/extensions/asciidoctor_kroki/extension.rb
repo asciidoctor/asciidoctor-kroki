@@ -46,6 +46,33 @@ module AsciidoctorExtensions
     end
   end
 
+  # Kroki API
+  #
+  module Kroki
+    SUPPORTED_DIAGRAM_NAMES = %w[
+      plantuml
+      ditaa
+      graphviz
+      blockdiag
+      seqdiag
+      actdiag
+      nwdiag
+      packetdiag
+      rackdiag
+      c4plantuml
+      erd
+      mermaid
+      nomnoml
+      svgbob
+      umlet
+      vega
+      vegalite
+      wavedrom
+      bytefield
+      bpmn
+    ].freeze
+  end
+
   # Internal processor
   #
   class KrokiProcessor
@@ -181,7 +208,7 @@ module AsciidoctorExtensions
     end
 
     def get_diagram_uri(server_url)
-      "#{server_url}/#{@type}/#{@format}/#{encode}"
+      _join_uri_segments(server_url, @type, @format, encode)
     end
 
     def encode
@@ -208,6 +235,21 @@ module AsciidoctorExtensions
         File.write(file_path, contents)
       end
       diagram_name
+    end
+
+    private
+
+    def _join_uri_segments(base, *uris)
+      segments = []
+      # remove trailing slashes
+      segments.push(base.gsub(%r{[/]+$}, ''))
+      segments.concat(uris.map do |uri|
+        # remove leading and trailing slashes
+        uri.to_s
+          .gsub(%r{^[/]+}, '')
+          .gsub(%r{[/]+$}, '')
+      end)
+      segments.join('/')
     end
   end
 
