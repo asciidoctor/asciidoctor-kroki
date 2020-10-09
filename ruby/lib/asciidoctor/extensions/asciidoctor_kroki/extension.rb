@@ -276,7 +276,7 @@ module AsciidoctorExtensions
 
     class << self
       def get(uri, _)
-        ::OpenURI.open_uri(uri, &:read)
+        ::OpenURI.open_uri(uri, 'r', &:read)
       end
 
       def post(uri, data, _)
