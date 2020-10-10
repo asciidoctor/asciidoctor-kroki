@@ -1,10 +1,6 @@
 # frozen_string_literal: true
 
 require 'asciidoctor/extensions' unless RUBY_ENGINE == 'opal'
-require 'stringio'
-require 'zlib'
-require 'digest'
-require 'fileutils'
 
 # Asciidoctor extensions
 #
@@ -72,7 +68,7 @@ module AsciidoctorExtensions
         attrs['role'] = get_role(format, role)
         attrs['format'] = format
         kroki_diagram = KrokiDiagram.new(diagram_type, format, diagram_text)
-        kroki_client = KrokiClient.new(doc, KrokiHttpClient)
+        kroki_client = KrokiClient.new(server_url(doc), http_method(doc), KrokiHttpClient)
         if TEXT_FORMATS.include?(format)
           text_content = kroki_client.text_content(kroki_diagram)
           block = processor.create_block(parent, 'literal', text_content, attrs)
@@ -134,14 +130,35 @@ module AsciidoctorExtensions
 
       def create_image_src(doc, kroki_diagram, kroki_client)
         if doc.attr('kroki-fetch-diagram')
-          kroki_diagram.save(doc, kroki_client)
+          kroki_diagram.save(output_dir_path(doc), kroki_client)
         else
           kroki_diagram.get_diagram_uri(server_url(doc))
         end
       end
 
       def server_url(doc)
-        doc.attr('kroki-server-url') || 'https://kroki.io'
+        doc.attr('kroki-server-url', 'https://kroki.io')
+      end
+
+      def http_method(doc)
+        doc.attr('kroki-http-method', 'adaptive').downcase
+      end
+
+      def output_dir_path(doc)
+        images_output_dir = doc.attr('imagesoutdir')
+        out_dir = doc.attr('outdir')
+        to_dir = doc.attr('to_dir')
+        base_dir = doc.base_dir
+        images_dir = doc.attr('imagesdir', '')
+        if images_output_dir
+          images_output_dir
+        elsif out_dir
+          File.join(out_dir, images_dir)
+        elsif to_dir
+          File.join(to_dir, images_dir)
+        else
+          File.join(base_dir, images_dir)
+        end
       end
     end
   end
@@ -149,6 +166,10 @@ module AsciidoctorExtensions
   # Kroki diagram
   #
   class KrokiDiagram
+    require 'fileutils'
+    require 'zlib'
+    require 'digest'
+
     attr_reader :type
     attr_reader :text
     attr_reader :format
@@ -167,11 +188,10 @@ module AsciidoctorExtensions
       Base64.urlsafe_encode64(Zlib::Deflate.deflate(@text, 9))
     end
 
-    def save(doc, kroki_client)
-      dir_path = dir_path(doc)
+    def save(output_dir_path, kroki_client)
       diagram_url = get_diagram_uri(kroki_client.server_url)
       diagram_name = "diag-#{Digest::SHA256.hexdigest diagram_url}.#{@format}"
-      file_path = File.join(dir_path, diagram_name)
+      file_path = File.join(output_dir_path, diagram_name)
       encoding = if @format == 'txt' || @format == 'atxt' || @format == 'utxt'
                    'utf8'
                  elsif @format == 'svg'
@@ -180,8 +200,8 @@ module AsciidoctorExtensions
                    'binary'
                  end
       # file is either (already) on the file system or we should read it from Kroki
-      contents = File.exist?(file_path) ? read(file_path) : kroki_client.get_image(self, encoding)
-      FileUtils.mkdir_p(dir_path)
+      contents = File.exist?(file_path) ? File.open(file_path, &:read) : kroki_client.get_image(self, encoding)
+      FileUtils.mkdir_p(output_dir_path)
       if encoding == 'binary'
         File.binwrite(file_path, contents)
       else
@@ -189,50 +209,27 @@ module AsciidoctorExtensions
       end
       diagram_name
     end
-
-    def read(target)
-      if target.start_with?('http://') || target.start_with?('https://')
-        require 'open-uri'
-        URI.open(target, &:read)
-      else
-        File.open(target, &:read)
-      end
-    end
-
-    def dir_path(doc)
-      images_output_dir = doc.attr('imagesoutdir')
-      out_dir = doc.attr('outdir')
-      to_dir = doc.attr('to_dir')
-      base_dir = doc.base_dir
-      images_dir = doc.attr('imagesdir', '')
-      if images_output_dir
-        images_output_dir
-      elsif out_dir
-        File.join(out_dir, images_dir)
-      elsif to_dir
-        File.join(to_dir, images_dir)
-      else
-        File.join(base_dir, images_dir)
-      end
-    end
   end
 
   # Kroki client
   #
   class KrokiClient
+    attr_reader :server_url
+    attr_reader :method
+
     SUPPORTED_HTTP_METHODS = %w[get post adaptive].freeze
 
-    def initialize(doc, http_client)
+    def initialize(server_url, http_method, http_client)
+      @server_url = server_url
       @max_uri_length = 4096
       @http_client = http_client
-      method = doc.attr('kroki-http-method', 'adaptive').downcase
+      method = (http_method || 'adaptive').downcase
       if SUPPORTED_HTTP_METHODS.include?(method)
         @method = method
       else
         puts "Invalid value '#{method}' for kroki-http-method attribute. The value must be either: 'get', 'post' or 'adaptive'. Proceeding using: 'adaptive'."
         @method = 'adaptive'
       end
-      @doc = doc
     end
 
     def text_content(kroki_diagram)
@@ -252,18 +249,14 @@ module AsciidoctorExtensions
             # Consider using the attribute kroki-http-method with the value 'adaptive'.
             @http_client.get(uri, encoding)
           else
-            @http_client.post("#{server_url}/#{type}/#{format}", text, encoding)
+            @http_client.post("#{@server_url}/#{type}/#{format}", text, encoding)
           end
         else
           @http_client.get(uri, encoding)
         end
       else
-        @http_client.post("#{server_url}/#{type}/#{format}", text, encoding)
+        @http_client.post("#{@server_url}/#{type}/#{format}", text, encoding)
       end
-    end
-
-    def server_url
-      @doc.attr('kroki-server-url', 'https://kroki.io')
     end
   end
 

@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'rspec_helper'
 require 'asciidoctor'
 require_relative '../lib/asciidoctor/extensions/asciidoctor_kroki'
 
@@ -53,16 +54,12 @@ describe ::AsciidoctorExtensions::KrokiBlockProcessor do
 
         plantuml::spec/fixtures/alice.puml[svg,role=sequence]
       ADOC
-      begin
-        output = Asciidoctor.convert(input, attributes: { 'kroki-fetch-diagram' => '' }, standalone: false)
-        (expect output).to eql %(<div class="imageblock sequence kroki-format-svg kroki">
+      output = Asciidoctor.convert(input, attributes: { 'kroki-fetch-diagram' => '' }, standalone: false)
+      (expect output).to eql %(<div class="imageblock sequence kroki-format-svg kroki">
 <div class="content">
 <img src=".asciidoctor/kroki/diag-f6acdc206506b6ca7badd3fe722f252af992871426e580c8361ff4d47c2c7d9b.svg" alt="Diagram">
 </div>
 </div>)
-      ensure
-        FileUtils.rm(Dir.glob("#{__dir__}/../.asciidoctor/kroki/diag-*"))
-      end
     end
     it 'should create PNG diagram in imagesdir if kroki-fetch-diagram is set' do
       input = <<~'ADOC'
@@ -70,16 +67,12 @@ describe ::AsciidoctorExtensions::KrokiBlockProcessor do
 
         plantuml::spec/fixtures/alice.puml[png,role=sequence]
       ADOC
-      begin
-        output = Asciidoctor.convert(input, attributes: { 'kroki-fetch-diagram' => '' }, standalone: false)
-        (expect output).to eql %(<div class="imageblock sequence kroki-format-png kroki">
+      output = Asciidoctor.convert(input, attributes: { 'kroki-fetch-diagram' => '' }, standalone: false)
+      (expect output).to eql %(<div class="imageblock sequence kroki-format-png kroki">
 <div class="content">
 <img src=".asciidoctor/kroki/diag-d4f314b2d4e75cc08aa4f8c2c944f7bf78321895d8ec5f665b42476d4e67e610.png" alt="Diagram">
 </div>
 </div>)
-      ensure
-        FileUtils.rm(Dir.glob("#{__dir__}/../.asciidoctor/kroki/diag-*"))
-      end
     end
   end
 end
