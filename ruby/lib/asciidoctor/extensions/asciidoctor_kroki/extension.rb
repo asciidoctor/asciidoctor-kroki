@@ -1,8 +1,6 @@
 # frozen_string_literal: true
 
 require 'asciidoctor/extensions' unless RUBY_ENGINE == 'opal'
-require 'stringio'
-require 'zlib'
 
 # Asciidoctor extensions
 #
@@ -29,9 +27,11 @@ module AsciidoctorExtensions
   class KrokiBlockMacroProcessor < Asciidoctor::Extensions::BlockMacroProcessor
     use_dsl
 
+    name_positional_attributes 'format'
+
     def process(parent, target, attrs)
       diagram_type = @name
-      target = parent.apply_subs(target, ['attributes'])
+      target = parent.apply_subs(target, [:attributes])
       diagram_text = read(target)
       KrokiProcessor.process(self, parent, attrs, diagram_type, diagram_text)
     end
@@ -49,6 +49,8 @@ module AsciidoctorExtensions
   # Internal processor
   #
   class KrokiProcessor
+    TEXT_FORMATS = %w[txt atxt utxt].freeze
+
     class << self
       def process(processor, parent, attrs, diagram_type, diagram_text)
         doc = parent.document
@@ -64,11 +66,18 @@ module AsciidoctorExtensions
         role = attrs['role']
         format = get_format(doc, attrs, diagram_type)
         attrs['role'] = get_role(format, role)
-        attrs['alt'] = get_alt(attrs)
-        attrs['target'] = create_image_src(doc, diagram_type, format, diagram_text)
         attrs['format'] = format
-        block = processor.create_image_block(parent, attrs)
-        block.title = title
+        kroki_diagram = KrokiDiagram.new(diagram_type, format, diagram_text)
+        kroki_client = KrokiClient.new(server_url(doc), http_method(doc), KrokiHttpClient)
+        if TEXT_FORMATS.include?(format)
+          text_content = kroki_client.text_content(kroki_diagram)
+          block = processor.create_block(parent, 'literal', text_content, attrs)
+        else
+          attrs['alt'] = get_alt(attrs)
+          attrs['target'] = create_image_src(doc, kroki_diagram, kroki_client)
+          block = processor.create_image_block(parent, attrs)
+        end
+        block.title = title if title
         block.assign_caption(caption, 'figure')
         block
       end
@@ -119,13 +128,153 @@ module AsciidoctorExtensions
         format
       end
 
-      def create_image_src(doc, type, format, text)
-        data = Base64.urlsafe_encode64(Zlib::Deflate.deflate(text, 9))
-        "#{server_url(doc)}/#{type}/#{format}/#{data}"
+      def create_image_src(doc, kroki_diagram, kroki_client)
+        if doc.attr('kroki-fetch-diagram')
+          kroki_diagram.save(output_dir_path(doc), kroki_client)
+        else
+          kroki_diagram.get_diagram_uri(server_url(doc))
+        end
       end
 
       def server_url(doc)
-        doc.attr('kroki-server-url') || 'https://kroki.io'
+        doc.attr('kroki-server-url', 'https://kroki.io')
+      end
+
+      def http_method(doc)
+        doc.attr('kroki-http-method', 'adaptive').downcase
+      end
+
+      def output_dir_path(doc)
+        images_output_dir = doc.attr('imagesoutdir')
+        out_dir = doc.attr('outdir')
+        to_dir = doc.attr('to_dir')
+        base_dir = doc.base_dir
+        images_dir = doc.attr('imagesdir', '')
+        if images_output_dir
+          images_output_dir
+        elsif out_dir
+          File.join(out_dir, images_dir)
+        elsif to_dir
+          File.join(to_dir, images_dir)
+        else
+          File.join(base_dir, images_dir)
+        end
+      end
+    end
+  end
+
+  # Kroki diagram
+  #
+  class KrokiDiagram
+    require 'fileutils'
+    require 'zlib'
+    require 'digest'
+
+    attr_reader :type
+    attr_reader :text
+    attr_reader :format
+
+    def initialize(type, format, text)
+      @text = text
+      @type = type
+      @format = format
+    end
+
+    def get_diagram_uri(server_url)
+      "#{server_url}/#{@type}/#{@format}/#{encode}"
+    end
+
+    def encode
+      Base64.urlsafe_encode64(Zlib::Deflate.deflate(@text, 9))
+    end
+
+    def save(output_dir_path, kroki_client)
+      diagram_url = get_diagram_uri(kroki_client.server_url)
+      diagram_name = "diag-#{Digest::SHA256.hexdigest diagram_url}.#{@format}"
+      file_path = File.join(output_dir_path, diagram_name)
+      encoding = if @format == 'txt' || @format == 'atxt' || @format == 'utxt'
+                   'utf8'
+                 elsif @format == 'svg'
+                   'binary'
+                 else
+                   'binary'
+                 end
+      # file is either (already) on the file system or we should read it from Kroki
+      contents = File.exist?(file_path) ? File.open(file_path, &:read) : kroki_client.get_image(self, encoding)
+      FileUtils.mkdir_p(output_dir_path)
+      if encoding == 'binary'
+        File.binwrite(file_path, contents)
+      else
+        File.write(file_path, contents)
+      end
+      diagram_name
+    end
+  end
+
+  # Kroki client
+  #
+  class KrokiClient
+    attr_reader :server_url
+    attr_reader :method
+
+    SUPPORTED_HTTP_METHODS = %w[get post adaptive].freeze
+
+    def initialize(server_url, http_method, http_client)
+      @server_url = server_url
+      @max_uri_length = 4096
+      @http_client = http_client
+      method = (http_method || 'adaptive').downcase
+      if SUPPORTED_HTTP_METHODS.include?(method)
+        @method = method
+      else
+        puts "Invalid value '#{method}' for kroki-http-method attribute. The value must be either: 'get', 'post' or 'adaptive'. Proceeding using: 'adaptive'."
+        @method = 'adaptive'
+      end
+    end
+
+    def text_content(kroki_diagram)
+      get_image(kroki_diagram, 'utf-8')
+    end
+
+    def get_image(kroki_diagram, encoding)
+      type = kroki_diagram.type
+      format = kroki_diagram.format
+      text = kroki_diagram.text
+      if @method == 'adaptive' || @method == 'get'
+        uri = kroki_diagram.get_diagram_uri(server_url)
+        if uri.length > @max_uri_length
+          # The request URI is longer than 4096.
+          if @method == 'get'
+            # The request might be rejected by the server with a 414 Request-URI Too Large.
+            # Consider using the attribute kroki-http-method with the value 'adaptive'.
+            @http_client.get(uri, encoding)
+          else
+            @http_client.post("#{@server_url}/#{type}/#{format}", text, encoding)
+          end
+        else
+          @http_client.get(uri, encoding)
+        end
+      else
+        @http_client.post("#{@server_url}/#{type}/#{format}", text, encoding)
+      end
+    end
+  end
+
+  # Kroki HTTP client
+  #
+  class KrokiHttpClient
+    require 'net/http'
+    require 'uri'
+    require 'json'
+
+    class << self
+      def get(uri, _)
+        ::OpenURI.open_uri(uri, 'r', &:read)
+      end
+
+      def post(uri, data, _)
+        res = ::Net::HTTP.request_post(uri, data)
+        res.body
       end
     end
   end
