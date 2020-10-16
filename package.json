@@ -28,7 +28,7 @@
   "devDependencies": {
     "@antora/site-generator-default": "^2.3.3",
     "@asciidoctor/core": "^2.0.3",
-    "browserify": "^16.3.0",
+    "browserify": "^17.0.0",
     "chai": "^4.2.0",
     "chai-string": "^1.5.0",
     "cheerio": "^1.0.0-rc.3",
