@@ -76,3 +76,19 @@ describe ::AsciidoctorExtensions::KrokiBlockProcessor do
     end
   end
 end
+
+describe ::AsciidoctorExtensions::Kroki do
+  it 'should return the list of supported diagrams' do
+    diagram_names = ::AsciidoctorExtensions::Kroki::SUPPORTED_DIAGRAM_NAMES
+    expect(diagram_names).to include('vegalite', 'plantuml', 'bytefield', 'bpmn')
+  end
+  it 'should register the extension for the list of supported diagrams' do
+    doc = Asciidoctor::Document.new
+    registry = Asciidoctor::Extensions::Registry.new
+    registry.activate doc
+    ::AsciidoctorExtensions::Kroki::SUPPORTED_DIAGRAM_NAMES.each do |name|
+      expect(registry.find_block_extension(name)).to_not be_nil, "expected block extension named '#{name}' to be registered"
+      expect(registry.find_block_macro_extension(name)).to_not be_nil, "expected block macro extension named '#{name}' to be registered "
+    end
+  end
+end
