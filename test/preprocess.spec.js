@@ -8,6 +8,7 @@ const path = require('path')
 
 chai.use(dirtyChai)
 
+const { readFixture } = require('./utils.js')
 const { preprocessVegaLite } = require('../src/preprocess.js')
 
 describe('Vega-Lite preprocessing', () => {
@@ -64,7 +65,7 @@ Error: ENOENT: no such file or directory, open 'unexisting.csv'`
     "url": "test/fixtures/vegalite-data.csv"
   }
 }`
-    const values = fs.readFileSync(`${__dirname}/fixtures/vegalite-data.csv`, 'utf8')
+    const values = readFixture('vegalite-data.csv')
     const inlinedLocalCsvFile = JSON.stringify({
       data: {
         values,
@@ -428,6 +429,7 @@ skinparam BackgroundColor black
   })
 
   it('should include a PlantUML file from an absolute path', () => {
+    // eslint-disable-next-line
     const diagramTextWithExistingIncludeFileWithIndex = `
       !include ${__dirname}/fixtures/plantuml/dir/subdir/handwritten.iuml
       alice -> bob`

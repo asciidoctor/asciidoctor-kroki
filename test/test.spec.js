@@ -1,19 +1,20 @@
 /* global describe it before */
+const ospath = require('path')
 const fs = require('fs')
 const fsPromises = require('fs').promises
 const rusha = require('rusha')
 const pako = require('pako')
-const delDir = require('./delDir')
 const path = require('path')
 const chai = require('chai')
 const sinon = require('sinon')
 const rimraf = require('rimraf')
-const http = require('../src/http/node-http')
 const expect = chai.expect
 const dirtyChai = require('dirty-chai')
 
 chai.use(dirtyChai)
 
+const { readFixture, fixturePath, deleteDirWithFiles } = require('./utils.js')
+const http = require('../src/http/node-http.js')
 const asciidoctorKroki = require('../src/asciidoctor-kroki.js')
 const asciidoctor = require('@asciidoctor/core')()
 
@@ -34,7 +35,7 @@ describe('Registration', () => {
 
 describe('Conversion', () => {
   before(() => {
-    rimraf.sync(`${__dirname}/../.asciidoctor/kroki/*`)
+    rimraf.sync(ospath.join(__dirname, '..', '.asciidoctor', 'kroki', '*'))
   })
 
   function encode (file) {
@@ -73,7 +74,7 @@ alice -> bob
       expect(html).to.contain('<div class="imageblock sequence kroki-format-svg kroki">')
     })
     it('should convert a diagram with an absolute path to an image', () => {
-      const file = `${__dirname}/fixtures/alice.puml`
+      const file = ospath.join(__dirname, 'fixtures', 'alice.puml')
       const input = `plantuml::${file}[svg,role=sequence]`
       const registry = asciidoctor.Extensions.create()
       asciidoctorKroki.register(registry)
@@ -82,13 +83,13 @@ alice -> bob
       expect(html).to.contain('<div class="imageblock sequence kroki-format-svg kroki">')
     }).timeout(5000)
     it('should convert a PlantUML diagram and resolve include relative to base directory', () => {
-      const file = `${__dirname}/fixtures/alice-with-styles.puml`
+      const file = ospath.join(__dirname, 'fixtures', 'alice-with-styles.puml')
       const diagramText = fs.readFileSync(file, 'utf8')
-        .replace(/^!include (.*)\r?\n/m, fs.readFileSync(`${__dirname}/fixtures/plantuml/style-general.iuml`, 'utf8') + '\n')
+        .replace(/^!include (.*)\r?\n/m, fs.readFileSync(ospath.join(__dirname, 'fixtures', 'plantuml', 'style-general.iuml'), 'utf8') + '\n')
       const input = `plantuml::${file}[svg,role=sequence]`
       const registry = asciidoctor.Extensions.create()
       asciidoctorKroki.register(registry)
-      const html = asciidoctor.convert(input, { extension_registry: registry, base_dir: `${__dirname}/fixtures` })
+      const html = asciidoctor.convert(input, { extension_registry: registry, base_dir: ospath.join(__dirname, 'fixtures') })
       expect(html).to.contain(`https://kroki.io/plantuml/svg/${encodeText(diagramText)}`)
       expect(html).to.contain('<div class="imageblock sequence kroki-format-svg kroki">')
     }).timeout(5000)
@@ -104,13 +105,13 @@ plantuml::test/fixtures/alice.puml[png,role=sequence]
         extension_registry: registry,
         attributes: { 'kroki-fetch-diagram': true }
       })
-      const file = `${__dirname}/fixtures/alice.puml`
+      const file = fixturePath('alice.puml')
       const hash = rusha.createHash().update(`https://kroki.io/plantuml/png/${encode(file)}`).digest('hex')
       expect(html).to.contain(`<img src=".asciidoctor/kroki/diag-${hash}.png" alt="Diagram">`)
     }).timeout(5000)
     it('should include the plantuml-config at the top of the diagram', () => {
-      const file = `${__dirname}/fixtures/alice.puml`
-      const config = `${__dirname}/fixtures/plantuml/base.iuml`
+      const file = fixturePath('alice.puml')
+      const config = fixturePath('plantuml', 'base.iuml')
       const input = `plantuml::${file}[svg,role=sequence]`
       const registry = asciidoctor.Extensions.create()
       asciidoctorKroki.register(registry)
@@ -123,24 +124,22 @@ plantuml::test/fixtures/alice.puml[png,role=sequence]
     it('should convert a file containing the macro form using a relative path to a diagram', () => {
       const registry = asciidoctor.Extensions.create()
       asciidoctorKroki.register(registry)
-      const file = `${__dirname}/fixtures/macro/doc.adoc`
-      const macroFile = `${__dirname}/fixtures/alice.puml`
-      const html = asciidoctor.loadFile(file, { extension_registry: registry, safe: 'unsafe' }).convert()
+      const macroFile = fixturePath('alice.puml')
+      const html = asciidoctor.loadFile(fixturePath('macro', 'doc.adoc'), { extension_registry: registry, safe: 'unsafe' }).convert()
       expect(html).to.contain(`https://kroki.io/plantuml/svg/${encode(macroFile)}`)
       expect(html).to.contain('<div class="imageblock sequence kroki-format-svg kroki">')
     })
     it('should create diagrams in imagesdir if kroki-fetch-diagram is set', async () => {
       const registry = asciidoctor.Extensions.create()
       asciidoctorKroki.register(registry)
-      const file = `${__dirname}/fixtures/fetch/doc.adoc`
-      const doc = asciidoctor.convertFile(file, { extension_registry: registry, safe: 'unsafe' })
+      const doc = asciidoctor.convertFile(fixturePath('fetch', 'doc.adoc'), { extension_registry: registry, safe: 'unsafe' })
       fs.unlinkSync(doc.getAttributes().outfile)
       const imageLocation = path.join(doc.base_dir, doc.getAttributes().imagesdir)
       try {
         const files = await fsPromises.readdir(imageLocation)
         expect(files).to.have.lengthOf(1)
       } finally {
-        delDir.deleteDirWithFiles(imageLocation)
+        deleteDirWithFiles(imageLocation)
       }
     })
     it('should download and save an image to a local folder', () => {
@@ -211,7 +210,7 @@ plantuml::{fixtures-dir}/alice.puml[svg,role=sequence]
         extension_registry: registry,
         attributes: { 'kroki-fetch-diagram': true }
       })
-      const file = `${__dirname}/fixtures/alice.puml`
+      const file = fixturePath('alice.puml')
       const hash = rusha.createHash().update(`https://kroki.io/plantuml/svg/${encode(file)}`).digest('hex')
       expect(html).to.contain(`<img src=".asciidoctor/kroki/diag-${hash}.svg" alt="Diagram">`)
     })
@@ -612,7 +611,7 @@ rackdiag {
       const registry = asciidoctor.Extensions.create()
       asciidoctorKroki.register(registry)
       const html = asciidoctor.convert(input, { extension_registry: registry })
-      const values = fs.readFileSync(`${__dirname}/fixtures/vegalite-data.csv`, 'utf8')
+      const values = readFixture('vegalite-data.csv')
       const text = JSON.stringify({
         $schema: 'https://vega.github.io/schema/vega-lite/v4.json',
         data: {
@@ -1018,7 +1017,7 @@ plantuml::test/fixtures/alice.puml[svg,role=sequence${blockAttr}]
             extension_registry: registry,
             attributes: { 'kroki-fetch-diagram': true }
           })
-          const file = `${__dirname}/fixtures/alice.puml`
+          const file = fixturePath('alice.puml')
           const hash = rusha.createHash().update(`https://kroki.io/plantuml/svg/${encode(file)}`).digest('hex')
           expect(html).to.contain(`<object type="image/svg+xml" data=".asciidoctor/kroki/diag-${hash}.svg"><span class="alt">Diagram</span></object>`)
         })

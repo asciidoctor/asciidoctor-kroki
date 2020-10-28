@@ -1,12 +1,11 @@
 /* global describe it */
 // @ts-check
-const fs = require('fs')
 const chai = require('chai')
 const expect = chai.expect
 const dirtyChai = require('dirty-chai')
-
 chai.use(dirtyChai)
 
+const { readFixture } = require('./utils.js')
 const { KrokiClient, KrokiDiagram } = require('../src/kroki-client.js')
 const httpClient = require('../src/http/node-http.js')
 const asciidoctor = require('@asciidoctor/core')()
@@ -43,11 +42,11 @@ describe('Kroki HTTP client', () => {
     it('should get an image with GET request if the URI length is <= 4096', () => {
       const doc = asciidoctor.load('')
       const krokiClient = new KrokiClient(doc, httpClient)
-      const krokiDiagram = new KrokiDiagram('vegalite', 'svg', fs.readFileSync(`${__dirname}/fixtures/chart.vlite`, 'utf-8'))
+      const krokiDiagram = new KrokiDiagram('vegalite', 'svg', readFixture('chart.vlite'))
       const image = krokiClient.getImage(krokiDiagram)
         .replace(/\r/, '')
         .replace(/\n/, '')
-      const expected = fs.readFileSync(`${__dirname}/fixtures/expected/chart.svg`, 'utf-8')
+      const expected = readFixture('expected', 'chart.svg')
         .replace(/\r/, '')
         .replace(/\n/, '')
       expect(image).to.equal(expected)
@@ -55,11 +54,11 @@ describe('Kroki HTTP client', () => {
     it('should get an image with POST request if the URI length is > 4096', () => {
       const doc = asciidoctor.load('')
       const krokiClient = new KrokiClient(doc, httpClient)
-      const krokiDiagram = new KrokiDiagram('vegalite', 'svg', fs.readFileSync(`${__dirname}/fixtures/cars-repeated-charts.vlite`, 'utf-8'))
+      const krokiDiagram = new KrokiDiagram('vegalite', 'svg', readFixture('cars-repeated-charts.vlite'))
       const image = krokiClient.getImage(krokiDiagram)
         .replace(/\r/, '')
         .replace(/\n/, '')
-      const expected = fs.readFileSync(`${__dirname}/fixtures/expected/cars-repeated-charts.svg`, 'utf-8')
+      const expected = readFixture('expected', 'cars-repeated-charts.svg')
         .replace(/\r/, '')
         .replace(/\n/, '')
       expect(image).to.equal(expected)
