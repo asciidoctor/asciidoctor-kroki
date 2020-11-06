@@ -40,7 +40,7 @@ describe ::AsciidoctorExtensions::KrokiBlockMacroProcessor do
       # noinspection RubyClassModuleNamingConvention
       class CustomUnresolvedTargetMessageKrokiBlockMacroProcessor < ::AsciidoctorExtensions::KrokiBlockMacroProcessor
         def unresolved_target_message(target, name)
-          "[ERROR: #{name}::#{target}[] - unresolved block macro]"
+          "*[ERROR: #{name}::#{target}[] - unresolved block macro]*"
         end
       end
       registry = Asciidoctor::Extensions.create do
@@ -51,7 +51,7 @@ describe ::AsciidoctorExtensions::KrokiBlockMacroProcessor do
       ADOC
       output = Asciidoctor.convert(input, standalone: false, extension_registry: registry)
       (expect output).to eql %(<div class="paragraph">
-<p>[ERROR: plantuml::spec/fixtures/missing.puml[] - unresolved block macro]</p>
+<p><strong>[ERROR: plantuml::spec/fixtures/missing.puml[] - unresolved block macro]</strong></p>
 </div>)
     end
   end
