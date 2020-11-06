@@ -21,7 +21,7 @@ describe ::AsciidoctorExtensions::KrokiBlockMacroProcessor do
     it 'should disallow read' do
       # noinspection RubyClassModuleNamingConvention
       class DisallowReadKrokiBlockMacroProcessor < ::AsciidoctorExtensions::KrokiBlockMacroProcessor
-        def read_allowed?
+        def read_allowed?(_target)
           false
         end
       end
@@ -36,10 +36,80 @@ describe ::AsciidoctorExtensions::KrokiBlockMacroProcessor do
 <p><a href="spec/fixtures/alice.puml">spec/fixtures/alice.puml</a></p>
 </div>)
     end
-    it 'should override the unresolved target message' do
+    it 'should allow read if target is not a URI' do
+      # noinspection RubyClassModuleNamingConvention
+      class DisallowUriReadKrokiBlockMacroProcessor < ::AsciidoctorExtensions::KrokiBlockMacroProcessor
+        def read_allowed?(target)
+          return false if ::Asciidoctor::Helpers.uriish?(target)
+
+          true
+        end
+      end
+      registry = Asciidoctor::Extensions.create do
+        block_macro DisallowUriReadKrokiBlockMacroProcessor, 'plantuml'
+      end
+      input = <<~'ADOC'
+        plantuml::https://domain.org/alice.puml[svg,role=sequence]
+
+        plantuml::file://path/to/alice.puml[svg,role=sequence]
+
+        plantuml::spec/fixtures/alice.puml[svg,role=sequence]
+      ADOC
+      output = Asciidoctor.convert(input, standalone: false, extension_registry: registry)
+      (expect output).to eql %(<div class="paragraph">
+<p><a href="https://domain.org/alice.puml">https://domain.org/alice.puml</a></p>
+</div>
+<div class="paragraph">
+<p><a href="file://path/to/alice.puml">file://path/to/alice.puml</a></p>
+</div>
+<div class="imageblock sequence kroki-format-svg kroki">
+<div class="content">
+<img src="https://kroki.io/plantuml/svg/eNpLzMlMTlXQtVNIyk-yUshIzcnJ5wIAQ-AGVQ==" alt="Diagram">
+</div>
+</div>)
+    end
+    it 'should override the resolve target method' do
+      # noinspection RubyClassModuleNamingConvention
+      class FixtureResolveTargetKrokiBlockMacroProcessor < ::AsciidoctorExtensions::KrokiBlockMacroProcessor
+        def resolve_target_path(target)
+          "spec/fixtures/#{target}"
+        end
+      end
+      registry = Asciidoctor::Extensions.create do
+        block_macro FixtureResolveTargetKrokiBlockMacroProcessor, 'plantuml'
+      end
+      input = <<~'ADOC'
+        plantuml::alice.puml[svg,role=sequence]
+      ADOC
+      output = Asciidoctor.convert(input, standalone: false, extension_registry: registry)
+      (expect output).to eql %(<div class="imageblock sequence kroki-format-svg kroki">
+<div class="content">
+<img src="https://kroki.io/plantuml/svg/eNpLzMlMTlXQtVNIyk-yUshIzcnJ5wIAQ-AGVQ==" alt="Diagram">
+</div>
+</div>)
+    end
+    it 'should display unresolved block macro message when the traget cannot be resolved' do
+      # noinspection RubyClassModuleNamingConvention
+      class UnresolvedTargetKrokiBlockMacroProcessor < ::AsciidoctorExtensions::KrokiBlockMacroProcessor
+        def resolve_target_path(_target)
+          nil
+        end
+      end
+      registry = Asciidoctor::Extensions.create do
+        block_macro UnresolvedTargetKrokiBlockMacroProcessor, 'plantuml'
+      end
+      input = <<~'ADOC'
+        plantuml::alice.puml[svg,role=sequence]
+      ADOC
+      output = Asciidoctor.convert(input, standalone: false, extension_registry: registry)
+      (expect output).to eql %(<div class="paragraph">
+<p>Unresolved block macro - plantuml::[]</p>
+</div>)
+    end
+    it 'should override the unresolved block macro message' do
       # noinspection RubyClassModuleNamingConvention
       class CustomUnresolvedTargetMessageKrokiBlockMacroProcessor < ::AsciidoctorExtensions::KrokiBlockMacroProcessor
-        def unresolved_target_message(target, name)
+        def unresolved_block_macro_message(name, target)
           "*[ERROR: #{name}::#{target}[] - unresolved block macro]*"
         end
       end

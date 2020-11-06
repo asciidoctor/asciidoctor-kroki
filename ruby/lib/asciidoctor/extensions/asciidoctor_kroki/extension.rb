@@ -54,16 +54,22 @@ module AsciidoctorExtensions
     def process(parent, target, attrs)
       diagram_type = @name
       target = parent.apply_subs(target, [:attributes])
-      unless read_allowed?
+
+      unless read_allowed?(target)
         link = create_inline(parent, :anchor, target, type: :link, target: target)
         return create_block(parent, :paragraph, link.convert, {}, content_model: :raw)
       end
 
+      unless (path = resolve_target_path(target))
+        logger.error "#{diagram_type} block macro not found: #{target}."
+        create_block(parent, 'paragraph', unresolved_block_macro_message(diagram_type, target), {})
+      end
+
       begin
-        diagram_text = read(target)
+        diagram_text = read(path)
       rescue => e # rubocop:disable RescueStandardError
-        logger.error "Failed to read #{diagram_type} target: #{target}. #{e}."
-        return create_block(parent, 'paragraph', unresolved_target_message(target, diagram_type), {})
+        logger.error "Failed to read #{diagram_type} file: #{path}. #{e}."
+        return create_block(parent, 'paragraph', unresolved_block_macro_message(diagram_type, path), {})
       end
       KrokiProcessor.process(self, parent, attrs, diagram_type, diagram_text, @logger)
     end
@@ -72,7 +78,11 @@ module AsciidoctorExtensions
 
     attr_reader :logger
 
-    def read_allowed?
+    def resolve_target_path(target)
+      target
+    end
+
+    def read_allowed?(_target)
       true
     end
 
@@ -85,7 +95,7 @@ module AsciidoctorExtensions
       end
     end
 
-    def unresolved_target_message(target, name)
+    def unresolved_block_macro_message(name, target)
       "Unresolved block macro - #{name}::#{target}[]"
     end
   end
