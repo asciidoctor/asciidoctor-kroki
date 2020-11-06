@@ -15,11 +15,24 @@ module AsciidoctorExtensions
     on_context :listing, :literal
     name_positional_attributes 'target', 'format'
 
+    # @param name [String] name of the block macro (optional)
+    # @param config [Hash] a config hash (optional)
+    # @param logger [Logger] a logger used to log warning and errors (optional)
+    #
+    def initialize(name = nil, config = {}, logger: ::Asciidoctor::LoggerManager.logger)
+      super(name, config)
+      @logger = logger
+    end
+
     def process(parent, reader, attrs)
       diagram_type = @name
       diagram_text = reader.string
-      KrokiProcessor.process(self, parent, attrs, diagram_type, diagram_text)
+      KrokiProcessor.process(self, parent, attrs, diagram_type, diagram_text, @logger)
     end
+
+    protected
+
+    attr_reader :logger
   end
 
   # A block macro extension that converts a diagram into an image.
@@ -29,11 +42,38 @@ module AsciidoctorExtensions
 
     name_positional_attributes 'format'
 
+    # @param name [String] name of the block macro (optional)
+    # @param config [Hash] a config hash (optional)
+    # @param logger [Logger] a logger used to log warning and errors (optional)
+    #
+    def initialize(name = nil, config = {}, logger: ::Asciidoctor::LoggerManager.logger)
+      super(name, config)
+      @logger = logger
+    end
+
     def process(parent, target, attrs)
       diagram_type = @name
       target = parent.apply_subs(target, [:attributes])
-      diagram_text = read(target)
-      KrokiProcessor.process(self, parent, attrs, diagram_type, diagram_text)
+      unless read_allowed?
+        link = create_inline(parent, :anchor, target, type: :link, target: target)
+        return create_block(parent, :paragraph, link.convert, {}, content_model: :raw)
+      end
+
+      begin
+        diagram_text = read(target)
+      rescue => e # rubocop:disable RescueStandardError
+        logger.error "Failed to read #{diagram_type} target: #{target}. #{e}."
+        return create_block(parent, 'paragraph', unresolved_target_message(target, diagram_type), {})
+      end
+      KrokiProcessor.process(self, parent, attrs, diagram_type, diagram_text, @logger)
+    end
+
+    protected
+
+    attr_reader :logger
+
+    def read_allowed?
+      true
     end
 
     def read(target)
@@ -43,6 +83,10 @@ module AsciidoctorExtensions
       else
         File.open(target, &:read)
       end
+    end
+
+    def unresolved_target_message(target, name)
+      "Unresolved block macro - #{name}::#{target}[]"
     end
   end
 
@@ -79,7 +123,7 @@ module AsciidoctorExtensions
     TEXT_FORMATS = %w[txt atxt utxt].freeze
 
     class << self
-      def process(processor, parent, attrs, diagram_type, diagram_text)
+      def process(processor, parent, attrs, diagram_type, diagram_text, logger)
         doc = parent.document
         diagram_text = prepend_plantuml_config(diagram_text, diagram_type, doc)
         # If "subs" attribute is specified, substitute accordingly.
@@ -95,7 +139,7 @@ module AsciidoctorExtensions
         attrs['role'] = get_role(format, role)
         attrs['format'] = format
         kroki_diagram = KrokiDiagram.new(diagram_type, format, diagram_text)
-        kroki_client = KrokiClient.new(server_url(doc), http_method(doc), KrokiHttpClient)
+        kroki_client = KrokiClient.new(server_url(doc), http_method(doc), KrokiHttpClient, logger)
         if TEXT_FORMATS.include?(format)
           text_content = kroki_client.text_content(kroki_diagram)
           block = processor.create_block(parent, 'literal', text_content, attrs)
@@ -261,7 +305,7 @@ module AsciidoctorExtensions
 
     SUPPORTED_HTTP_METHODS = %w[get post adaptive].freeze
 
-    def initialize(server_url, http_method, http_client)
+    def initialize(server_url, http_method, http_client, logger = ::Asciidoctor::LoggerManager.logger)
       @server_url = server_url
       @max_uri_length = 4096
       @http_client = http_client
@@ -269,7 +313,7 @@ module AsciidoctorExtensions
       if SUPPORTED_HTTP_METHODS.include?(method)
         @method = method
       else
-        puts "Invalid value '#{method}' for kroki-http-method attribute. The value must be either: 'get', 'post' or 'adaptive'. Proceeding using: 'adaptive'."
+        logger.warn "Invalid value '#{method}' for kroki-http-method attribute. The value must be either: 'get', 'post' or 'adaptive'. Proceeding using: 'adaptive'."
         @method = 'adaptive'
       end
     end

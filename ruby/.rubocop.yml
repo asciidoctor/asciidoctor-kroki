@@ -2,7 +2,7 @@ Style/Encoding:
   Enabled: false
 
 Metrics/LineLength:
-  Max: 160
+  Max: 180
 
 Metrics/MethodLength:
   Max: 50
@@ -15,3 +15,6 @@ Metrics/PerceivedComplexity:
 
 Metrics/AbcSize:
   Max: 30
+
+Metrics/ParameterLists:
+  Max: 7
