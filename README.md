@@ -10,6 +10,7 @@ An extension for [Asciidoctor.js](https://github.com/asciidoctor/asciidoctor.js)
   * [Install](#install)
     + [Node.js](#nodejs)
     + [Browser](#browser)
+    + [Ruby](#ruby)
     + [Antora Integration](#antora-integration)
   * [Usage](#usage)
     + [Supported diagram types](#supported-diagram-types)
@@ -103,6 +104,16 @@ AsciidoctorKroki.register(registry, {
 const input = 'plantuml::hello.puml[svg,role=sequence]'
 asciidoctor.convert(input, { base_dir: window.location.origin, safe: 'safe', extension_registry: registry })
 ```
+
+### Ruby
+
+Install the dependency:
+
+    $ gem install asciidoctor-kroki
+
+Require the library using the `--require` (or `-r`) option from the Asciidoctor CLI:
+
+    $ asciidoctor -r asciidoctor-kroki doc.adoc
 
 ### Antora Integration
 
