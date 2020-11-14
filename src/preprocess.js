@@ -55,6 +55,9 @@ ${diagramText}
   return JSON.stringify(diagramObject)
 }
 
+const plantUmlBlocksRx = /@startuml(?:\r?\n)([\s\S]*?)(?:\r?\n)@enduml/gm
+const plantUmlFirstBlockRx = /@startuml(?:\r?\n)([\s\S]*?)(?:\r?\n)@enduml/m
+
 /**
  * Removes all plantuml tags (@startuml/@enduml) from the diagram
  * It's possible to have more than one diagram in a single file in the cli version of plantuml
@@ -250,18 +253,24 @@ function getPlantUmlTextRegEx (text, regEx) {
  * @returns {string}
  */
 function getPlantUmlTextFromIndex (text, index) {
-  const regEx = new RegExp('@startuml(?:\\r\\n|\\n)([\\s\\S]*?)(?:\\r\\n|\\n)@enduml', 'gm')
-  let idx = -1
-  let matchedStrings = ''
-  let match = regEx.exec(text)
-  while (match != null && idx < index) {
-    if (++idx === index) {
-      matchedStrings += match[1]
-    } else {
-      match = regEx.exec(text)
-    }
+  // please note that RegExp objects are stateful when they have the global flag set (e.g. /foo/g).
+  // They store a lastIndex from the previous match.
+  // Using exec() multiple times will return the next occurrence.
+  // reset to find the first occurrence
+  let idx = 0
+  plantUmlBlocksRx.lastIndex = 0
+  let match = plantUmlBlocksRx.exec(text)
+  while (match && idx < index) {
+    // find the nth occurrence
+    match = plantUmlBlocksRx.exec(text)
+    idx++
   }
-  return matchedStrings
+  if (match) {
+    // [0] - result matching the complete regular expression
+    // [1] - the first capturing group
+    return match[1]
+  }
+  return ''
 }
 
 /**
@@ -269,13 +278,11 @@ function getPlantUmlTextFromIndex (text, index) {
  * @returns {string}
  */
 function getPlantUmlTextOrFirstBlock (text) {
-  const regEx = new RegExp('@startuml(?:\\r\\n|\\n)([\\s\\S]*?)(?:\\r\\n|\\n)@enduml', 'gm')
-  let matchedStrings = text
-  const match = regEx.exec(text)
-  if (match != null) {
-    matchedStrings = match[1]
+  const match = text.match(plantUmlFirstBlockRx)
+  if (match) {
+    return match[1]
   }
-  return matchedStrings
+  return text
 }
 
 /**
