@@ -23,7 +23,7 @@
     "mkdirp": "^1.0.4",
     "pako": "^1.0.10",
     "rusha": "^0.8.13",
-    "unxhr": "1.0.4"
+    "unxhr": "1.1.0"
   },
   "devDependencies": {
     "@antora/site-generator-default": "^2.3.3",
