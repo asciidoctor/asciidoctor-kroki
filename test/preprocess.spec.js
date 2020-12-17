@@ -44,7 +44,7 @@ describe('Vega-Lite preprocessing', () => {
    * @returns {void}
    */
   function expectToBeEqual (diagramText, expectedPreprocessedDiagramText, baseDir) {
-    expect(preprocessVegaLite(diagramText, {}, baseDir).replace(/\r\n/g, '\n')).to.be.equal(expectedPreprocessedDiagramText)
+    expect(preprocessVegaLite(diagramText, {}, baseDir)).to.be.equal(expectedPreprocessedDiagramText.replace(/\r\n/g, '\n'))
   }
 
   it('should throw an error for invalid JSON', () => {
