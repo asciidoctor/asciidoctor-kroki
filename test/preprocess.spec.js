@@ -144,7 +144,9 @@ Error: ENOENT: no such file or directory, open '${unexistingPath}'`
     "url": "https://raw.githubusercontent.com/Mogztter/asciidoctor-kroki/master/${relativePath}"
   }
 }`
-    expectToBeEqual(diagramText, diagramTextWithInlinedCsvFile)
+    // replace escaped CR/LF (which happens when CSV file was checked-out in Windows) with escaped LF
+    const expected = diagramTextWithInlinedCsvFile.replace(/\\r\\n/g, '\\n')
+    expectToBeEqual(diagramText, expected)
   })
 })
 
