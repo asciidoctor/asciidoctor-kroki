@@ -20,7 +20,7 @@ describe('Vega-Lite preprocessing', () => {
   const relativePath = 'test/fixtures/vegalite-data.csv'
   const diagramTextWithInlinedCsvFile = JSON.stringify({
     data: {
-      values: fs.readFileSync(`${__dirname}/fixtures/vegalite-data.csv`, 'utf8'),
+      values: fs.readFileSync(`${path.join(cwd, relativePath)}`, 'utf8'),
       format: {
         type: 'csv'
       }
@@ -71,7 +71,7 @@ Error: ENOENT: no such file or directory, open 'unexisting.csv'`
   })
 
   it('should throw an error for unexisting file referenced with "file" protocol', () => {
-    const unexistingFileUrl = url.pathToFileURL(cwd + '/unexisting.csv')
+    const unexistingFileUrl = url.pathToFileURL(path.join(cwd, 'unexisting.csv'))
     const diagramText = `{
       "data": {
         "url": "${unexistingFileUrl}"
