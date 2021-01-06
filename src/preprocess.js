@@ -31,7 +31,7 @@ ${diagramText}
   const data = diagramObject.data
   const urlOrPath = data.url
   try {
-    data.values = read(isLocalAndRelative(urlOrPath) ? baseDir + urlOrPath : urlOrPath)
+    data.values = read(isLocalAndRelative(urlOrPath) ? path.join(baseDir, urlOrPath) : urlOrPath)
   } catch (e) {
     if (isRemoteUrl(urlOrPath)) {
       // Only warn and do not throw an error, because the data file can perhaps be found by kroki server (https://github.com/yuzutech/kroki/issues/60)
