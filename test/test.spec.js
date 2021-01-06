@@ -30,6 +30,7 @@ describe('Registration', () => {
     expect(registry['$registered_for_block_macro?']('packetdiag')).to.be.an('object')
     expect(registry['$registered_for_block_macro?']('rackdiag')).to.be.an('object')
     expect(registry['$registered_for_block_macro?']('wavedrom')).to.be.an('object')
+    expect(registry['$registered_for_block_macro?']('excalidraw')).to.be.an('object')
   })
 })
 

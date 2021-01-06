@@ -50,26 +50,27 @@ module AsciidoctorExtensions
   #
   module Kroki
     SUPPORTED_DIAGRAM_NAMES = %w[
-      plantuml
-      ditaa
-      graphviz
-      blockdiag
-      seqdiag
       actdiag
-      nwdiag
-      packetdiag
-      rackdiag
+      blockdiag
+      bpmn
+      bytefield
       c4plantuml
+      ditaa
       erd
+      excalidraw
+      graphviz
       mermaid
       nomnoml
+      nwdiag
+      packetdiag
+      plantuml
+      rackdiag
+      seqdiag
       svgbob
       umlet
       vega
       vegalite
-      wavedrom
-      bytefield
-      bpmn
+      wavedrow
     ].freeze
   end
 
