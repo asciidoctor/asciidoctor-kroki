@@ -191,7 +191,29 @@ module.exports.register = function register (registry, context = {}) {
   if (typeof context.contentCatalog !== 'undefined' && typeof context.contentCatalog.addFile === 'function' && typeof context.file !== 'undefined') {
     context.vfs = require('./antora-adapter.js')(context.file, context.contentCatalog, context.vfs)
   }
-  const names = ['plantuml', 'ditaa', 'graphviz', 'blockdiag', 'seqdiag', 'actdiag', 'nwdiag', 'packetdiag', 'rackdiag', 'c4plantuml', 'erd', 'mermaid', 'nomnoml', 'svgbob', 'umlet', 'vega', 'vegalite', 'wavedrom', 'bytefield', 'bpmn']
+  const names = [
+    'actdiag',
+    'blockdiag',
+    'bpmn',
+    'bytefield',
+    'c4plantuml',
+    'ditaa',
+    'erd',
+    'excalidraw',
+    'graphviz',
+    'mermaid',
+    'nomnoml',
+    'nwdiag',
+    'packetdiag',
+    'plantuml',
+    'rackdiag',
+    'seqdiag',
+    'svgbob',
+    'umlet',
+    'vega',
+    'vegalite',
+    'wavedrom'
+  ]
   if (typeof registry.register === 'function') {
     registry.register(function () {
       for (const name of names) {
