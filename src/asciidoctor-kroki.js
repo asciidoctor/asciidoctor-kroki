@@ -67,7 +67,7 @@ const processKroki = (processor, parent, attrs, diagramType, diagramText, contex
     diagramText = parent.applySubstitutions(diagramText, parent.$resolve_subs(subs))
   }
   if (diagramType === 'vegalite') {
-    diagramText = require('./preprocess.js').preprocessVegaLite(diagramText, context)
+    diagramText = require('./preprocess.js').preprocessVegaLite(diagramText, context, doc.getBaseDir())
   } else if (diagramType === 'plantuml') {
     const plantUmlInclude = doc.getAttribute('kroki-plantuml-include')
     if (plantUmlInclude) {

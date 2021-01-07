@@ -1,6 +1,7 @@
 const fs = require('fs')
 const path = require('path')
 const mkdirp = require('mkdirp')
+const url = require('url')
 
 const http = require('./http/node-http.js')
 
@@ -18,7 +19,7 @@ module.exports = {
       return http.get(path, encoding)
     }
     if (path.startsWith('file://')) {
-      return fs.readFileSync(path.substr('file://'.length), encoding)
+      return fs.readFileSync(url.fileURLToPath(path), encoding)
     }
     return fs.readFileSync(path, encoding)
   }
