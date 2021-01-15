@@ -58,7 +58,7 @@ function getOption (attrs, document) {
   }
 }
 
-const processKroki = (processor, parent, attrs, diagramType, diagramText, context) => {
+const processKroki = (processor, parent, attrs, diagramType, diagramText, context, baseDir) => {
   const doc = parent.getDocument()
   // If "subs" attribute is specified, substitute accordingly.
   // Be careful not to specify "specialcharacters" or your diagram code won't be valid anymore!
@@ -67,7 +67,7 @@ const processKroki = (processor, parent, attrs, diagramType, diagramText, contex
     diagramText = parent.applySubstitutions(diagramText, parent.$resolve_subs(subs))
   }
   if (diagramType === 'vegalite') {
-    diagramText = require('./preprocess.js').preprocessVegaLite(diagramText, context, doc.getBaseDir())
+    diagramText = require('./preprocess.js').preprocessVegaLite(diagramText, context, baseDir)
   } else if (diagramType === 'plantuml') {
     const plantUmlInclude = doc.getAttribute('kroki-plantuml-include')
     if (plantUmlInclude) {
@@ -176,7 +176,8 @@ function diagramBlockMacro (name, context) {
       const diagramType = name
       try {
         const diagramText = vfs.read(target)
-        return processKroki(this, parent, attrs, diagramType, diagramText, context)
+        const baseDir = target.substr(0, target.lastIndexOf('/') + 1)
+        return processKroki(this, parent, attrs, diagramType, diagramText, context, baseDir)
       } catch (e) {
         console.warn(`Skipping ${diagramType} block macro. ${e.message}`)
         attrs.role = role ? `${role} kroki-error` : 'kroki-error'
