@@ -6,10 +6,10 @@ const path = require('path')
 /**
  * @param {string} diagramText
  * @param {any} context
- * @param {string} baseDir
+ * @param {string} diagramDir
  * @returns {string}
  */
-module.exports.preprocessVegaLite = function (diagramText, context, baseDir = '') {
+module.exports.preprocessVegaLite = function (diagramText, context, diagramDir = '') {
   let diagramObject
   try {
     const JSON5 = require('json5')
@@ -31,7 +31,7 @@ ${diagramText}
   const data = diagramObject.data
   const urlOrPath = data.url
   try {
-    data.values = read(isLocalAndRelative(urlOrPath) ? path.join(baseDir, urlOrPath) : urlOrPath)
+    data.values = read(isLocalAndRelative(urlOrPath) ? path.join(diagramDir, urlOrPath) : urlOrPath)
   } catch (e) {
     if (isRemoteUrl(urlOrPath)) {
       // Only warn and do not throw an error, because the data file can perhaps be found by kroki server (https://github.com/yuzutech/kroki/issues/60)
