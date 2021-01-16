@@ -835,7 +835,20 @@ rackdiag {
       const registry = asciidoctor.Extensions.create()
       asciidoctorKroki.register(registry)
       const html = asciidoctor.convertFile(fixturePath('docs', 'data.adoc'), { to_file: false, extension_registry: registry, safe: 'unsafe' })
-      expect(html).to.contain('https://kroki.io/vegalite/svg/eNplVNtuwjAM_Zc-mypOet23TJqiNrAIKKyEy4T499lOGTSVMJf4cHx87Oae9TbY7OOeXezu7E7ZBx84OI6u80cfbPCHAYLbH7_29jZ98QNc_dDD1dnw7cbPQSssVwrpBSpXUOYVrEyuASlO5-ENwGelABiocwOj9e8AMzEoAtYS68PmLV8AKmZWRGHo7wXRJRQlNDkCaoK1eQEVRYKI1QVRMZR45lVqAdR5I1KRYp5v_vOsUC_yLeUNi1QiksXOJSD32AgDK1CLLhDFKW6gFicxBejYBGcKQi1EYrSSGTSV0amVWEg-lq8EM89z9XpqEoHnmSiongpqsYlHMWcgayoWzx5wcI2Eg4Sx_QRppdFqaVUr9uBT7JJEqyjkabehz5kQjdO8NKyEKx24ZjObaV3iQiQljMxLVqaRTlKZuogyZRbRsAVJGXWyjjjUIpExOcoaYqs6AdSiU_ijDJXWaF67HZ-iZKy6fQHiTNr5M2qim0yPshsJgXmZaQTTcj6DbH0Y9zbwXRJ-j45uku50yR4PyPZ23NLP4LstwdzQHXo_bBh447e1d7ue8rM7h4ATy8_ZDkFOL47oHn8tkyTM')
+      const values = fs.readFileSync(fixturePath('docs', 'diagrams', 'data', 'seattle-weather.csv'), 'utf8')
+      const diagramText = JSON.stringify({
+        data: {
+          values,
+          format: {
+            type: 'csv'
+          }
+        },
+        mark: 'tick',
+        encoding: {
+          x: { field: 'precipitation', type: 'quantitative' }
+        }
+      })
+      expect(html).to.contain(`https://kroki.io/vegalite/svg/${encodeText(diagramText)}`)
     })
 
     describe('Default options', () => {
