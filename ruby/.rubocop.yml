@@ -1,6 +1,9 @@
 Style/Encoding:
   Enabled: false
 
+Layout/EndOfLine:
+  EnforcedStyle: lf
+
 Metrics/LineLength:
   Max: 160
 

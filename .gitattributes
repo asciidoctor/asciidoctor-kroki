@@ -1,0 +1,3 @@
+# To match the .editorconfig that asks for lf only
+# Otherwise you will end up with files that show up as modified after you IDE
+* text=auto eol=lf
