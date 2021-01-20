@@ -117,7 +117,7 @@ module AsciidoctorExtensions
           # TODO: this behaves different than the JS version
           # The file should be added by !include #{plantuml_include}" once we have a preprocessor for ruby
           config = File.read(doc.attr('kroki-plantuml-include'))
-          diagram_text = config + '\n' + diagram_text
+          diagram_text = config + "\n" + diagram_text
         end
         diagram_text
       end

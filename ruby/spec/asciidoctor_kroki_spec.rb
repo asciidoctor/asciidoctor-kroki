@@ -44,7 +44,7 @@ describe ::AsciidoctorExtensions::KrokiBlockProcessor do
       output = Asciidoctor.convert(input, attributes: { 'env-idea' => '', 'kroki-plantuml-include' => 'spec/fixtures/config.puml' }, standalone: false)
       (expect output).to eql %(<div class="imageblock kroki">
 <div class="content">
-<img src="https://kroki.io/plantuml/png/eNorzs7MK0gsSsxVyM3Py0_OKMrPTVUoKSpN5YrJS8zJTE5V0LVTSMpPslLISM3JyQcArVsRHA==" alt="Diagram">
+<img src="https://kroki.io/plantuml/png/eNorzs7MK0gsSsxVyM3Py0_OKMrPTVUoKSpN5eJKzMlMTlXQtVNIyk-yUshIzcnJBwCT9xBc" alt="Diagram">
 </div>
 </div>)
     end
