@@ -70,7 +70,7 @@ module AsciidoctorExtensions
       umlet
       vega
       vegalite
-      wavedrow
+      wavedrom
     ].freeze
   end
 
