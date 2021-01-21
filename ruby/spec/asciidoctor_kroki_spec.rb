@@ -20,17 +20,32 @@ describe ::AsciidoctorExtensions::KrokiBlockProcessor do
 </div>
 </div>)
     end
-    it 'should use png if env-idea is defined' do
+    it 'should use png if kroki-default-format is set to png' do
       input = <<~'ADOC'
         [plantuml]
         ....
         alice -> bob: hello
         ....
       ADOC
-      output = Asciidoctor.convert(input, attributes: { 'env-idea' => '' }, standalone: false)
+      output = Asciidoctor.convert(input, attributes: { 'kroki-default-format' => 'png' }, standalone: false)
       (expect output).to eql %(<div class="imageblock kroki">
 <div class="content">
 <img src="https://kroki.io/plantuml/png/eNpLzMlMTlXQtVNIyk-yUshIzcnJBwA9iwZL" alt="Diagram">
+</div>
+</div>)
+    end
+    it 'should use svg if kroki-default-format is set to png and the diagram type does not support png' do
+      input = <<~'ADOC'
+        [mermaid]
+        ....
+        graph TD;
+          A-->B;
+        ....
+      ADOC
+      output = Asciidoctor.convert(input, attributes: { 'kroki-default-format' => 'png' }, standalone: false)
+      (expect output).to eql %(<div class="imageblock kroki">
+<div class="content">
+<img src="https://kroki.io/mermaid/svg/eNpLL0osyFAIcbHmUlBw1NW1c7IGADLKBKY=" alt="Diagram">
 </div>
 </div>)
     end
@@ -41,10 +56,12 @@ describe ::AsciidoctorExtensions::KrokiBlockProcessor do
         alice -> bob: hello
         ....
       ADOC
-      output = Asciidoctor.convert(input, attributes: { 'env-idea' => '', 'kroki-plantuml-include' => 'spec/fixtures/config.puml' }, standalone: false, safe: :safe)
+      output = Asciidoctor.convert(input,
+                                   attributes: { 'kroki-plantuml-include' => 'spec/fixtures/config.puml' },
+                                   standalone: false, safe: :safe)
       (expect output).to eql %(<div class="imageblock kroki">
 <div class="content">
-<img src="https://kroki.io/plantuml/png/eNorzs7MK0gsSsxVyM3Py0_OKMrPTVUoKSpN5eJKzMlMTlXQtVNIyk-yUshIzcnJBwCT9xBc" alt="Diagram">
+<img src="https://kroki.io/plantuml/svg/eNorzs7MK0gsSsxVyM3Py0_OKMrPTVUoKSpN5eJKzMlMTlXQtVNIyk-yUshIzcnJBwCT9xBc" alt="Diagram">
 </div>
 </div>)
     end
@@ -55,10 +72,10 @@ describe ::AsciidoctorExtensions::KrokiBlockProcessor do
         alice -> bob: hello
         ....
       ADOC
-      output = Asciidoctor.convert(input, attributes: { 'env-idea' => '', 'kroki-plantuml-include' => '../../../spec/fixtures/config.puml' }, standalone: false, safe: :safe)
+      output = Asciidoctor.convert(input, attributes: { 'kroki-plantuml-include' => '../../../spec/fixtures/config.puml' }, standalone: false, safe: :safe)
       (expect output).to eql %(<div class="imageblock kroki">
 <div class="content">
-<img src="https://kroki.io/plantuml/png/eNorzs7MK0gsSsxVyM3Py0_OKMrPTVUoKSpN5eJKzMlMTlXQtVNIyk-yUshIzcnJBwCT9xBc" alt="Diagram">
+<img src="https://kroki.io/plantuml/svg/eNorzs7MK0gsSsxVyM3Py0_OKMrPTVUoKSpN5eJKzMlMTlXQtVNIyk-yUshIzcnJBwCT9xBc" alt="Diagram">
 </div>
 </div>)
     end
@@ -69,10 +86,10 @@ describe ::AsciidoctorExtensions::KrokiBlockProcessor do
         alice -> bob: hello
         ....
       ADOC
-      output = Asciidoctor.convert(input, attributes: { 'env-idea' => '', 'kroki-plantuml-include' => '/etc/passwd' }, standalone: false, safe: :safe)
+      output = Asciidoctor.convert(input, attributes: { 'kroki-plantuml-include' => '/etc/passwd' }, standalone: false, safe: :safe)
       (expect output).to eql %(<div class="imageblock kroki">
 <div class="content">
-<img src="https://kroki.io/plantuml/png/eNpLzMlMTlXQtVNIyk-yUshIzcnJBwA9iwZL" alt="Diagram">
+<img src="https://kroki.io/plantuml/svg/eNpLzMlMTlXQtVNIyk-yUshIzcnJBwA9iwZL" alt="Diagram">
 </div>
 </div>)
     end
@@ -83,10 +100,10 @@ describe ::AsciidoctorExtensions::KrokiBlockProcessor do
         alice -> bob: hello
         ....
       ADOC
-      output = Asciidoctor.convert(input, attributes: { 'env-idea' => '', 'kroki-plantuml-include' => 'spec/fixtures/config.puml' }, standalone: false, safe: :secure)
+      output = Asciidoctor.convert(input, attributes: { 'kroki-plantuml-include' => 'spec/fixtures/config.puml' }, standalone: false, safe: :secure)
       (expect output).to eql %(<div class="imageblock kroki">
 <div class="content">
-<img src="https://kroki.io/plantuml/png/eNpLzMlMTlXQtVNIyk-yUshIzcnJBwA9iwZL" alt="Diagram">
+<img src="https://kroki.io/plantuml/svg/eNpLzMlMTlXQtVNIyk-yUshIzcnJBwA9iwZL" alt="Diagram">
 </div>
 </div>)
     end
