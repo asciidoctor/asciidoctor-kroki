@@ -38,6 +38,7 @@ module AsciidoctorExtensions
   # A block macro extension that converts a diagram into an image.
   #
   class KrokiBlockMacroProcessor < Asciidoctor::Extensions::BlockMacroProcessor
+    include Asciidoctor::Logging
     use_dsl
 
     name_positional_attributes 'format'
@@ -61,14 +62,14 @@ module AsciidoctorExtensions
       end
 
       unless (path = resolve_target_path(target))
-        logger.error "#{diagram_type} block macro not found: #{target}."
+        logger.error message_with_context "#{diagram_type} block macro not found: #{target}.", source_location: parent.document.reader.cursor_at_mark
         create_block(parent, 'paragraph', unresolved_block_macro_message(diagram_type, target), {})
       end
 
       begin
         diagram_text = read(path)
       rescue => e # rubocop:disable Style/RescueStandardError
-        logger.error "Failed to read #{diagram_type} file: #{path}. #{e}."
+        logger.error message_with_context "Failed to read #{diagram_type} file: #{path}. #{e}.", source_location: parent.document.reader.cursor_at_mark
         return create_block(parent, 'paragraph', unresolved_block_macro_message(diagram_type, path), {})
       end
       KrokiProcessor.process(self, parent, attrs, diagram_type, diagram_text, @logger)
@@ -132,6 +133,8 @@ module AsciidoctorExtensions
   # Internal processor
   #
   class KrokiProcessor
+    include Asciidoctor::Logging
+
     TEXT_FORMATS = %w[txt atxt utxt].freeze
 
     class << self
@@ -147,12 +150,17 @@ module AsciidoctorExtensions
         title = attrs.delete('title')
         caption = attrs.delete('caption')
         attrs.delete('opts')
-        role = attrs['role']
         format = get_format(doc, attrs, diagram_type)
-        attrs['role'] = get_role(format, role)
+        attrs['role'] = get_role(format, attrs['role'])
         attrs['format'] = format
         kroki_diagram = KrokiDiagram.new(diagram_type, format, diagram_text)
-        kroki_client = KrokiClient.new(server_url(doc), http_method(doc), KrokiHttpClient, logger, max_uri_length(doc))
+        kroki_client = KrokiClient.new({
+                                         server_url: server_url(doc),
+                                         http_method: http_method(doc),
+                                         max_uri_length: max_uri_length(doc),
+                                         source_location: doc.reader.cursor_at_mark,
+                                         http_client: KrokiHttpClient
+                                       }, logger)
         if TEXT_FORMATS.include?(format)
           text_content = kroki_client.text_content(kroki_diagram)
           block = processor.create_block(parent, 'literal', text_content, attrs)
@@ -178,7 +186,8 @@ module AsciidoctorExtensions
             config = File.read(plantuml_include_path)
             diagram_text = "#{config}\n#{diagram_text}"
           else
-            logger.warn "Unable to read plantuml-include. File not found or not readable: #{plantuml_include_path}."
+            logger.warn message_with_context "Unable to read plantuml-include. File not found or not readable: #{plantuml_include_path}.",
+                                             source_location: doc.reader.cursor_at_mark
           end
         end
         diagram_text
@@ -316,19 +325,23 @@ module AsciidoctorExtensions
   # Kroki client
   #
   class KrokiClient
+    include Asciidoctor::Logging
+
     attr_reader :server_url, :method, :max_uri_length
 
     SUPPORTED_HTTP_METHODS = %w[get post adaptive].freeze
 
-    def initialize(server_url, http_method, http_client, logger = ::Asciidoctor::LoggerManager.logger, max_uri_length = 4000)
-      @server_url = server_url
-      @max_uri_length = max_uri_length
-      @http_client = http_client
-      method = (http_method || 'adaptive').downcase
+    def initialize(opts, logger = ::Asciidoctor::LoggerManager.logger)
+      @server_url = opts[:server_url]
+      @max_uri_length = opts.fetch(:max_uri_length, 4000)
+      @http_client = opts[:http_client]
+      method = opts.fetch(:http_method, 'adaptive').downcase
       if SUPPORTED_HTTP_METHODS.include?(method)
         @method = method
       else
-        logger.warn "Invalid value '#{method}' for kroki-http-method attribute. The value must be either: 'get', 'post' or 'adaptive'. Proceeding using: 'adaptive'."
+        logger.warn message_with_context "Invalid value '#{method}' for kroki-http-method attribute. The value must be either: " \
+                                         "'get', 'post' or 'adaptive'. Proceeding using: 'adaptive'.",
+                                         source_location: opts[:source_location]
         @method = 'adaptive'
       end
     end
