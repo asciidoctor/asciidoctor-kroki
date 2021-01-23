@@ -30,21 +30,21 @@ describe('Vega-Lite preprocessing', () => {
   /**
    * @param {string} diagramText
    * @param {string} expectedErrorMessage
-   * @param {string} [baseDir]
+   * @param {string} [diagramDir]
    * @returns {void}
    */
-  function expectToThrow (diagramText, expectedErrorMessage, baseDir) {
-    expect(() => preprocessVegaLite(diagramText, {}, baseDir)).to.throw(expectedErrorMessage)
+  function expectToThrow (diagramText, expectedErrorMessage, diagramDir) {
+    expect(() => preprocessVegaLite(diagramText, {}, diagramDir)).to.throw(expectedErrorMessage)
   }
 
   /**
    * @param {string} diagramText
    * @param {string} expectedPreprocessedDiagramText
-   * @param {string} [baseDir]
+   * @param {string} [diagramDir]
    * @returns {void}
    */
-  function expectToBeEqual (diagramText, expectedPreprocessedDiagramText, baseDir) {
-    expect(preprocessVegaLite(diagramText, {}, baseDir)).to.be.equal(expectedPreprocessedDiagramText.replace(/\r\n/g, '\n'))
+  function expectToBeEqual (diagramText, expectedPreprocessedDiagramText, diagramDir) {
+    expect(preprocessVegaLite(diagramText, {}, diagramDir)).to.be.equal(expectedPreprocessedDiagramText.replace(/\r\n/g, '\n'))
   }
 
   it('should throw an error for invalid JSON', () => {

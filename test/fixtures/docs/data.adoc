@@ -1,0 +1,5 @@
+= Exploring Data
+
+For this tutorial, we will create visualizations to explore weather data for Seattle, taken from NOAA.
+
+vegalite::diagrams/weather.vlite[]

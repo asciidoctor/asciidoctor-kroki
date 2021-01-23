@@ -831,6 +831,25 @@ rackdiag {
       expect(html).to.contain('https://kroki.io/bytefield/svg/eNrTSClKLNdNzs8pzc3TzUhNTEktKtbk0gCLJuVXKCg5pqQUpRYXKylUWxUXJOYpmNSiSAdnVqXC5YxQ5AwwhdMTCxSUAhIrc_ITU5QQaktK8nM1AW7MLSU')
       expect(html).to.contain('<div class="imageblock kroki">')
     })
+    it('should convert a Vega-Lite diagram and resolve data.url relative to the diagram file', async () => {
+      const registry = asciidoctor.Extensions.create()
+      asciidoctorKroki.register(registry)
+      const html = asciidoctor.convertFile(fixturePath('docs', 'data.adoc'), { to_file: false, extension_registry: registry, safe: 'unsafe' })
+      const values = fs.readFileSync(fixturePath('docs', 'diagrams', 'data', 'seattle-weather.csv'), 'utf8')
+      const diagramText = JSON.stringify({
+        data: {
+          values,
+          format: {
+            type: 'csv'
+          }
+        },
+        mark: 'tick',
+        encoding: {
+          x: { field: 'precipitation', type: 'quantitative' }
+        }
+      })
+      expect(html).to.contain(`https://kroki.io/vegalite/svg/${encodeText(diagramText)}`)
+    })
 
     describe('Default options', () => {
       const defaultOptionsFixtures = [
