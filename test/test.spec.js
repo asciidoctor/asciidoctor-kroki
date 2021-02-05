@@ -159,7 +159,7 @@ Hello -> World
         attributes: { 'kroki-fetch-diagram': true }
       })
       expect(html).to.contain('<img src=".asciidoctor/kroki/diag-7a123c0b2909750ca5526554cd8620774ccf6cd9.svg" alt="hello-world">')
-    })
+    }).timeout(5000)
     it('should download and save an image to a local folder and generated name', () => {
       const input = `
 :imagesdir: .asciidoctor/kroki
@@ -176,7 +176,7 @@ Hello -> World
         attributes: { 'kroki-fetch-diagram': true }
       })
       expect(html).to.contain('<img src=".asciidoctor/kroki/diag-7a123c0b2909750ca5526554cd8620774ccf6cd9.svg" alt="Diagram">')
-    })
+    }).timeout(5000)
     it('should apply substitutions in diagram block', () => {
       const input = `
 :action: generates
