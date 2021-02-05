@@ -1,4 +1,4 @@
-/* global it, describe, mocha, chai, Asciidoctor, AsciidoctorKroki, mochaOpts, pako */
+/* global it, describe, mocha, chai, Asciidoctor, AsciidoctorKroki, mochaOpts, pako, base64js */
 const httpGet = (uri, encoding = 'utf8') => {
   let data = ''
   let status = -1
@@ -53,11 +53,11 @@ const httpGet = (uri, encoding = 'utf8') => {
   parts.pop()
   parts.pop()
   const baseDir = parts.join('/')
-
   function encodeText (text) {
-    const compressed = pako.deflate(text, { to: 'string', level: 9 })
-    return window.btoa(compressed)
-      .replace(/\+/g, '-').replace(/\//g, '_')
+    const buffer = pako.deflate(text, { level: 9 })
+    return base64js.fromByteArray(buffer)
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
   }
 
   describe('Conversion', () => {

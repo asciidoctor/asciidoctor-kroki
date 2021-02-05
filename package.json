@@ -28,6 +28,7 @@
   "devDependencies": {
     "@antora/site-generator-default": "^2.3.3",
     "@asciidoctor/core": "^2.0.3",
+    "base64-js": "^1.5.1",
     "browserify": "^17.0.0",
     "chai": "^4.2.0",
     "chai-string": "^1.5.0",
