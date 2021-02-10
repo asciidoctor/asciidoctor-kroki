@@ -136,7 +136,7 @@ module AsciidoctorExtensions
     class << self
       def process(processor, parent, attrs, diagram_type, diagram_text, logger)
         doc = parent.document
-        diagram_text = prepend_plantuml_config(diagram_text, diagram_type, doc)
+        diagram_text = prepend_plantuml_config(diagram_text, diagram_type, doc, logger)
         # If "subs" attribute is specified, substitute accordingly.
         # Be careful not to specify "specialcharacters" or your diagram code won't be valid anymore!
         if (subs = attrs['subs'])
@@ -166,12 +166,17 @@ module AsciidoctorExtensions
 
       private
 
-      def prepend_plantuml_config(diagram_text, diagram_type, doc)
-        if diagram_type == :plantuml && doc.attr?('kroki-plantuml-include')
-          # TODO: this behaves different than the JS version
-          # The file should be added by !include #{plantuml_include}" once we have a preprocessor for ruby
-          config = File.read(doc.attr('kroki-plantuml-include'))
-          diagram_text = config + "\n" + diagram_text
+      def prepend_plantuml_config(diagram_text, diagram_type, doc, logger)
+        if diagram_type == :plantuml && doc.safe < ::Asciidoctor::SafeMode::SECURE && doc.attr?('kroki-plantuml-include')
+          # REMIND: this behaves different than the JS version
+          # Once we have a preprocessor for Ruby, the value should be added in the diagram source as "!include #{plantuml_include}"
+          plantuml_include_path = doc.normalize_system_path(doc.attr('kroki-plantuml-include'))
+          if ::File.readable? plantuml_include_path
+            config = File.read(plantuml_include_path)
+            diagram_text = config + "\n" + diagram_text
+          else
+            logger.warn "Unable to read plantuml-include. File not found or not readable: #{plantuml_include_path}."
+          end
         end
         diagram_text
       end
@@ -211,7 +216,7 @@ module AsciidoctorExtensions
       end
 
       def create_image_src(doc, kroki_diagram, kroki_client)
-        if doc.attr('kroki-fetch-diagram')
+        if doc.attr('kroki-fetch-diagram') && doc.safe < ::Asciidoctor::SafeMode::SECURE
           kroki_diagram.save(output_dir_path(doc), kroki_client)
         else
           kroki_diagram.get_diagram_uri(server_url(doc))
