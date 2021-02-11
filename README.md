@@ -326,8 +326,9 @@ Consult the [Kroki documentation](https://kroki.io/#support) to find out which f
 | ---- | ---- | ---- |
 | `kroki-server-url` | The URL of the Kroki server (see "Using Your Own Kroki") | `https://kroki.io`
 | `kroki-fetch-diagram` | Define if we should download (and save on the disk) the images from the Kroki server.<br/>This feature is not available when running in the browser. | `false`
-| `kroki-http-method` | Define how we should get the image from the Kroki server. Possible values:<br/><ul><li>`get`: always use GET requests</li><li>`post`: always use POST requests</li><li>`adaptive`: use a POST request if the URI length is longer than 4096 characters, otherwise use a GET request</li></ul> | `adaptive` |
+| `kroki-http-method` | Define how we should get the image from the Kroki server. Possible values:<br/><ul><li>`get`: always use GET requests</li><li>`post`: always use POST requests</li><li>`adaptive`: use a POST request if the URI length is longer than `kroki-max-uri-length` (default 4000) characters, otherwise use a GET request</li></ul> | `adaptive` |
 | `kroki-plantuml-include` | A file that will be included at the top of all PlantUML diagrams as if `!include file` was used. This can be useful when you want to define a common skin for all your diagrams. The value can be a path or a URL. |  |
+| `kroki-max-uri-length` | Define the max URI length before using a POST request when using `adaptive` HTTP method (`kroki-http-method`) | `4000`
 
 **❗ IMPORTANT:**
 `kroki-fetch-diagram` and `kroki-plantuml-include` are only available when safe mode is `server` or lower.

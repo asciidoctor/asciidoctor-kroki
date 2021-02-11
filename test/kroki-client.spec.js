@@ -37,9 +37,33 @@ describe('Kroki HTTP client', () => {
       const krokiClient = new KrokiClient(doc, httpClient)
       expect(krokiClient.method).to.equal('adaptive')
     })
+    it('should use adaptive method when kroki-http-method is undefined', () => {
+      const doc = asciidoctor.load('')
+      const krokiClient = new KrokiClient(doc, httpClient)
+      expect(krokiClient.method).to.equal('adaptive')
+    })
+  })
+  describe('kroki-max-uri-length attribute', () => {
+    it('should use the default value (4000) when kroki-max-uri-length is undefined', () => {
+      const doc = asciidoctor.load('')
+      const krokiClient = new KrokiClient(doc, httpClient)
+      expect(krokiClient.maxUriLength).to.equal(4000)
+    })
+    it('should use the default value (4000) when kroki-max-uri-length is invalid', () => {
+      const doc = asciidoctor.load('')
+      doc.setAttribute('kroki-max-uri-length', 'foo')
+      const krokiClient = new KrokiClient(doc, httpClient)
+      expect(krokiClient.maxUriLength).to.equal(4000)
+    })
+    it('should use a custom value when kroki-max-uri-length is a number', () => {
+      const doc = asciidoctor.load('')
+      doc.setAttribute('kroki-max-uri-length', '8000')
+      const krokiClient = new KrokiClient(doc, httpClient)
+      expect(krokiClient.maxUriLength).to.equal(8000)
+    })
   })
   describe('Adaptive mode', () => {
-    it('should get an image with GET request if the URI length is <= 4096', () => {
+    it('should get an image with GET request if the URI length is <= 4000', () => {
       const doc = asciidoctor.load('')
       const krokiClient = new KrokiClient(doc, httpClient)
       const krokiDiagram = new KrokiDiagram('vegalite', 'svg', readFixture('chart.vlite'))
@@ -51,7 +75,7 @@ describe('Kroki HTTP client', () => {
         .replace(/\n/, '')
       expect(image).to.equal(expected)
     }).timeout(5000)
-    it('should get an image with POST request if the URI length is > 4096', () => {
+    it('should get an image with POST request if the URI length is > 4000', () => {
       const doc = asciidoctor.load('')
       const krokiClient = new KrokiClient(doc, httpClient)
       const krokiDiagram = new KrokiDiagram('vegalite', 'svg', readFixture('cars-repeated-charts.vlite'))
@@ -63,5 +87,37 @@ describe('Kroki HTTP client', () => {
         .replace(/\n/, '')
       expect(image).to.equal(expected)
     }).timeout(5000)
+    it('should get an image with POST request if the URI length is greater than the value configured', () => {
+      const doc = asciidoctor.load('')
+      doc.setAttribute('kroki-max-uri-length', '10')
+      const krokiClient = new KrokiClient(doc, {
+        get: (uri) => `GET ${uri}`,
+        post: (uri, body) => `POST ${uri} - ${body}`,
+      })
+      const krokiDiagram = {
+        type: 'type',
+        format: 'format',
+        text: 'text',
+        getDiagramUri: () =>  'diagram-uri' // length: 11
+      }
+      const image = krokiClient.getImage(krokiDiagram)
+      expect(image).to.equal('POST https://kroki.io/type/format - text')
+    })
+    it('should get an image with GET request if the URI length is lower or equals than the value configured', () => {
+      const doc = asciidoctor.load('')
+      doc.setAttribute('kroki-max-uri-length', '11')
+      const krokiClient = new KrokiClient(doc, {
+        get: (uri) => `GET ${uri}`,
+        post: (uri, body) => `POST ${uri} - ${body}`,
+      })
+      const krokiDiagram = {
+        type: 'type',
+        format: 'format',
+        text: 'text',
+        getDiagramUri: () =>  'diagram-uri' // length: 11
+      }
+      const image = krokiClient.getImage(krokiDiagram)
+      expect(image).to.equal('GET diagram-uri')
+    })
   })
 })
