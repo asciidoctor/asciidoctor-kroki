@@ -28,7 +28,7 @@ Install the dependencies:
 
     $ npm i asciidoctor asciidoctor-kroki
 
-Create a file named `kroki.js` with following content and run it:
+Create a file named `kroki.js` with following content and run it:
 
 ```javascript
 const asciidoctor = require('@asciidoctor/core')()
@@ -37,11 +37,11 @@ const kroki = require('asciidoctor-kroki')
 const input = 'plantuml::hello.puml[svg,role=sequence]'
 
 kroki.register(asciidoctor.Extensions) // <1>
-console.log(asciidoctor.convert(input))
+console.log(asciidoctor.convert(input, { safe: 'safe' }))
 
 const registry = asciidoctor.Extensions.create()
 kroki.register(registry) // <2>
-console.log(asciidoctor.convert(input, { extension_registry: registry }))
+console.log(asciidoctor.convert(input, { safe: 'safe', extension_registry: registry }))
 ```
 **<1>** Register the extension in the global registry <br/>
 **<2>** Register the extension in a dedicated registry
@@ -78,7 +78,7 @@ digraph G {
 
       const registry = asciidoctor.Extensions.create()
       AsciidoctorKroki.register(registry) // <1>
-      const result = asciidoctor.convert(input, { extension_registry: registry })
+      const result = asciidoctor.convert(input, { safe: 'safe', extension_registry: registry })
       document.getElementById('content').innerHTML = result
     </script>
   </body>
@@ -102,7 +102,7 @@ AsciidoctorKroki.register(registry, {
   }
 })
 const input = 'plantuml::hello.puml[svg,role=sequence]'
-asciidoctor.convert(input, { base_dir: window.location.origin, safe: 'safe', extension_registry: registry })
+asciidoctor.convert(input, { safe: 'safe', base_dir: window.location.origin, extension_registry: registry })
 ```
 
 ### Ruby
@@ -328,6 +328,11 @@ Consult the [Kroki documentation](https://kroki.io/#support) to find out which f
 | `kroki-fetch-diagram` | Define if we should download (and save on the disk) the images from the Kroki server.<br/>This feature is not available when running in the browser. | `false`
 | `kroki-http-method` | Define how we should get the image from the Kroki server. Possible values:<br/><ul><li>`get`: always use GET requests</li><li>`post`: always use POST requests</li><li>`adaptive`: use a POST request if the URI length is longer than 4096 characters, otherwise use a GET request</li></ul> | `adaptive` |
 | `kroki-plantuml-include` | A file that will be included at the top of all PlantUML diagrams as if `!include file` was used. This can be useful when you want to define a common skin for all your diagrams. The value can be a path or a URL. |  |
+
+**❗ IMPORTANT:**
+`kroki-fetch-diagram` and `kroki-plantuml-include` are only available when safe mode is `server` or lower.
+If you want to learn more about Asciidoctor safe modes: https://docs.asciidoctor.org/asciidoctor/latest/safe-modes/
+
 ### Default configuration
 
 By default, images are generated as SVG when possible.
@@ -367,6 +372,17 @@ To change the default for SVG diagrams, set the `kroki-default-options` attribut
 
 You can unset this with `:kroki-default-options: none` or `:kroki-default-options!:` or specify `opts=none` in a block or macro.
 
+## Preprocessing
+
+Some diagram libraries allow referencing external entities by URL or accessing resources from the filesystem.
+For example PlantUML allows the `!import` directive to pull fragments from the filesystem or a remote URL or the standard library.
+Similarly, Vega-Lite can load data from a URL using the `url` property.
+
+By default, the Kroki server is running in `SECURE` mode which restrict access to files on the file system and on the network.
+
+For ease of use and convenience, Asciidoctor Kroki will try to resolve and load external resources before sending a request to the Kroki server.
+This feature is only available when Asciidoctor safe mode is `server` or lower.
+
 ## Using Your Own Kroki
 
 By default, this extension sends information and receives diagrams back from https://kroki.io.
@@ -395,7 +411,7 @@ Note that either the `http://` or `https://` prefix _is_ required (the default D
 You can also set this attribute using the Javascript API, for instance:
 
 ```js
-asciidoctor.convertFile('file.adoc', { attributes: { 'kroki-server-url': 'http://my-server-url:port' } })
+asciidoctor.convertFile('file.adoc', { safe: 'safe', attributes: { 'kroki-server-url': 'http://my-server-url:port' } })
 ```
 
 ## Contributing
