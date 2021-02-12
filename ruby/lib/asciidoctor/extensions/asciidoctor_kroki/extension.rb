@@ -236,19 +236,15 @@ module AsciidoctorExtensions
       end
 
       def output_dir_path(doc)
-        images_output_dir = doc.attr('imagesoutdir')
-        out_dir = doc.attr('outdir')
-        to_dir = doc.attr('to_dir')
-        base_dir = doc.base_dir
         images_dir = doc.attr('imagesdir', '')
-        if images_output_dir
+        if (images_output_dir = doc.attr('imagesoutdir'))
           images_output_dir
-        elsif out_dir
+        elsif (out_dir = doc.attr('outdir'))
           File.join(out_dir, images_dir)
-        elsif to_dir
+        elsif (to_dir = doc.attr('to_dir'))
           File.join(to_dir, images_dir)
         else
-          File.join(base_dir, images_dir)
+          File.join(doc.base_dir, images_dir)
         end
       end
     end
