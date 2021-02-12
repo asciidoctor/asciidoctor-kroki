@@ -23,10 +23,13 @@ const isBrowser = () => {
   return typeof window === 'object' && typeof window.XMLHttpRequest === 'object'
 }
 
+// A value of 20 (SECURE) disallows the document from attempting to read files from the file system
+const SAFE_MODE_SECURE = 20
+
 const createImageSrc = (doc, krokiDiagram, target, vfs, krokiClient) => {
   const shouldFetch = doc.isAttribute('kroki-fetch-diagram')
   let imageUrl
-  if (shouldFetch) {
+  if (shouldFetch && doc.getSafe() < SAFE_MODE_SECURE) {
     imageUrl = require('./fetch.js').save(krokiDiagram, doc, target, vfs, krokiClient)
   } else {
     imageUrl = krokiDiagram.getDiagramUri(krokiClient.getServerUrl())
@@ -66,14 +69,16 @@ const processKroki = (processor, parent, attrs, diagramType, diagramText, contex
   if (subs) {
     diagramText = parent.applySubstitutions(diagramText, parent.$resolve_subs(subs))
   }
-  if (diagramType === 'vegalite') {
-    diagramText = require('./preprocess.js').preprocessVegaLite(diagramText, context, diagramDir)
-  } else if (diagramType === 'plantuml') {
-    const plantUmlInclude = doc.getAttribute('kroki-plantuml-include')
-    if (plantUmlInclude) {
-      diagramText = `!include ${plantUmlInclude}\n${diagramText}`
+  if (doc.getSafe() < SAFE_MODE_SECURE) {
+    if (diagramType === 'vegalite') {
+      diagramText = require('./preprocess.js').preprocessVegaLite(diagramText, context, diagramDir)
+    } else if (diagramType === 'plantuml') {
+      const plantUmlInclude = doc.getAttribute('kroki-plantuml-include')
+      if (plantUmlInclude) {
+        diagramText = `!include ${plantUmlInclude}\n${diagramText}`
+      }
+      diagramText = require('./preprocess.js').preprocessPlantUML(diagramText, context, doc.getBaseDir())
     }
-    diagramText = require('./preprocess.js').preprocessPlantUML(diagramText, context, doc.getBaseDir())
   }
   const blockId = attrs.id
   const format = attrs.format || doc.getAttribute('kroki-default-format') || 'svg'

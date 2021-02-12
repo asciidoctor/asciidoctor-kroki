@@ -90,7 +90,11 @@ alice -> bob
       const input = `plantuml::${file}[svg,role=sequence]`
       const registry = asciidoctor.Extensions.create()
       asciidoctorKroki.register(registry)
-      const html = asciidoctor.convert(input, { extension_registry: registry, base_dir: ospath.join(__dirname, 'fixtures') })
+      const html = asciidoctor.convert(input, {
+        safe: 'safe',
+        extension_registry: registry,
+        base_dir: ospath.join(__dirname, 'fixtures')
+      })
       expect(html).to.contain(`https://kroki.io/plantuml/svg/${encodeText(diagramText)}`)
       expect(html).to.contain('<div class="imageblock sequence kroki-format-svg kroki">')
     }).timeout(5000)
@@ -103,6 +107,7 @@ plantuml::test/fixtures/alice.puml[png,role=sequence]
       const registry = asciidoctor.Extensions.create()
       asciidoctorKroki.register(registry)
       const html = asciidoctor.convert(input, {
+        safe: 'safe',
         extension_registry: registry,
         attributes: { 'kroki-fetch-diagram': true }
       })
@@ -116,7 +121,11 @@ plantuml::test/fixtures/alice.puml[png,role=sequence]
       const input = `plantuml::${file}[svg,role=sequence]`
       const registry = asciidoctor.Extensions.create()
       asciidoctorKroki.register(registry)
-      const html = asciidoctor.convert(input, { extension_registry: registry, attributes: { 'kroki-plantuml-include': config } })
+      const html = asciidoctor.convert(input, {
+        safe: 'safe',
+        extension_registry: registry,
+        attributes: { 'kroki-plantuml-include': config }
+      })
       const diagramText = getDiagramFromHTML(html)
       expect(diagramText).to.contain('skinparam BackgroundColor black')
       expect(diagramText).to.contain('alice -> bob')
@@ -143,6 +152,24 @@ plantuml::test/fixtures/alice.puml[png,role=sequence]
         deleteDirWithFiles(imageLocation)
       }
     })
+    it('should not fetch diagram (and write to disk) when safe mode is secure', () => {
+      const input = `
+:imagesdir: .asciidoctor/kroki
+
+[plantuml,hello-world,svg,role=sequence]
+....
+Hello -> World
+....
+`
+      const registry = asciidoctor.Extensions.create()
+      asciidoctorKroki.register(registry)
+      const html = asciidoctor.convert(input, {
+        safe: 'secure', // default value
+        extension_registry: registry,
+        attributes: { 'kroki-fetch-diagram': true }
+      })
+      expect(html).to.contain('<img src="https://kroki.io/plantuml/svg/eNrzSM3JyVfQtVMIzy_KSQEAIiQEqA==" alt="hello-world">')
+    }).timeout(5000)
     it('should download and save an image to a local folder', () => {
       const input = `
 :imagesdir: .asciidoctor/kroki
@@ -155,6 +182,7 @@ Hello -> World
       const registry = asciidoctor.Extensions.create()
       asciidoctorKroki.register(registry)
       const html = asciidoctor.convert(input, {
+        safe: 'safe',
         extension_registry: registry,
         attributes: { 'kroki-fetch-diagram': true }
       })
@@ -172,6 +200,7 @@ Hello -> World
       const registry = asciidoctor.Extensions.create()
       asciidoctorKroki.register(registry)
       const html = asciidoctor.convert(input, {
+        safe: 'safe',
         extension_registry: registry,
         attributes: { 'kroki-fetch-diagram': true }
       })
@@ -208,6 +237,7 @@ plantuml::{fixtures-dir}/alice.puml[svg,role=sequence]
       const registry = asciidoctor.Extensions.create()
       asciidoctorKroki.register(registry)
       const html = asciidoctor.convert(input, {
+        safe: 'safe',
         extension_registry: registry,
         attributes: { 'kroki-fetch-diagram': true }
       })
@@ -229,6 +259,7 @@ AsciiDoc -> HTML5: convert
         const registry = asciidoctor.Extensions.create()
         asciidoctorKroki.register(registry)
         const html = asciidoctor.convert(input, {
+          safe: 'safe',
           extension_registry: registry,
           attributes: { 'kroki-fetch-diagram': true }
         })
@@ -611,7 +642,10 @@ rackdiag {
 `
       const registry = asciidoctor.Extensions.create()
       asciidoctorKroki.register(registry)
-      const html = asciidoctor.convert(input, { extension_registry: registry })
+      const html = asciidoctor.convert(input, {
+        safe: 'safe',
+        extension_registry: registry
+      })
       const values = readFixture('vegalite-data.csv')
       const text = JSON.stringify({
         $schema: 'https://vega.github.io/schema/vega-lite/v4.json',
