@@ -30,4 +30,62 @@ describe ::AsciidoctorExtensions::KrokiClient do
     kroki_client = ::AsciidoctorExtensions::KrokiClient.new('http://localhost:8000', 'get', kroki_http_client, nil, 8000)
     expect(kroki_client.max_uri_length).to eq(8000)
   end
+  it 'should get an image with POST request if the URI length is greater than the value configured' do
+    kroki_http_client = Class.new do
+      class << self
+        def get(uri, _)
+          "GET #{uri}"
+        end
+
+        def post(uri, data, _)
+          "POST #{uri} - #{data}"
+        end
+      end
+    end
+    kroki_diagram = Class.new do
+      attr_reader :type, :text, :format
+
+      def initialize(type, format, text)
+        @text = text
+        @type = type
+        @format = format
+      end
+
+      def get_diagram_uri(_)
+        'diagram-uri'
+      end
+    end.new('type', 'format', 'text')
+    kroki_client = ::AsciidoctorExtensions::KrokiClient.new('http://localhost:8000', 'adaptive', kroki_http_client, nil, 10)
+    result = kroki_client.get_image(kroki_diagram, 'utf8')
+    expect(result).to eq('POST http://localhost:8000/type/format - text')
+  end
+  it 'should get an image with GET request if the URI length is lower or equals than the value configured' do
+    kroki_http_client = Class.new do
+      class << self
+        def get(uri, _)
+          "GET #{uri}"
+        end
+
+        def post(uri, data, _)
+          "POST #{uri} - #{data}"
+        end
+      end
+    end
+    kroki_diagram = Class.new do
+      attr_reader :type, :text, :format
+
+      def initialize(type, format, text)
+        @text = text
+        @type = type
+        @format = format
+      end
+
+      def get_diagram_uri(_)
+        'diagram-uri'
+      end
+    end.new('type', 'format', 'text')
+    kroki_client = ::AsciidoctorExtensions::KrokiClient.new('http://localhost:8000', 'adaptive', kroki_http_client, nil, 11)
+    result = kroki_client.get_image(kroki_diagram, 'utf8')
+    expect(result).to eq('GET diagram-uri')
+  end
 end
