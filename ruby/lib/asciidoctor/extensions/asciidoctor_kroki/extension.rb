@@ -150,7 +150,7 @@ module AsciidoctorExtensions
         attrs['role'] = get_role(format, role)
         attrs['format'] = format
         kroki_diagram = KrokiDiagram.new(diagram_type, format, diagram_text)
-        kroki_client = KrokiClient.new(server_url(doc), http_method(doc), KrokiHttpClient, logger)
+        kroki_client = KrokiClient.new(server_url(doc), http_method(doc), KrokiHttpClient, logger, max_uri_length(doc))
         if TEXT_FORMATS.include?(format)
           text_content = kroki_client.text_content(kroki_diagram)
           block = processor.create_block(parent, 'literal', text_content, attrs)
@@ -231,20 +231,20 @@ module AsciidoctorExtensions
         doc.attr('kroki-http-method', 'adaptive').downcase
       end
 
+      def max_uri_length(doc)
+        doc.attr('kroki-max-uri-length', '4000').to_i
+      end
+
       def output_dir_path(doc)
-        images_output_dir = doc.attr('imagesoutdir')
-        out_dir = doc.attr('outdir')
-        to_dir = doc.attr('to_dir')
-        base_dir = doc.base_dir
         images_dir = doc.attr('imagesdir', '')
-        if images_output_dir
+        if (images_output_dir = doc.attr('imagesoutdir'))
           images_output_dir
-        elsif out_dir
+        elsif (out_dir = doc.attr('outdir'))
           File.join(out_dir, images_dir)
-        elsif to_dir
+        elsif (to_dir = doc.attr('to_dir'))
           File.join(to_dir, images_dir)
         else
-          File.join(base_dir, images_dir)
+          File.join(doc.base_dir, images_dir)
         end
       end
     end
@@ -318,12 +318,13 @@ module AsciidoctorExtensions
   class KrokiClient
     attr_reader :server_url
     attr_reader :method
+    attr_reader :max_uri_length
 
     SUPPORTED_HTTP_METHODS = %w[get post adaptive].freeze
 
-    def initialize(server_url, http_method, http_client, logger = ::Asciidoctor::LoggerManager.logger)
+    def initialize(server_url, http_method, http_client, logger = ::Asciidoctor::LoggerManager.logger, max_uri_length = 4000)
       @server_url = server_url
-      @max_uri_length = 4096
+      @max_uri_length = max_uri_length
       @http_client = http_client
       method = (http_method || 'adaptive').downcase
       if SUPPORTED_HTTP_METHODS.include?(method)
@@ -345,7 +346,7 @@ module AsciidoctorExtensions
       if @method == 'adaptive' || @method == 'get'
         uri = kroki_diagram.get_diagram_uri(server_url)
         if uri.length > @max_uri_length
-          # The request URI is longer than 4096.
+          # The request URI is longer than the max URI length.
           if @method == 'get'
             # The request might be rejected by the server with a 414 Request-URI Too Large.
             # Consider using the attribute kroki-http-method with the value 'adaptive'.

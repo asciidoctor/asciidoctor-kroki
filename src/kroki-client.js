@@ -1,5 +1,7 @@
 const pako = require('pako')
 
+const MAX_URI_DEFAULT_VALUE = 4000
+
 module.exports.KrokiDiagram = class KrokiDiagram {
   constructor (type, format, text) {
     this.text = text
@@ -23,7 +25,8 @@ module.exports.KrokiDiagram = class KrokiDiagram {
 
 module.exports.KrokiClient = class KrokiClient {
   constructor (doc, httpClient) {
-    this.maxUriLength = 4096
+    const maxUriLengthValue = parseInt(doc.getAttribute('kroki-max-uri-length', String(MAX_URI_DEFAULT_VALUE)))
+    this.maxUriLength = isNaN(maxUriLengthValue) ? MAX_URI_DEFAULT_VALUE : maxUriLengthValue
     this.httpClient = httpClient
     const method = doc.getAttribute('kroki-http-method', 'adaptive').toLowerCase()
     if (method === 'get' || method === 'post' || method === 'adaptive') {
@@ -47,7 +50,7 @@ module.exports.KrokiClient = class KrokiClient {
     if (this.method === 'adaptive' || this.method === 'get') {
       const uri = krokiDiagram.getDiagramUri(serverUrl)
       if (uri.length > this.maxUriLength) {
-        // The request URI is longer than 4096.
+        // The request URI is longer than the max URI length.
         if (this.method === 'get') {
           // The request might be rejected by the server with a 414 Request-URI Too Large.
           // Consider using the attribute kroki-http-method with the value 'adaptive'.

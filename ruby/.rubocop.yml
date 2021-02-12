@@ -7,6 +7,9 @@ Layout/EndOfLine:
 Metrics/LineLength:
   Max: 180
 
+Metrics/ClassLength:
+  Max: 150
+
 Metrics/MethodLength:
   Max: 50
 
