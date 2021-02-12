@@ -92,13 +92,13 @@ describe('Kroki HTTP client', () => {
       doc.setAttribute('kroki-max-uri-length', '10')
       const krokiClient = new KrokiClient(doc, {
         get: (uri) => `GET ${uri}`,
-        post: (uri, body) => `POST ${uri} - ${body}`,
+        post: (uri, body) => `POST ${uri} - ${body}`
       })
       const krokiDiagram = {
         type: 'type',
         format: 'format',
         text: 'text',
-        getDiagramUri: () =>  'diagram-uri' // length: 11
+        getDiagramUri: () => 'diagram-uri' // length: 11
       }
       const image = krokiClient.getImage(krokiDiagram)
       expect(image).to.equal('POST https://kroki.io/type/format - text')
@@ -108,13 +108,13 @@ describe('Kroki HTTP client', () => {
       doc.setAttribute('kroki-max-uri-length', '11')
       const krokiClient = new KrokiClient(doc, {
         get: (uri) => `GET ${uri}`,
-        post: (uri, body) => `POST ${uri} - ${body}`,
+        post: (uri, body) => `POST ${uri} - ${body}`
       })
       const krokiDiagram = {
         type: 'type',
         format: 'format',
         text: 'text',
-        getDiagramUri: () =>  'diagram-uri' // length: 11
+        getDiagramUri: () => 'diagram-uri' // length: 11
       }
       const image = krokiClient.getImage(krokiDiagram)
       expect(image).to.equal('GET diagram-uri')
