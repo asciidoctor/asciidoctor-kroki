@@ -13,6 +13,9 @@ const url = require('url')
 
 chai.use(dirtyChai)
 
+const asciidoctorKroki = require('../src/asciidoctor-kroki.js')
+const asciidoctor = require('@asciidoctor/core')()
+
 const { preprocessVegaLite } = require('../src/preprocess.js')
 
 describe('Vega-Lite preprocessing', () => {
@@ -519,5 +522,13 @@ skinparam BackgroundColor black
     expect(result.trim()).to.be.eq(`alice -> bob
       here -> there`
     )
+  })
+
+  it('should resolve PlantUML includes from the diagram directory', () => {
+    const registry = asciidoctor.Extensions.create()
+    asciidoctorKroki.register(registry)
+    const file = path.join(__dirname, 'fixtures', 'docs', 'hello.adoc')
+    const html = asciidoctor.convertFile(file, { safe: 'safe', extension_registry: registry, to_file: false })
+    expect(html).to.contain('https://kroki.io/plantuml/svg/eNorzs7MK0gsSsxVyM3Py0_OKMrPTVUoKSpN5eJyyk_StXPMyUxOtVLwSM3JyQcAc1EPvA==')
   })
 })

@@ -1,0 +1,3 @@
+!include ./style.puml
+
+Bob->Alice: Hello
