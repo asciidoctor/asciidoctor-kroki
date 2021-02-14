@@ -303,6 +303,7 @@ Kroki currently supports the following diagram libraries:
 * [C4 (PlantUML)](https://github.com/RicardoNiepel/C4-PlantUML): `c4plantuml`
 * [Ditaa](http://ditaa.sourceforge.net): `ditaa`
 * [ERD](https://github.com/BurntSushi/erd): `erd`
+* [Excalidraw](https://github.com/excalidraw/excalidraw): `excalidraw`
 * [GraphViz](https://www.graphviz.org/): `graphviz`
 * [Mermaid](https://github.com/knsv/mermaid): `mermaid`
 * [Nomnoml](https://github.com/skanaar/nomnoml): `nomnoml`
