@@ -86,7 +86,7 @@ function removePlantUmlTags (diagramText) {
  * @param {string} diagramDir - diagram base directory
  * @returns {string}
  */
-module.exports.preprocessPlantUML = function (diagramText, context, diagramDir = '.') {
+module.exports.preprocessPlantUML = function (diagramText, context, diagramDir = '') {
   const includeOnce = []
   const includeStack = []
   diagramText = preprocessPlantUmlIncludes(diagramText, diagramDir, includeOnce, includeStack, context.vfs)

@@ -1,0 +1,2 @@
+!include ./style-general.iuml
+Bob->Alice: Hello
