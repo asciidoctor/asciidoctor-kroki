@@ -77,7 +77,7 @@ const processKroki = (processor, parent, attrs, diagramType, diagramText, contex
       if (plantUmlInclude) {
         diagramText = `!include ${plantUmlInclude}\n${diagramText}`
       }
-      diagramText = require('./preprocess.js').preprocessPlantUML(diagramText, context, doc.getBaseDir())
+      diagramText = require('./preprocess.js').preprocessPlantUML(diagramText, context, diagramDir)
     }
   }
   const blockId = attrs.id
