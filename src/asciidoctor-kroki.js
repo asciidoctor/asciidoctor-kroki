@@ -72,7 +72,7 @@ const processKroki = (processor, parent, attrs, diagramType, diagramText, contex
   if (doc.getSafe() < SAFE_MODE_SECURE) {
     if (diagramType === 'vegalite') {
       diagramText = require('./preprocess.js').preprocessVegaLite(diagramText, context, diagramDir)
-    } else if (diagramType === 'plantuml') {
+    } else if (diagramType === 'plantuml' || diagramType === 'c4plantuml') {
       const plantUmlInclude = doc.getAttribute('kroki-plantuml-include')
       if (plantUmlInclude) {
         diagramText = `!include ${plantUmlInclude}\n${diagramText}`
