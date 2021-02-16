@@ -175,7 +175,7 @@ function readPlantUmlInclude (url, dirPath, includeStack, vfs) {
   let text = ''
   let filePath = url
   if (url.startsWith('<')) {
-    // Only warn and do not throw an error, because the std-lib includes can perhaps be found by kroki server
+    // Only warn and do not throw an error, because the std-lib includes can perhaps be found by Kroki server
     console.warn(`Skipping preprocessing of PlantUML standard library include file '${url}'`)
     skip = true
   } else if (includeStack.includes(url)) {
@@ -186,7 +186,7 @@ function readPlantUmlInclude (url, dirPath, includeStack, vfs) {
       try {
         text = read(url)
       } catch (e) {
-        // Only warn and do not throw an error, because the data file can perhaps be found by kroki server (https://github.com/yuzutech/kroki/issues/60)
+        // Only warn and do not throw an error, because the data file can perhaps be found by Kroki server (https://github.com/yuzutech/kroki/issues/60)
         console.warn(`Skipping preprocessing of PlantUML include, because reading the referenced remote file '${url}' caused an error:\n${e}`)
         skip = true
       }
@@ -202,7 +202,7 @@ function readPlantUmlInclude (url, dirPath, includeStack, vfs) {
         try {
           text = read(filePath)
         } catch (e) {
-          // Only warn and do not throw an error, because the data file can perhaps be found by kroki server
+          // Only warn and do not throw an error, because the data file can perhaps be found by Kroki server
           console.warn(`Skipping preprocessing of PlantUML include, because reading the referenced local file '${filePath}' caused an error:\n${e}`)
           skip = true
         }
