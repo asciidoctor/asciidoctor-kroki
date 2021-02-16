@@ -1,0 +1,1 @@
+plantuml::diagrams/hello.puml[]
