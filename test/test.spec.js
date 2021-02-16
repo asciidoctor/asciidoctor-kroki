@@ -283,7 +283,7 @@ AsciiDoc -> HTML5: convert
       } finally {
         http.get.restore()
       }
-    })
+    }).timeout(5000)
     it('should create a literal block when format is txt', () => {
       const input = `
 [plantuml,format=txt]
