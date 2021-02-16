@@ -73,11 +73,12 @@ const processKroki = (processor, parent, attrs, diagramType, diagramText, contex
     if (diagramType === 'vegalite') {
       diagramText = require('./preprocess.js').preprocessVegaLite(diagramText, context, diagramDir)
     } else if (diagramType === 'plantuml' || diagramType === 'c4plantuml') {
-      const plantUmlInclude = doc.getAttribute('kroki-plantuml-include')
-      if (plantUmlInclude) {
-        diagramText = `!include ${plantUmlInclude}\n${diagramText}`
+      const plantUmlIncludeFile = doc.getAttribute('kroki-plantuml-include')
+      if (plantUmlIncludeFile) {
+        diagramText = `!include ${plantUmlIncludeFile}\n${diagramText}`
       }
-      diagramText = require('./preprocess.js').preprocessPlantUML(diagramText, context, diagramDir)
+      const plantUmlIncludePaths = doc.getAttribute('kroki-plantuml-include-paths')
+      diagramText = require('./preprocess.js').preprocessPlantUML(diagramText, context, plantUmlIncludePaths, diagramDir)
     }
   }
   const blockId = attrs.id

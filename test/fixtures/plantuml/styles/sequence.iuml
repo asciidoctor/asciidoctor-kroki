@@ -1,0 +1,13 @@
+skinparam Sequence {
+  TitleFontSize               12
+  TitleFontColor              #606060
+  ArrowColor                  #303030
+  DividerBackgroundColor      #EEEEEE
+  GroupBackgroundColor        #EEEEEE
+  LifeLineBackgroundColor     white
+  LifeLineBorderColor         #303030
+  ParticipantBackgroundColor  #FEFEFE
+  ParticipantBorderColor      #303030
+  BoxLineColor                #303030
+  BoxBackgroundColor          #DDDDDD
+}
