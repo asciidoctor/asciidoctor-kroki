@@ -1,0 +1,3 @@
+!include base.iuml
+!include note.iuml
+Bob->Alice: Hello

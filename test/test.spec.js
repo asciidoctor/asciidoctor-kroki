@@ -113,7 +113,7 @@ alice -> bob
       expect(html).to.contain(`https://kroki.io/plantuml/svg/${encodeText(diagramText)}`)
       expect(html).to.contain('<div class="imageblock sequence kroki-format-svg kroki">')
     }).timeout(5000)
-    it('should convert a PlantUML diagram and resolve includes from configured kroki-plantuml-include-paths attribute', () => {
+    it('should convert a PlantUML diagram and resolve includes from configured kroki-plantuml-include-paths attribute with single path', () => {
       const file = fixturePath('plantuml', 'diagrams', 'hello-with-style.puml')
       const diagramText = fs.readFileSync(file, 'utf8')
         .replace(/^!include (.*)\r?\n/m,
@@ -128,6 +128,23 @@ alice -> bob
         safe: 'safe',
         extension_registry: registry,
         attributes: { 'kroki-plantuml-include-paths': fixturePath('plantuml', 'styles') },
+        base_dir: fixturePath()
+      })
+      expect(html).to.contain(`https://kroki.io/plantuml/svg/${encodeText(diagramText)}`)
+      expect(html).to.contain('<div class="imageblock sequence kroki-format-svg kroki">')
+    }).timeout(5000)
+    it('should convert a PlantUML diagram and resolve includes from configured kroki-plantuml-include-paths attribute with multiple paths', () => {
+      const file = fixturePath('plantuml', 'diagrams', 'hello-with-base-and-note.puml')
+      const diagramText = fs.readFileSync(file, 'utf8')
+        .replace(/^!include base.iuml\r?\n/m, fs.readFileSync(fixturePath('plantuml', 'include', 'base.iuml'), 'utf8') + '\n')
+        .replace(/^!include note.iuml\r?\n/m, fs.readFileSync(fixturePath('plantuml', 'styles', 'note.iuml'), 'utf8') + '\n')
+      const input = `plantuml::${file}[svg,role=sequence]`
+      const registry = asciidoctor.Extensions.create()
+      asciidoctorKroki.register(registry)
+      const html = asciidoctor.convert(input, {
+        safe: 'safe',
+        extension_registry: registry,
+        attributes: { 'kroki-plantuml-include-paths': fixturePath('plantuml', 'styles') + path.delimiter + fixturePath('plantuml', 'include') },
         base_dir: fixturePath()
       })
       expect(html).to.contain(`https://kroki.io/plantuml/svg/${encodeText(diagramText)}`)
