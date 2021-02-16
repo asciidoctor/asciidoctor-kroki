@@ -1,2 +1,2 @@
 skinparam Shadowing false
-!include ../../base.iuml
+!include ../base.iuml

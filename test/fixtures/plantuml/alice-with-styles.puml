@@ -1,2 +1,2 @@
 !include styles/general.iuml
-Bob->Alice: Hello
+alice -> bob

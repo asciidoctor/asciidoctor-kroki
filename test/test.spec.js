@@ -84,9 +84,9 @@ alice -> bob
       expect(html).to.contain('<div class="imageblock sequence kroki-format-svg kroki">')
     }).timeout(5000)
     it('should convert a PlantUML diagram and resolve include relative to base directory', () => {
-      const file = ospath.join(__dirname, 'fixtures', 'alice-with-styles.puml')
+      const file = ospath.join(__dirname, 'fixtures', 'plantuml', 'alice-with-styles.puml')
       const diagramText = fs.readFileSync(file, 'utf8')
-        .replace(/^!include (.*)\r?\n/m, fs.readFileSync(ospath.join(__dirname, 'fixtures', 'plantuml', 'style-general.iuml'), 'utf8') + '\n')
+        .replace(/^!include (.*)\r?\n/m, fs.readFileSync(ospath.join(__dirname, 'fixtures', 'plantuml', 'styles', 'general.iuml'), 'utf8') + '\n')
       const input = `plantuml::${file}[svg,role=sequence]`
       const registry = asciidoctor.Extensions.create()
       asciidoctorKroki.register(registry)
@@ -101,7 +101,7 @@ alice -> bob
     it('should convert a PlantUML diagram and resolve include relative to diagram directory', () => {
       const file = ospath.join(__dirname, 'fixtures', 'plantuml', 'hello.puml')
       const diagramText = fs.readFileSync(file, 'utf8')
-        .replace(/^!include (.*)\r?\n/m, fs.readFileSync(ospath.join(__dirname, 'fixtures', 'plantuml', 'style-general.iuml'), 'utf8') + '\n')
+        .replace(/^!include (.*)\r?\n/m, fs.readFileSync(ospath.join(__dirname, 'fixtures', 'plantuml', 'styles', 'general.iuml'), 'utf8') + '\n')
       const input = `plantuml::${file}[svg,role=sequence]`
       const registry = asciidoctor.Extensions.create()
       asciidoctorKroki.register(registry)
@@ -152,7 +152,7 @@ plantuml::test/fixtures/alice.puml[png,role=sequence]
     }).timeout(5000)
     it('should include the plantuml-config at the top of the diagram', () => {
       const file = fixturePath('alice.puml')
-      const config = fixturePath('plantuml', 'base.iuml')
+      const config = fixturePath('plantuml', 'include', 'base.iuml')
       const input = `plantuml::${file}[svg,role=sequence]`
       const registry = asciidoctor.Extensions.create()
       asciidoctorKroki.register(registry)
