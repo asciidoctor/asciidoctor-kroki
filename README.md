@@ -422,6 +422,26 @@ asciidoctor.convertFile('file.adoc', { safe: 'safe', attributes: { 'kroki-server
 
 To build this project, you will need the latest active LTS of Node.js and npm (we recommend `nvm` to manage multiple active Node.js versions).
 
+The latest Node LTS version is : ```v14.15.x```
+
+Please use latest NPM version ```v7.x``` for ```"lockfileVersion": 2```, see [lockfileversion](https://docs.npmjs.com/cli/v7/configuring-npm/package-lock-json#lockfileversion)
+
+#### Update NPM @ Linux
+    npm i -g npm
+
+#### Update NPM @ Windows
+see [npm-windows-upgrade](https://github.com/felixrieseberg/npm-windows-upgrade)
+1. Open PowerShell and select ```Run as Administrator```
+
+2. Install ```npm-windows-upgrade```
+
+        Set-ExecutionPolicy Unrestricted -Scope CurrentUser -Force
+        npm install --global --production npm-windows-upgrade
+
+3. Upgrade NPM
+
+        npm-windows-upgrade
+
 ### Building
 
 1. Install the dependencies:
