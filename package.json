@@ -14,9 +14,9 @@
     "test:antora": "mocha test/antora/**.spec.js",
     "lint": "standard src/**.js test/**.js",
     "lint-fix": "npm run lint -- --fix",
-    "clean": "rm -rf dist/*",
+    "clean": "shx rm -rf dist/*",
     "dist": "npm run clean && npm run dist:browser",
-    "dist:browser": "mkdir -p dist/browser && browserify src/asciidoctor-kroki.js --exclude ./node-fs.js --exclude ./fetch.js --exclude ./antora-adapter.js --standalone AsciidoctorKroki -o dist/browser/asciidoctor-kroki.js"
+    "dist:browser": "shx mkdir -p dist/browser && browserify src/asciidoctor-kroki.js --exclude ./node-fs.js --exclude ./fetch.js --exclude ./antora-adapter.js --standalone AsciidoctorKroki -o dist/browser/asciidoctor-kroki.js"
   },
   "dependencies": {
     "json5": "^2.1.3",
@@ -39,6 +39,7 @@
     "mocha": "^8.0.1",
     "puppeteer": "^7.0.1",
     "rimraf": "^3.0.2",
+    "shx": "^0.3.3",
     "sinon": "^9.0.1",
     "standard": "^16.0.2"
   },
