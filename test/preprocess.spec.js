@@ -156,9 +156,7 @@ Error: ENOENT: no such file or directory, open '${unexistingPath}'`
 const { preprocessPlantUML } = require('../src/preprocess.js')
 
 describe('PlantUML preprocessing', () => {
-  // TODO: change me
-  // const remoteBasePath = 'https://raw.githubusercontent.com/Mogztter/asciidoctor-kroki/master/'
-  const remoteBasePath = 'https://raw.githubusercontent.com/anb0s/asciidoctor-kroki/plantuml-include-path/'
+  const remoteBasePath = 'https://raw.githubusercontent.com/Mogztter/asciidoctor-kroki/master/'
   const localUnexistingFilePath = 'test/fixtures/plantuml/unexisting.iuml'
   const localExistingFilePath = 'test/fixtures/plantuml/styles/general.iuml'
 
