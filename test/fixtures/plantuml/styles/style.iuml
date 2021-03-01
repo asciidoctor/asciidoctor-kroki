@@ -1,0 +1,3 @@
+!include general.iuml
+!include note.iuml
+!include sequence.iuml

@@ -156,9 +156,11 @@ Error: ENOENT: no such file or directory, open '${unexistingPath}'`
 const { preprocessPlantUML } = require('../src/preprocess.js')
 
 describe('PlantUML preprocessing', () => {
-  const remoteBasePath = 'https://raw.githubusercontent.com/Mogztter/asciidoctor-kroki/master/'
+  // TODO: change me
+  // const remoteBasePath = 'https://raw.githubusercontent.com/Mogztter/asciidoctor-kroki/master/'
+  const remoteBasePath = 'https://raw.githubusercontent.com/anb0s/asciidoctor-kroki/plantuml-include-path/'
   const localUnexistingFilePath = 'test/fixtures/plantuml/unexisting.iuml'
-  const localExistingFilePath = 'test/fixtures/plantuml/style-general.iuml'
+  const localExistingFilePath = 'test/fixtures/plantuml/styles/general.iuml'
 
   it('should return original diagramText without "!include ..."', () => {
     const diagramTextWithoutInclude = `
@@ -200,7 +202,7 @@ ${includedText}
   })
 
   it('should return diagramText with inlined local file referenced with "!include local-file-or-url" and first "@startuml ... @enduml" block', () => {
-    const localExistingFileNameWithBlocksPath = 'test/fixtures/plantuml/style-general.puml'
+    const localExistingFileNameWithBlocksPath = 'test/fixtures/plantuml/styles/general.puml'
     const diagramTextWithExistingLocalIncludeFile = `
       !include ${localExistingFileNameWithBlocksPath}
       alice -> bob`
@@ -212,7 +214,7 @@ ${includedText}
   })
 
   it('should return diagramText with inlined local file referenced with "!include local-file-name-with-spaces # trailing comment"', () => {
-    const localExistingFileNameWithSpacesPath = 'test/fixtures/plantuml/style general with spaces.iuml'
+    const localExistingFileNameWithSpacesPath = 'test/fixtures/plantuml/styles/general with spaces.iuml'
     const localExistingFileNameWithSpacesPathEscaped = localExistingFileNameWithSpacesPath.replace(/ /g, '\\ ')
     const diagramTextWithExistingLocalIncludeFile = `
       !include ${localExistingFileNameWithSpacesPathEscaped} # this includes general style
@@ -261,7 +263,7 @@ ${includedText}`
   })
 
   it('should throw an error for local file(s) referenced multiple times nested with "!include_once local-file-or-url"', () => {
-    const localExistingFileNameIncldudeOncePath = 'test/fixtures/plantuml/style-include-once-style-general.iuml'
+    const localExistingFileNameIncldudeOncePath = 'test/fixtures/plantuml/styles/style-include-once-general.iuml'
     const localExistingFilePathNormalized = path.normalize(localExistingFilePath)
     const diagramTextWithExistingLocalIncludeOneFile = `
       !include_once ${localExistingFilePath}
@@ -317,7 +319,7 @@ ${includedText} /'
   })
 
   it('should return diagramText with inlined local file referenced with "!include local-file-name-with-spaces"', () => {
-    const localExistingFileNameWithSpacesPath = 'test/fixtures/plantuml/style general with spaces.iuml'
+    const localExistingFileNameWithSpacesPath = 'test/fixtures/plantuml/styles/general with spaces.iuml'
     const localExistingFileNameWithSpacesPathEscaped = localExistingFileNameWithSpacesPath.replace(/ /g, '\\ ')
     const diagramTextWithExistingLocalIncludeFile = `
       !include ${localExistingFileNameWithSpacesPathEscaped}
@@ -354,8 +356,8 @@ ${includedText}
   })
 
   it('should return diagramText with inlined multiple local files referenced with "!include local-file-or-url"', () => {
-    const localExistingFilePath1 = 'test/fixtures/plantuml/style-note.iuml'
-    const localExistingFilePath2 = 'test/fixtures/plantuml/style-sequence.iuml'
+    const localExistingFilePath1 = 'test/fixtures/plantuml/styles/note.iuml'
+    const localExistingFilePath2 = 'test/fixtures/plantuml/styles/sequence.iuml'
     const diagramTextWithExistingLocalIncludeFiles = `
       !include ${localExistingFilePath}
       !include ${localExistingFilePath1}
@@ -373,9 +375,9 @@ ${includedText2}
   })
 
   it('should return diagramText with inlined recursive local files referenced with "!include local-file-or-url"', () => {
-    const localExistingFilePath0 = 'test/fixtures/plantuml/style.iuml'
-    const localExistingFilePath1 = 'test/fixtures/plantuml/style-note.iuml'
-    const localExistingFilePath2 = 'test/fixtures/plantuml/style-sequence.iuml'
+    const localExistingFilePath0 = 'test/fixtures/plantuml/styles/style.iuml'
+    const localExistingFilePath1 = 'test/fixtures/plantuml/styles/note.iuml'
+    const localExistingFilePath2 = 'test/fixtures/plantuml/styles/sequence.iuml'
     const diagramTextWithExistingRecursiveLocalIncludeFile = `
       !include ${localExistingFilePath0}
       alice -> bob`
@@ -391,11 +393,11 @@ ${includedText2}
   })
 
   it('should return diagramText with inlined recursive local files referenced with "!include local-file-name-with-spaces"', () => {
-    const localExistingFileNameWithSpacesPath = 'test/fixtures/plantuml/style general with spaces.iuml'
-    const localExistingFilePath0WithSpaces = 'test/fixtures/plantuml/style with spaces.iuml'
+    const localExistingFileNameWithSpacesPath = 'test/fixtures/plantuml/styles/general with spaces.iuml'
+    const localExistingFilePath0WithSpaces = 'test/fixtures/plantuml/styles/style with spaces.iuml'
     const localExistingFilePath0WithSpacesEscaped = localExistingFilePath0WithSpaces.replace(/ /g, '\\ ')
-    const localExistingFilePath1 = 'test/fixtures/plantuml/style-note.iuml'
-    const localExistingFilePath2 = 'test/fixtures/plantuml/style-sequence.iuml'
+    const localExistingFilePath1 = 'test/fixtures/plantuml/styles/note.iuml'
+    const localExistingFilePath2 = 'test/fixtures/plantuml/styles/sequence.iuml'
     const diagramTextWithExistingRecursiveLocalIncludeFile = `
       !include ${localExistingFilePath0WithSpacesEscaped}
       alice -> bob`
@@ -411,7 +413,7 @@ ${includedText2}
   })
 
   it('should throw an error for file recursive included itself', () => {
-    const localExistingFileIncludesItselfPath = 'test/fixtures/plantuml/file-include-itself.iuml'
+    const localExistingFileIncludesItselfPath = 'test/fixtures/plantuml/include/itself.iuml'
     const localExistingFileIncludesItselfPathNormalized = path.normalize(localExistingFileIncludesItselfPath)
     const diagramTextWithIncludeItself = `
       !include ${localExistingFileIncludesItselfPath}
@@ -421,8 +423,8 @@ ${includedText2}
   })
 
   it('should throw an error for file recursive included grand parent file', () => {
-    const localExistingFileGrandParentName = 'file-include-grand-parent.iuml'
-    const localExistingFileGrandParentPath = 'test/fixtures/plantuml/' + localExistingFileGrandParentName
+    const localExistingFileGrandParentName = 'grand-parent.iuml'
+    const localExistingFileGrandParentPath = 'test/fixtures/plantuml/include/' + localExistingFileGrandParentName
     const localExistingFileGrandParentPathNormalized = path.normalize(localExistingFileGrandParentPath)
     const diagramTextWithIncludeGrandParent = `
       !include ${localExistingFileGrandParentPath}
@@ -432,7 +434,7 @@ ${includedText2}
   })
 
   it('should return diagramText with inlined local file referenced with "!includesub local-file!sub-name"', () => {
-    const localExistingFilePathWithSubs = 'test/fixtures/plantuml/file-with-subs.puml!BASIC'
+    const localExistingFilePathWithSubs = 'test/fixtures/plantuml/diagrams/subs.puml!BASIC'
     const diagramTextWithExistingIncludeFileWithSubs = `
       !includesub ${localExistingFilePathWithSubs}
       alice -> bob`
@@ -446,8 +448,8 @@ D -> D : stuff4.1
   })
 
   it('should return diagramText with inlined local file referenced with "!include local-file!id"', () => {
-    const localExistingFilePathWithID1 = 'test/fixtures/plantuml/file-with-id.puml!MY_OWN_ID1'
-    const localExistingFilePathWithID2 = 'test/fixtures/plantuml/file-with-id.puml!MY_OWN_ID2'
+    const localExistingFilePathWithID1 = 'test/fixtures/plantuml/diagrams/id.puml!MY_OWN_ID1'
+    const localExistingFilePathWithID2 = 'test/fixtures/plantuml/diagrams/id.puml!MY_OWN_ID2'
     const diagramTextWithExistingIncludeFileWithID = `
       !include ${localExistingFilePathWithID1}
       !include ${localExistingFilePathWithID2}
@@ -462,8 +464,8 @@ D -> D : stuff4
   })
 
   it('should return diagramText with inlined local file referenced with "!include local-file!index"', () => {
-    const localExistingFilePathWithIndex0 = 'test/fixtures/plantuml/file-with-index.puml!0'
-    const localExistingFilePathWithIndex1 = 'test/fixtures/plantuml/file-with-index.puml!1'
+    const localExistingFilePathWithIndex0 = 'test/fixtures/plantuml/diagrams/index.puml!0'
+    const localExistingFilePathWithIndex1 = 'test/fixtures/plantuml/diagrams/index.puml!1'
     const diagramTextWithExistingIncludeFileWithIndex = `
       !include ${localExistingFilePathWithIndex0}
       !include ${localExistingFilePathWithIndex1}
@@ -478,30 +480,30 @@ D -> D : stuff4
   })
 
   it('should resolve include path relative to the included file', () => {
-    const diagramTextWithExistingIncludeFileWithIndex = `
-      !include test/fixtures/plantuml/dir/subdir/handwritten.iuml
+    const diagramTextWithExistingIncludeFile = `
+      !include test/fixtures/plantuml/include/parent/child/handwritten.iuml
       alice -> bob`
     const diagramTextWithIncludedText = `
 skinparam Handwritten true
 skinparam DefaultFontName "Neucha"
 skinparam BackgroundColor black
       alice -> bob`
-    expect(preprocessPlantUML(diagramTextWithExistingIncludeFileWithIndex, {})
+    expect(preprocessPlantUML(diagramTextWithExistingIncludeFile, {})
       .replace(/\r\n/g, '\n'))
       .to.be.equal(diagramTextWithIncludedText)
   })
 
   it('should include a PlantUML file from an absolute path', () => {
     // eslint-disable-next-line
-    const diagramTextWithExistingIncludeFileWithIndex = `
-      !include ${__dirname}/fixtures/plantuml/dir/subdir/handwritten.iuml
+    const diagramTextWithExistingIncludeFile = `
+      !include ${__dirname}/fixtures/plantuml/include/parent/child/handwritten.iuml
       alice -> bob`
     const diagramTextWithIncludedText = `
 skinparam Handwritten true
 skinparam DefaultFontName "Neucha"
 skinparam BackgroundColor black
       alice -> bob`
-    expect(preprocessPlantUML(diagramTextWithExistingIncludeFileWithIndex, {})
+    expect(preprocessPlantUML(diagramTextWithExistingIncludeFile, {})
       .replace(/\r\n/g, '\n'))
       .to.be.equal(diagramTextWithIncludedText)
   })
