@@ -125,6 +125,7 @@ module AsciidoctorExtensions
       vega
       vegalite
       wavedrom
+      bitfield
     ].freeze
   end
 
