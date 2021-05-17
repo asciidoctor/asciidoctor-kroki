@@ -17,11 +17,11 @@ module AsciidoctorExtensions
 
     # @param name [String] name of the block macro (optional)
     # @param config [Hash] a config hash (optional)
-    # @param logger [Logger] a logger used to log warning and errors (optional)
+    #   - :logger a logger used to log warning and errors (optional)
     #
-    def initialize(name = nil, config = {}, logger: ::Asciidoctor::LoggerManager.logger)
+    def initialize(name = nil, config = {})
+      @logger = (config || {}).delete(:logger) { ::Asciidoctor::LoggerManager.logger }
       super(name, config)
-      @logger = logger
     end
 
     def process(parent, reader, attrs)
@@ -44,11 +44,11 @@ module AsciidoctorExtensions
 
     # @param name [String] name of the block macro (optional)
     # @param config [Hash] a config hash (optional)
-    # @param logger [Logger] a logger used to log warning and errors (optional)
+    #   - :logger a logger used to log warning and errors (optional)
     #
-    def initialize(name = nil, config = {}, logger: ::Asciidoctor::LoggerManager.logger)
+    def initialize(name = nil, config = {})
+      @logger = (config || {}).delete(:logger) { ::Asciidoctor::LoggerManager.logger }
       super(name, config)
-      @logger = logger
     end
 
     def process(parent, target, attrs)
