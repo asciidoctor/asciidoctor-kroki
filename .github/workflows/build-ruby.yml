@@ -14,10 +14,10 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: ruby/setup-ruby@v1
-        working-directory: ./ruby
         with:
           ruby-version: 2.7
           bundler-cache: true
+          working-directory: ./ruby
       - run: bundle exec rake
         working-directory: ./ruby
         env:
