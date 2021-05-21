@@ -130,6 +130,17 @@ describe ::AsciidoctorExtensions::KrokiBlockProcessor do
 </div>)
     end
   end
+  context 'instantiate' do
+    it 'should instantiate block processor without warning' do
+      original_stderr = $stderr
+      $stderr = StringIO.new
+      ::AsciidoctorExtensions::KrokiBlockProcessor.new 'plantuml'.to_sym, {}
+      output = $stderr.string
+      (expect output).to eql ''
+    ensure
+      $stderr = original_stderr
+    end
+  end
 end
 
 describe ::AsciidoctorExtensions::Kroki do
