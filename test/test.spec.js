@@ -963,7 +963,7 @@ line up $r*0.45 right $r*0.45 then right
       const registry = asciidoctor.Extensions.create()
       asciidoctorKroki.register(registry)
       const html = asciidoctor.convert(input, { extension_registry: registry })
-      expect(html).to.contain('https://kroki.io/pikchr/svg/eNptUk1T2zAQvetX7Jgww0cxisEUZ6aHdoYbNzjkwEW2lVhF0TLyJqL_vispSV3g4NFo3-rt2_c88_ADZFkZJ6xx2qs-3b_XFzOfKsHkSlULcQJPpDyBcj1o_lqL3esoTkSL71BoqzfaUQEt2h5WhtJ76DE4qOUprDxuwKqRuOG9HIPokSAOrCLaoUXPjKp7FUu5SI2lhks4k-XNN3kulPcYJiTxNSEspdjgToM364Hgpmx4kygn6q5PgWsVHytj7YG82ZMHuPqKfNlE2qPOIOLez4OGjTIO_NZqoEERrFGPMJJXaTANHrfrIVOMySVmWRlnxuFgELa_dUdXvY5lMugKMKSs6aJZwJTz-fX8DoL6A62moLXj7ZLZy2avMC7c_KdWflSbxT7-_PXwuEhyeXx-kC2a-X8vBx6R8plzvpx4rhz6BO6UhSJz8RkjzUwc2B58KRYvxRSqJGNp3TccP22Zm_KPkcdsHRkLesdzg6Eh2s-xzDynApD1bN--6krQJz-SE1FaqY97XMiyPjKl6_0Uu89yDthtPQVv64knfwGrmf6K')
+expect(html).to.contain('https://kroki.io/pikchr/svg/eNptUk1T2zAQvetX7Jgww0cxisEUZ6aHdoYbNzjkwEW2lVhF0TLyJqL_vispSV3g4NFo3-rt2_c88_ADZFkZJ6xx2qs-3b_XFzOfKsHkSlULcQJPpDyBcj1o_lqL3esoTkSL71BoqzfaUQEt2h5WhtJ76DE4qOUprDxuwKqRuOG9HIPokSAOrCLaoUXPjKp7FUu5SI2lhks4k-XNN3kulPcYJiTxNSEspdjgToM364Hgpmx4kygn6q5PgWsVHytj7YG82ZMHuPqKfNlE2qPOIOLez4OGjTIO_NZqoEERrFGPMJJXaTANHrfrIVOMySVmWRlnxuFgELa_dUdXvY5lMugKMKSs6aJZwJTz-fX8DoL6A62moLXj7ZLZy2avMC7c_KdWflSbxT7-_PXwuEhyeXx-kC2a-X8vBx6R8plzvpx4rhz6BO6UhSJz8RkjzUwc2B58KRYvxRSqJGNp3TccP22Zm_KPkcdsHRkLesdzg6Eh2s-xzDynApD1bN--6krQJz-SE1FaqY97XMiyPjKl6_0Uu89yDthtPQVv64knfwGrmf6K')
 
       expect(html).to.contain('<div class="imageblock kroki">')
     })
