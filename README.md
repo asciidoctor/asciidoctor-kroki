@@ -309,6 +309,7 @@ Kroki currently supports the following diagram libraries:
 * [Nomnoml](https://github.com/skanaar/nomnoml): `nomnoml`
 * [NwDiag](https://github.com/blockdiag/nwdiag): `nwdiag`
 * [PacketDiag](https://github.com/blockdiag/nwdiag): `packetdiag`
+* [Pikchr](https://github.com/drhsqlite/pikchr): `pikchr`
 * [PlantUML](https://github.com/plantuml/plantuml): `plantuml`
 * [RackDiag](https://github.com/blockdiag/nwdiag): `rackdiag`
 * [SeqDiag](https://github.com/blockdiag/seqdiag): `seqdiag`

@@ -212,6 +212,7 @@ module.exports.register = function register (registry, context = {}) {
     'nomnoml',
     'nwdiag',
     'packetdiag',
+    'pikchr',
     'plantuml',
     'rackdiag',
     'seqdiag',
