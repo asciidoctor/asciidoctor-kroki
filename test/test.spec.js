@@ -31,6 +31,7 @@ describe('Registration', () => {
     expect(registry['$registered_for_block_macro?']('rackdiag')).to.be.an('object')
     expect(registry['$registered_for_block_macro?']('wavedrom')).to.be.an('object')
     expect(registry['$registered_for_block_macro?']('excalidraw')).to.be.an('object')
+    expect(registry['$registered_for_block_macro?']('pikchr')).to.be.an('object')
   })
 })
 
@@ -915,6 +916,54 @@ rackdiag {
       asciidoctorKroki.register(registry)
       const html = asciidoctor.convert(input, { extension_registry: registry })
       expect(html).to.contain('https://kroki.io/bytefield/svg/eNrTSClKLNdNzs8pzc3TzUhNTEktKtbk0gCLJuVXKCg5pqQUpRYXKylUWxUXJOYpmNSiSAdnVqXC5YxQ5AwwhdMTCxSUAhIrc_ITU5QQaktK8nM1AW7MLSU')
+      expect(html).to.contain('<div class="imageblock kroki">')
+    })
+    it('should convert a Pikchr diagram to an image', () => {
+      const input = `
+[pikchr]
+....
+$r = 0.2in
+linerad = 0.75*$r
+linewid = 0.25
+
+# Start and end blocks
+#
+box "element" bold fit
+line down 50% from last box.sw
+dot rad 250% color black
+X0: last.e + (0.3,0)
+arrow from last dot to X0
+move right 3.9in
+box wid 5% ht 25% fill black
+X9: last.w - (0.3,0)
+arrow from X9 to last box.w
+
+
+# The main rule that goes straight through from start to finish
+#
+box "object-definition" italic fit at 11/16 way between X0 and X9
+arrow to X9
+arrow from X0 to last box.w
+
+# The LABEL: rule
+#
+arrow right $r from X0 then down 1.25*$r then right $r
+oval " LABEL " fit
+arrow 50%
+oval "\\":\\"" fit
+arrow 200%
+box "position" italic fit
+arrow
+line right until even with X9 - ($r,0) \
+  then up until even with X9 then to X9
+arrow from last oval.e right $r*0.5 then up $r*0.8 right $r*0.8
+line up $r*0.45 right $r*0.45 then right
+....
+`
+      const registry = asciidoctor.Extensions.create()
+      asciidoctorKroki.register(registry)
+      const html = asciidoctor.convert(input, { extension_registry: registry })
+      expect(html).to.contain('https://kroki.io/pikchr/svg/eNptUk1T2zAQvetX7Jgww0cxisEUZ6aHdoYbNzjkwEW2lVhF0TLyJqL_vispSV3g4NFo3-rt2_c88_ADZFkZJ6xx2qs-3b_XFzOfKsHkSlULcQJPpDyBcj1o_lqL3esoTkSL71BoqzfaUQEt2h5WhtJ76DE4qOUprDxuwKqRuOG9HIPokSAOrCLaoUXPjKp7FUu5SI2lhks4k-XNN3kulPcYJiTxNSEspdjgToM364Hgpmx4kygn6q5PgWsVHytj7YG82ZMHuPqKfNlE2qPOIOLez4OGjTIO_NZqoEERrFGPMJJXaTANHrfrIVOMySVmWRlnxuFgELa_dUdXvY5lMugKMKSs6aJZwJTz-fX8DoL6A62moLXj7ZLZy2avMC7c_KdWflSbxT7-_PXwuEhyeXx-kC2a-X8vBx6R8plzvpx4rhz6BO6UhSJz8RkjzUwc2B58KRYvxRSqJGNp3TccP22Zm_KPkcdsHRkLesdzg6Eh2s-xzDynApD1bN--6krQJz-SE1FaqY97XMiyPjKl6_0Uu89yDthtPQVv64knfwGrmf6K')
       expect(html).to.contain('<div class="imageblock kroki">')
     })
     it('should convert a Vega-Lite diagram and resolve data.url relative to the diagram file', async () => {

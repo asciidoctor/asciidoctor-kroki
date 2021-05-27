@@ -117,6 +117,7 @@ module AsciidoctorExtensions
       nomnoml
       nwdiag
       packetdiag
+      pikchr
       plantuml
       rackdiag
       seqdiag
