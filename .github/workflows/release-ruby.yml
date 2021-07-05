@@ -10,9 +10,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/setup-ruby@v1
+      - uses: ruby/setup-ruby@v1
         with:
-          ruby-version: '2.6'
+          ruby-version: 2.7
+          bundler-cache: true
+          working-directory: ./ruby
       - run: bundle install
         working-directory: ./ruby
       - run: bundle exec rake
@@ -22,9 +24,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/setup-ruby@v1
+      - uses: ruby/setup-ruby@v1
         with:
-          ruby-version: '2.6'
+          ruby-version: 2.7
+          bundler-cache: true
+          working-directory: ./ruby
       - name: Install and test
         run: |
           bundle install
