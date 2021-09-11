@@ -20,7 +20,7 @@ Gem::Specification.new do |s|
 
   s.add_runtime_dependency 'asciidoctor', '~> 2.0'
 
-  s.add_development_dependency 'rake', '~> 12.3.2'
-  s.add_development_dependency 'rspec', '~> 3.8.0'
-  s.add_development_dependency 'rubocop', '~> 0.74.0'
+  s.add_development_dependency 'rake', '~> 13.0.6'
+  s.add_development_dependency 'rspec', '~> 3.10.0'
+  s.add_development_dependency 'rubocop', '~> 1.19'
 end
