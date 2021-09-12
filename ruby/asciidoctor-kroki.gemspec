@@ -1,8 +1,10 @@
 # frozen_string_literal: true
 
+require_relative 'lib/asciidoctor/extensions/asciidoctor_kroki/version'
+
 Gem::Specification.new do |s|
   s.name = 'asciidoctor-kroki'
-  s.version = '0.5.0'
+  s.version = Asciidoctor::AsciidoctorKroki::VERSION
   s.summary = 'Asciidoctor extension to convert diagrams to images using Kroki'
   s.description = 'An extension for Asciidoctor to convert diagrams to images using https://kroki.io'
 
