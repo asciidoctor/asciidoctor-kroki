@@ -67,7 +67,7 @@ module AsciidoctorExtensions
 
       begin
         diagram_text = read(path)
-      rescue => e # rubocop:disable RescueStandardError
+      rescue => e # rubocop:disable Style/RescueStandardError
         logger.error "Failed to read #{diagram_type} file: #{path}. #{e}."
         return create_block(parent, 'paragraph', unresolved_block_macro_message(diagram_type, path), {})
       end
@@ -89,7 +89,7 @@ module AsciidoctorExtensions
     def read(target)
       if target.start_with?('http://') || target.start_with?('https://')
         require 'open-uri'
-        URI.open(target, &:read)
+        ::OpenURI.open_uri(target, &:read)
       else
         File.open(target, &:read)
       end
@@ -135,6 +135,7 @@ module AsciidoctorExtensions
     TEXT_FORMATS = %w[txt atxt utxt].freeze
 
     class << self
+      # rubocop:disable Metrics/AbcSize
       def process(processor, parent, attrs, diagram_type, diagram_text, logger)
         doc = parent.document
         diagram_text = prepend_plantuml_config(diagram_text, diagram_type, doc, logger)
@@ -164,6 +165,7 @@ module AsciidoctorExtensions
         block.assign_caption(caption, 'figure')
         block
       end
+      # rubocop:enable Metrics/AbcSize
 
       private
 
@@ -174,7 +176,7 @@ module AsciidoctorExtensions
           plantuml_include_path = doc.normalize_system_path(doc.attr('kroki-plantuml-include'))
           if ::File.readable? plantuml_include_path
             config = File.read(plantuml_include_path)
-            diagram_text = config + "\n" + diagram_text
+            diagram_text = "#{config}\n#{diagram_text}"
           else
             logger.warn "Unable to read plantuml-include. File not found or not readable: #{plantuml_include_path}."
           end
@@ -258,9 +260,7 @@ module AsciidoctorExtensions
     require 'zlib'
     require 'digest'
 
-    attr_reader :type
-    attr_reader :text
-    attr_reader :format
+    attr_reader :type, :text, :format
 
     def initialize(type, format, text)
       @text = text
@@ -280,11 +280,10 @@ module AsciidoctorExtensions
       diagram_url = get_diagram_uri(kroki_client.server_url)
       diagram_name = "diag-#{Digest::SHA256.hexdigest diagram_url}.#{@format}"
       file_path = File.join(output_dir_path, diagram_name)
-      encoding = if @format == 'txt' || @format == 'atxt' || @format == 'utxt'
+      encoding = case @format
+                 when 'txt', 'atxt', 'utxt'
                    'utf8'
-                 elsif @format == 'svg'
-                   'binary'
-                 else
+                 when 'svg', 'binary'
                    'binary'
                  end
       # file is either (already) on the file system or we should read it from Kroki
@@ -303,12 +302,12 @@ module AsciidoctorExtensions
     def _join_uri_segments(base, *uris)
       segments = []
       # remove trailing slashes
-      segments.push(base.gsub(%r{[/]+$}, ''))
+      segments.push(base.gsub(%r{/+$}, ''))
       segments.concat(uris.map do |uri|
         # remove leading and trailing slashes
         uri.to_s
-          .gsub(%r{^[/]+}, '')
-          .gsub(%r{[/]+$}, '')
+          .gsub(%r{^/+}, '')
+          .gsub(%r{/+$}, '')
       end)
       segments.join('/')
     end
@@ -317,9 +316,7 @@ module AsciidoctorExtensions
   # Kroki client
   #
   class KrokiClient
-    attr_reader :server_url
-    attr_reader :method
-    attr_reader :max_uri_length
+    attr_reader :server_url, :method, :max_uri_length
 
     SUPPORTED_HTTP_METHODS = %w[get post adaptive].freeze
 

@@ -1,3 +1,4 @@
+# rubocop:disable Lint/ConstantDefinitionInBlock
 # frozen_string_literal: true
 
 require 'rspec_helper'
@@ -126,3 +127,4 @@ describe ::AsciidoctorExtensions::KrokiBlockMacroProcessor do
     end
   end
 end
+# rubocop:enable Lint/ConstantDefinitionInBlock

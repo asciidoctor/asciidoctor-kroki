@@ -134,7 +134,7 @@ describe ::AsciidoctorExtensions::KrokiBlockProcessor do
     it 'should instantiate block processor without warning' do
       original_stderr = $stderr
       $stderr = StringIO.new
-      ::AsciidoctorExtensions::KrokiBlockProcessor.new 'plantuml'.to_sym, {}
+      ::AsciidoctorExtensions::KrokiBlockProcessor.new :plantuml, {}
       output = $stderr.string
       (expect output).to eql ''
     ensure
