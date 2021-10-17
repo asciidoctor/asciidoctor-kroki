@@ -146,7 +146,7 @@ end
 describe ::AsciidoctorExtensions::Kroki do
   it 'should return the list of supported diagrams' do
     diagram_names = ::AsciidoctorExtensions::Kroki::SUPPORTED_DIAGRAM_NAMES
-    expect(diagram_names).to include('vegalite', 'plantuml', 'bytefield', 'bpmn', 'excalidraw', 'wavedrom', 'pikchr')
+    expect(diagram_names).to include('vegalite', 'plantuml', 'bytefield', 'bpmn', 'excalidraw', 'wavedrom', 'pikchr', 'structurizr')
   end
   it 'should register the extension for the list of supported diagrams' do
     doc = Asciidoctor::Document.new
