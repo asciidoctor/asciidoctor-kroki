@@ -220,7 +220,8 @@ module.exports.register = function register (registry, context = {}) {
     'umlet',
     'vega',
     'vegalite',
-    'wavedrom'
+    'wavedrom',
+    'structurizr'
   ]
   if (typeof registry.register === 'function') {
     registry.register(function () {

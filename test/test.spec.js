@@ -32,6 +32,7 @@ describe('Registration', () => {
     expect(registry['$registered_for_block_macro?']('wavedrom')).to.be.an('object')
     expect(registry['$registered_for_block_macro?']('excalidraw')).to.be.an('object')
     expect(registry['$registered_for_block_macro?']('pikchr')).to.be.an('object')
+    expect(registry['$registered_for_block_macro?']('structurizr')).to.be.an('object')
   })
 })
 

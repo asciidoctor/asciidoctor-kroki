@@ -318,6 +318,7 @@ Kroki currently supports the following diagram libraries:
 * [Vega](https://github.com/vega/vega): `vega`
 * [Vega-Lite](https://github.com/vega/vega-lite): `vegalite`
 * [WaveDrom](https://github.com/wavedrom/wavedrom): `wavedrom`
+* [Structurizr](https://github.com/structurizr/dsl): `structurizr`
 
 Each diagram libraries support one or more output formats.
 Consult the [Kroki documentation](https://kroki.io/#support) to find out which formats are supported.
