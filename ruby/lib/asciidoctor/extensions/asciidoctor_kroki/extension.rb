@@ -374,7 +374,6 @@ module AsciidoctorExtensions
       def get(uri, _)
         uri = URI(uri)
         request = ::Net::HTTP::Get.new(uri)
-        request['Content-Type'] = 'text/plain'
         request['referer'] = REFERER
         ::Net::HTTP.start(
           uri.hostname,
