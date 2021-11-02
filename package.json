@@ -3,6 +3,7 @@
   "version": "0.14.0",
   "description": "Asciidoctor extension to convert diagrams to images using Kroki",
   "main": "src/asciidoctor-kroki.js",
+  "browser": "dist/browser/asciidoctor-kroki.js",
   "files": [
     "src",
     "dist"
