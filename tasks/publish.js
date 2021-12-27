@@ -1,15 +1,23 @@
 'use strict'
 const path = require('path')
+const pacote = require('pacote') // see: http://npm.im/pacote
 const { publish: npmPublish } = require('libnpmpublish')
 
 const publish = async (directory) => {
-    const pkg = require(path.join(directory, 'package.json'))
-    if (process.env.DRY_RUN) {
-      console.log(`${pkg.name}@${pkg.version}`)
-    } else {
-      return npmPublish(directory, pkg, { token: process.env.NPM_AUTH_TOKEN })
-    }
+  const pkg = require(path.join(directory, 'package.json'))
+  if (process.env.DRY_RUN) {
+    console.log(`${pkg.name}@${pkg.version}`)
+  } else {
+    const manifest = await pacote.manifest(directory)
+    const tarData = await pacote.tarball(directory)
+    return npmPublish(manifest, tarData, {
+      access: true,
+      forceAuth: {
+        token: process.env.NPM_AUTH_TOKEN
+      }
+    })
   }
+}
 
 ;(async () => {
   try {

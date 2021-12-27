@@ -17,7 +17,7 @@
     "test:node": "mocha test/**.spec.js",
     "test:browser": "node test/browser/run.js",
     "test:antora": "mocha test/antora/**.spec.js",
-    "lint": "standard src/**.js test/**.js",
+    "lint": "standard src/**.js test/**.js tasks/**.js",
     "lint-fix": "npm run lint -- --fix",
     "clean": "shx rm -rf dist/*",
     "dist": "npm run clean && npm run dist:browser",
