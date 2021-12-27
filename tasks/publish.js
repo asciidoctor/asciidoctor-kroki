@@ -11,7 +11,7 @@ const publish = async (directory) => {
     const manifest = await pacote.manifest(directory)
     const tarData = await pacote.tarball(directory)
     return npmPublish(manifest, tarData, {
-      access: true,
+      access: 'public',
       forceAuth: {
         token: process.env.NPM_AUTH_TOKEN
       }
