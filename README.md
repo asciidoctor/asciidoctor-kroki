@@ -363,7 +363,7 @@ For instance, in an Antora playbook or component descriptor:
 ```yaml
 asciidoc:
   attributes:
-    kroki-default-format@: png
+    kroki-default-format: png@
 ```
 
 (the `@` allows the attribute value to be reset in documents)
