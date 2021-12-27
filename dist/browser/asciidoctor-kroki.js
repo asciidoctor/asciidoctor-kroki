@@ -5083,7 +5083,7 @@ Inflate.prototype.onEnd = function (status) {
  *
  * try {
  *   output = pako.inflate(input);
- * } catch (err)
+ * } catch (err) {
  *   console.log(err);
  * }
  * ```
@@ -5208,6 +5208,10 @@ _utf8len[254] = _utf8len[254] = 1; // Invalid sequence start
 
 // convert string to array (typed, when possible)
 module.exports.string2buf = (str) => {
+  if (typeof TextEncoder === 'function' && TextEncoder.prototype.encode) {
+    return new TextEncoder().encode(str);
+  }
+
   let buf, c, c2, m_pos, i, str_len = str.length, buf_len = 0;
 
   // count binary size
@@ -5281,8 +5285,13 @@ const buf2binstring = (buf, len) => {
 
 // convert array to string
 module.exports.buf2string = (buf, max) => {
-  let i, out;
   const len = max || buf.length;
+
+  if (typeof TextDecoder === 'function' && TextDecoder.prototype.decode) {
+    return new TextDecoder().decode(buf.subarray(0, max));
+  }
+
+  let i, out;
 
   // Reserve max possible length (2 words per char)
   // NB: by unknown reasons, Array is significantly faster for
@@ -18203,11 +18212,12 @@ const processKroki = (processor, parent, attrs, diagramType, diagramText, contex
     if (diagramType === 'vegalite') {
       diagramText = require('./preprocess.js').preprocessVegaLite(diagramText, context, diagramDir)
     } else if (diagramType === 'plantuml' || diagramType === 'c4plantuml') {
-      const plantUmlInclude = doc.getAttribute('kroki-plantuml-include')
-      if (plantUmlInclude) {
-        diagramText = `!include ${plantUmlInclude}\n${diagramText}`
+      const plantUmlIncludeFile = doc.getAttribute('kroki-plantuml-include')
+      if (plantUmlIncludeFile) {
+        diagramText = `!include ${plantUmlIncludeFile}\n${diagramText}`
       }
-      diagramText = require('./preprocess.js').preprocessPlantUML(diagramText, context, diagramDir)
+      const plantUmlIncludePaths = doc.getAttribute('kroki-plantuml-include-paths')
+      diagramText = require('./preprocess.js').preprocessPlantUML(diagramText, context, plantUmlIncludePaths, diagramDir)
     }
   }
   const blockId = attrs.id
@@ -18341,6 +18351,7 @@ module.exports.register = function register (registry, context = {}) {
     'nomnoml',
     'nwdiag',
     'packetdiag',
+    'pikchr',
     'plantuml',
     'rackdiag',
     'seqdiag',
@@ -18348,7 +18359,8 @@ module.exports.register = function register (registry, context = {}) {
     'umlet',
     'vega',
     'vegalite',
-    'wavedrom'
+    'wavedrom',
+    'structurizr'
   ]
   if (typeof registry.register === 'function') {
     registry.register(function () {
@@ -18601,13 +18613,15 @@ function removePlantUmlTags (diagramText) {
 /**
  * @param {string} diagramText
  * @param {any} context
+ * @param {string} diagramIncludePaths - predefined include paths (can be null)
  * @param {string} diagramDir - diagram base directory
  * @returns {string}
  */
-module.exports.preprocessPlantUML = function (diagramText, context, diagramDir = '') {
+module.exports.preprocessPlantUML = function (diagramText, context, diagramIncludePaths = '', diagramDir = '') {
   const includeOnce = []
   const includeStack = []
-  diagramText = preprocessPlantUmlIncludes(diagramText, diagramDir, includeOnce, includeStack, context.vfs)
+  const includePaths = diagramIncludePaths ? diagramIncludePaths.split(path.delimiter) : []
+  diagramText = preprocessPlantUmlIncludes(diagramText, diagramDir, includeOnce, includeStack, includePaths, context.vfs)
   return removePlantUmlTags(diagramText)
 }
 
@@ -18616,13 +18630,14 @@ module.exports.preprocessPlantUML = function (diagramText, context, diagramDir =
  * @param {string} dirPath
  * @param {string[]} includeOnce
  * @param {string[]} includeStack
+ * @param {string[]} includePaths
  * @param {any} vfs
  * @returns {string}
  */
-function preprocessPlantUmlIncludes (diagramText, dirPath, includeOnce, includeStack, vfs) {
+function preprocessPlantUmlIncludes (diagramText, dirPath, includeOnce, includeStack, includePaths, vfs) {
   // See: http://plantuml.com/en/preprocessing
   // Please note that we cannot use lookbehind for compatibility reasons with Safari: https://caniuse.com/mdn-javascript_builtins_regexp_lookbehind_assertion objects are stateful when they have the global flag set (e.g. /foo/g).
-  //const regExInclude = /^\s*!(include(?:_many|_once|url|sub)?)\s+((?:(?<=\\)[ ]|[^ ])+)(.*)/
+  // const regExInclude = /^\s*!(include(?:_many|_once|url|sub)?)\s+((?:(?<=\\)[ ]|[^ ])+)(.*)/
   const regExInclude = /^\s*!(include(?:_many|_once|url|sub)?)\s+([\s\S]*)/
   const diagramLines = diagramText.split('\n')
   let insideCommentBlock = false
@@ -18635,12 +18650,11 @@ function preprocessPlantUmlIncludes (diagramText, dirPath, includeOnce, includeS
         (match, ...args) => {
           const include = args[0].toLowerCase()
           const target = parseTarget(args[1])
-          console.log(target)
           const urlSub = target.url.split('!')
           const trailingContent = target.comment
           const url = urlSub[0].replace(/\\ /g, ' ')
           const sub = urlSub[1]
-          const result = readPlantUmlInclude(url, dirPath, includeStack, vfs)
+          const result = readPlantUmlInclude(url, [dirPath, ...includePaths], includeStack, vfs)
           if (result.skip) {
             return line
           }
@@ -18663,7 +18677,7 @@ function preprocessPlantUmlIncludes (diagramText, dirPath, includeOnce, includeS
             text = getPlantUmlTextOrFirstBlock(text)
           }
           includeStack.push(result.filePath)
-          text = preprocessPlantUmlIncludes(text, path.dirname(result.filePath), includeOnce, includeStack, vfs)
+          text = preprocessPlantUmlIncludes(text, path.dirname(result.filePath), includeOnce, includeStack, includePaths, vfs)
           includeStack.pop()
           if (trailingContent !== '') {
             return text + ' ' + trailingContent
@@ -18680,6 +18694,25 @@ function preprocessPlantUmlIncludes (diagramText, dirPath, includeOnce, includeS
     return result
   })
   return diagramProcessed.join('\n')
+}
+
+/**
+ * @param {string} includeFile - relative or absolute include file
+ * @param {string[]} includePaths - array with include paths
+ * @param {any} vfs
+ * @returns {string} the found file or include file path
+ */
+function resolveIncludeFile (includeFile, includePaths, vfs) {
+  const exists = typeof vfs !== 'undefined' && typeof vfs.exists === 'function' ? vfs.exists : require('./node-fs.js').exists
+  let filePath = includeFile
+  for (let i = 0; i < includePaths.length; i++) {
+    const localFilePath = path.join(includePaths[i], includeFile)
+    if (exists(localFilePath)) {
+      filePath = localFilePath
+      break
+    }
+  }
+  return filePath
 }
 
 function parseTarget (value) {
@@ -18701,13 +18734,12 @@ function parseTarget (value) {
 
 /**
  * @param {string} url
- * @param {string} dirPath
+ * @param {string[]} includePaths
  * @param {string[]} includeStack
  * @param {any} vfs
  * @returns {any}
  */
-function readPlantUmlInclude (url, dirPath, includeStack, vfs) {
-  const exists = typeof vfs !== 'undefined' && typeof vfs.exists === 'function' ? vfs.exists : require('./node-fs.js').exists
+function readPlantUmlInclude (url, includePaths, includeStack, vfs) {
   const read = typeof vfs !== 'undefined' && typeof vfs.read === 'function' ? vfs.read : require('./node-fs.js').read
   let skip = false
   let text = ''
@@ -18729,10 +18761,7 @@ function readPlantUmlInclude (url, dirPath, includeStack, vfs) {
         skip = true
       }
     } else {
-      filePath = path.join(dirPath, url)
-      if (!exists(filePath)) {
-        filePath = url
-      }
+      filePath = resolveIncludeFile(url, includePaths, vfs)
       if (includeStack.includes(filePath)) {
         const message = `Preprocessing of PlantUML include failed, because recursive reading already included referenced file '${filePath}'`
         throw new Error(message)
