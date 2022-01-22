@@ -31,27 +31,16 @@ describe('Vega-Lite preprocessing', () => {
   })
 
   /**
-   * @param {string} diagramText
-   * @param {string} expectedErrorMessage
-   * @param {string} [diagramDir]
+   * @param {string} result
+   * @param {string} expected
    * @returns {void}
    */
-  function expectToThrow (diagramText, expectedErrorMessage, diagramDir) {
-    expect(() => preprocessVegaLite(diagramText, {}, diagramDir)).to.throw(expectedErrorMessage)
-  }
-
-  /**
-   * @param {string} diagramText
-   * @param {string} expectedPreprocessedDiagramText
-   * @param {string} [diagramDir]
-   * @returns {void}
-   */
-  function expectToBeEqual (diagramText, expectedPreprocessedDiagramText, diagramDir) {
-    expect(preprocessVegaLite(diagramText, {}, diagramDir)).to.be.equal(expectedPreprocessedDiagramText.replace(/\r\n/g, '\n'))
+  function expectToBeEqualIgnoreNewlines (result, expected) {
+    expect(result).to.equal(expected.replace(/\r\n/g, '\n'))
   }
 
   it('should throw an error for invalid JSON', () => {
-    expectToThrow('invalid JSON', `Preprocessing of Vega-Lite view specification failed, because of a parsing error:
+    expect(() => preprocessVegaLite('invalid JSON')).to.throw(`Preprocessing of Vega-Lite view specification failed, because of a parsing error:
 SyntaxError: JSON5: invalid character 'i' at 1:1
 The invalid view specification was:
 invalid JSON`)
@@ -59,7 +48,7 @@ invalid JSON`)
 
   it('should return original diagramText for valid JSON but without "data.url"', () => {
     const validJsonWithoutDataUrl = '{}'
-    expectToBeEqual(validJsonWithoutDataUrl, validJsonWithoutDataUrl)
+    expect(preprocessVegaLite(validJsonWithoutDataUrl)).to.equal(validJsonWithoutDataUrl)
   })
 
   it('should throw an error for unexisting local file referenced with relative path', () => {
@@ -70,7 +59,7 @@ invalid JSON`)
 }`
     const errorMessage = `Preprocessing of Vega-Lite view specification failed, because reading the local data file 'unexisting.csv' referenced in the diagram caused an error:
 Error: ENOENT: no such file or directory, open 'unexisting.csv'`
-    expectToThrow(diagramText, errorMessage)
+    expect(() => preprocessVegaLite(diagramText)).to.throw(errorMessage)
   })
 
   it('should throw an error for unexisting file referenced with "file" protocol', () => {
@@ -81,18 +70,21 @@ Error: ENOENT: no such file or directory, open 'unexisting.csv'`
       }
     }`
     const unexistingPath = url.fileURLToPath(unexistingFileUrl)
-    const errorMessage = `Preprocessing of Vega-Lite view specification failed, because reading the local data file '${unexistingFileUrl}' referenced in the diagram caused an error:
-Error: ENOENT: no such file or directory, open '${unexistingPath}'`
-    expectToThrow(diagramText, errorMessage)
+    expect(() => preprocessVegaLite(diagramText)).to.throw(`Preprocessing of Vega-Lite view specification failed, because reading the local data file '${unexistingFileUrl}' referenced in the diagram caused an error:
+Error: ENOENT: no such file or directory, open '${unexistingPath}'`)
   })
 
-  it('should warn and return original diagramText for unexisting remote file referenced with "http" protocol, because it can perhaps be found by kroki server', () => {
+  it('should log and return original diagramText for unexisting remote file referenced with "http" protocol, because it can perhaps be found by kroki server', () => {
+    const memoryLogger = asciidoctor.MemoryLogger.create()
     const diagramText = `{
   "data": {
     "url": "https://raw.githubusercontent.com/Mogztter/asciidoctor-kroki/master/unexisting.csv"
   }
 }`
-    expectToBeEqual(diagramText, diagramText)
+    expectToBeEqualIgnoreNewlines(preprocessVegaLite(diagramText, { logger: memoryLogger }), diagramText)
+    const logs = memoryLogger.getMessages()
+    expect(logs.length).to.equal(1)
+    expect(logs[0].message).to.includes('Skipping preprocessing of Vega-Lite view specification, because reading the remote data file \'https://raw.githubusercontent.com/Mogztter/asciidoctor-kroki/master/unexisting.csv\' referenced in the diagram caused an error:')
   })
 
   it('should return diagramText with inlined local file referenced with relative path', () => {
@@ -101,7 +93,7 @@ Error: ENOENT: no such file or directory, open '${unexistingPath}'`
     "url": "${relativePath}"
   }
 }`
-    expectToBeEqual(diagramText, diagramTextWithInlinedCsvFile)
+    expectToBeEqualIgnoreNewlines(preprocessVegaLite(diagramText), diagramTextWithInlinedCsvFile)
   })
 
   it('should return diagramText with inlined local file referenced with relative path and base dir', () => {
@@ -110,7 +102,7 @@ Error: ENOENT: no such file or directory, open '${unexistingPath}'`
     "url": "vegalite-data.csv"
   }
 }`
-    expectToBeEqual(diagramText, diagramTextWithInlinedCsvFile, 'test/fixtures/')
+    expectToBeEqualIgnoreNewlines(preprocessVegaLite(diagramText, {}, 'test/fixtures/'), diagramTextWithInlinedCsvFile)
   })
 
   it('should return diagramText with inlined local file referenced with absolute path', () => {
@@ -119,7 +111,7 @@ Error: ENOENT: no such file or directory, open '${unexistingPath}'`
     "url": "${cwd}/${relativePath}"
   }
 }`
-    expectToBeEqual(diagramText, diagramTextWithInlinedCsvFile)
+    expectToBeEqualIgnoreNewlines(preprocessVegaLite(diagramText), diagramTextWithInlinedCsvFile)
   })
 
   it('should return diagramText with inlined local file referenced with absolute path and base dir (which should not be used)', () => {
@@ -128,7 +120,7 @@ Error: ENOENT: no such file or directory, open '${unexistingPath}'`
     "url": "${cwd}/${relativePath}"
   }
 }`
-    expectToBeEqual(diagramText, diagramTextWithInlinedCsvFile, 'test/fixtures/')
+    expectToBeEqualIgnoreNewlines(preprocessVegaLite(diagramText, {}, 'test/fixtures/'), diagramTextWithInlinedCsvFile)
   })
 
   it('should return diagramText with inlined local file referenced with "file" protocol and absolute path', () => {
@@ -138,7 +130,7 @@ Error: ENOENT: no such file or directory, open '${unexistingPath}'`
     "url": "${fileUrl}"
   }
 }`
-    expectToBeEqual(diagramText, diagramTextWithInlinedCsvFile)
+    expectToBeEqualIgnoreNewlines(preprocessVegaLite(diagramText), diagramTextWithInlinedCsvFile)
   })
 
   it('should return diagramText with inlined remote file referenced with "http" protocol', () => {
@@ -147,9 +139,7 @@ Error: ENOENT: no such file or directory, open '${unexistingPath}'`
     "url": "https://raw.githubusercontent.com/Mogztter/asciidoctor-kroki/master/${relativePath}"
   }
 }`
-    // replace escaped CR/LF (which happens when CSV file was checked-out in Windows) with escaped LF
-    const expected = diagramTextWithInlinedCsvFile.replace(/\\r\\n/g, '\\n')
-    expectToBeEqual(diagramText, expected)
+    expectToBeEqualIgnoreNewlines(preprocessVegaLite(diagramText), diagramTextWithInlinedCsvFile)
   })
 })
 
@@ -166,26 +156,38 @@ describe('PlantUML preprocessing', () => {
     expect(preprocessPlantUML(diagramTextWithoutInclude, {})).to.be.equal(diagramTextWithoutInclude)
   })
 
-  it('should warn and return original diagramText for standard library file referenced with "!include <std-lib-file>", because it can perhaps be found by kroki server', () => {
+  it('should log and return original diagramText for standard library file referenced with "!include <std-lib-file>", because it can perhaps be found by kroki server', () => {
+    const memoryLogger = asciidoctor.MemoryLogger.create()
     const diagramTextWithStdLibIncludeFile = `
       !include <std/include.iuml>
       alice -> bob`
-    expect(preprocessPlantUML(diagramTextWithStdLibIncludeFile, {})).to.be.equal(diagramTextWithStdLibIncludeFile)
+    expect(preprocessPlantUML(diagramTextWithStdLibIncludeFile, { logger: memoryLogger })).to.be.equal(diagramTextWithStdLibIncludeFile)
+    const logs = memoryLogger.getMessages()
+    expect(logs.length).to.equal(1)
+    expect(logs[0].message).to.equal('Skipping preprocessing of PlantUML standard library include \'<std/include.iuml>\'')
   })
 
-  it('should warn and return original diagramText for unexisting local file referenced with "!include local-file-or-url", because it can perhaps be found by kroki server', () => {
+  it('should log and return original diagramText for unexisting local file referenced with "!include local-file-or-url", because it can perhaps be found by kroki server', () => {
+    const memoryLogger = asciidoctor.MemoryLogger.create()
     const diagramTextWithUnexistingLocalIncludeFile = `
       !include ${localUnexistingFilePath}
       alice -> bob`
-    expect(preprocessPlantUML(diagramTextWithUnexistingLocalIncludeFile, {})).to.be.equal(diagramTextWithUnexistingLocalIncludeFile)
+    expect(preprocessPlantUML(diagramTextWithUnexistingLocalIncludeFile, { logger: memoryLogger })).to.be.equal(diagramTextWithUnexistingLocalIncludeFile)
+    const logs = memoryLogger.getMessages()
+    expect(logs.length).to.equal(1)
+    expect(logs[0].message).to.includes(`Skipping preprocessing of PlantUML include, because reading the referenced local file '${localUnexistingFilePath}' caused an error:`)
   })
 
-  it('should warn and return original diagramText for unexisting remote file referenced with "!include remote-url", because it can perhaps be found by kroki server', () => {
+  it('should log and return original diagramText for unexisting remote file referenced with "!include remote-url", because it can perhaps be found by kroki server', () => {
+    const memoryLogger = asciidoctor.MemoryLogger.create()
     const remoteUnexistingIncludeFilePath = `${remoteBasePath}${localUnexistingFilePath}`
     const diagramTextWithUnexistingRemoteIncludeFile = `
       !include ${remoteUnexistingIncludeFilePath}
       alice -> bob`
-    expect(preprocessPlantUML(diagramTextWithUnexistingRemoteIncludeFile, {})).to.be.equal(diagramTextWithUnexistingRemoteIncludeFile)
+    expect(preprocessPlantUML(diagramTextWithUnexistingRemoteIncludeFile, { logger: memoryLogger })).to.be.equal(diagramTextWithUnexistingRemoteIncludeFile)
+    const logs = memoryLogger.getMessages()
+    expect(logs.length).to.equal(1)
+    expect(logs[0].message).to.includes(`Skipping preprocessing of PlantUML include, because reading the referenced remote file '${remoteUnexistingIncludeFilePath}' caused an error:`)
   })
 
   it('should return diagramText with inlined local file referenced with "!include local-file-or-url"', () => {

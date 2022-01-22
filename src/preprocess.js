@@ -9,7 +9,8 @@ const path = require('path')
  * @param {string} diagramDir
  * @returns {string}
  */
-module.exports.preprocessVegaLite = function (diagramText, context, diagramDir = '') {
+module.exports.preprocessVegaLite = function (diagramText, context = {}, diagramDir = '') {
+  const logger = 'logger' in context && typeof context.logger !== 'undefined' ? context.logger : console
   let diagramObject
   try {
     const JSON5 = require('json5')
@@ -26,16 +27,15 @@ ${diagramText}
   if (!diagramObject || !diagramObject.data || !diagramObject.data.url) {
     return diagramText
   }
-  const vfs = context.vfs
-  const read = typeof vfs !== 'undefined' && typeof vfs.read === 'function' ? vfs.read : require('./node-fs.js').read
+  const read = 'vfs' in context && typeof context.vfs !== 'undefined' && typeof context.vfs.read === 'function' ? context.vfs.read : require('./node-fs.js').read
   const data = diagramObject.data
   const urlOrPath = data.url
   try {
     data.values = read(isLocalAndRelative(urlOrPath) ? path.join(diagramDir, urlOrPath) : urlOrPath)
   } catch (e) {
     if (isRemoteUrl(urlOrPath)) {
-      // Only warn and do not throw an error, because the data file can perhaps be found by kroki server (https://github.com/yuzutech/kroki/issues/60)
-      console.warn(`Skipping preprocessing of Vega-Lite view specification, because reading the remote data file '${urlOrPath}' referenced in the diagram caused an error:\n${e}`)
+      // Includes a remote file that cannot be found but might be resolved by the Kroki server (https://github.com/yuzutech/kroki/issues/60)
+      logger.info(`Skipping preprocessing of Vega-Lite view specification, because reading the remote data file '${urlOrPath}' referenced in the diagram caused an error:\n${e}`)
       return diagramText
     }
     const message = `Preprocessing of Vega-Lite view specification failed, because reading the local data file '${urlOrPath}' referenced in the diagram caused an error:\n${e}`
@@ -88,10 +88,11 @@ function removePlantUmlTags (diagramText) {
  * @returns {string}
  */
 module.exports.preprocessPlantUML = function (diagramText, context, diagramIncludePaths = '', diagramDir = '') {
+  const logger = 'logger' in context ? context.logger : console
   const includeOnce = []
   const includeStack = []
   const includePaths = diagramIncludePaths ? diagramIncludePaths.split(path.delimiter) : []
-  diagramText = preprocessPlantUmlIncludes(diagramText, diagramDir, includeOnce, includeStack, includePaths, context.vfs)
+  diagramText = preprocessPlantUmlIncludes(diagramText, diagramDir, includeOnce, includeStack, includePaths, context.vfs, logger)
   return removePlantUmlTags(diagramText)
 }
 
@@ -102,9 +103,10 @@ module.exports.preprocessPlantUML = function (diagramText, context, diagramInclu
  * @param {string[]} includeStack
  * @param {string[]} includePaths
  * @param {any} vfs
+ * @param {any} logger
  * @returns {string}
  */
-function preprocessPlantUmlIncludes (diagramText, dirPath, includeOnce, includeStack, includePaths, vfs) {
+function preprocessPlantUmlIncludes (diagramText, dirPath, includeOnce, includeStack, includePaths, vfs, logger) {
   // See: http://plantuml.com/en/preprocessing
   // Please note that we cannot use lookbehind for compatibility reasons with Safari: https://caniuse.com/mdn-javascript_builtins_regexp_lookbehind_assertion objects are stateful when they have the global flag set (e.g. /foo/g).
   // const regExInclude = /^\s*!(include(?:_many|_once|url|sub)?)\s+((?:(?<=\\)[ ]|[^ ])+)(.*)/
@@ -124,7 +126,7 @@ function preprocessPlantUmlIncludes (diagramText, dirPath, includeOnce, includeS
           const trailingContent = target.comment
           const url = urlSub[0].replace(/\\ /g, ' ')
           const sub = urlSub[1]
-          const result = readPlantUmlInclude(url, [dirPath, ...includePaths], includeStack, vfs)
+          const result = readPlantUmlInclude(url, [dirPath, ...includePaths], includeStack, vfs, logger)
           if (result.skip) {
             return line
           }
@@ -147,7 +149,7 @@ function preprocessPlantUmlIncludes (diagramText, dirPath, includeOnce, includeS
             text = getPlantUmlTextOrFirstBlock(text)
           }
           includeStack.push(result.filePath)
-          text = preprocessPlantUmlIncludes(text, path.dirname(result.filePath), includeOnce, includeStack, includePaths, vfs)
+          text = preprocessPlantUmlIncludes(text, path.dirname(result.filePath), includeOnce, includeStack, includePaths, vfs, logger)
           includeStack.pop()
           if (trailingContent !== '') {
             return text + ' ' + trailingContent
@@ -207,16 +209,17 @@ function parseTarget (value) {
  * @param {string[]} includePaths
  * @param {string[]} includeStack
  * @param {any} vfs
+ * @param {any} logger
  * @returns {any}
  */
-function readPlantUmlInclude (url, includePaths, includeStack, vfs) {
+function readPlantUmlInclude (url, includePaths, includeStack, vfs, logger) {
   const read = typeof vfs !== 'undefined' && typeof vfs.read === 'function' ? vfs.read : require('./node-fs.js').read
   let skip = false
   let text = ''
   let filePath = url
   if (url.startsWith('<')) {
-    // Only warn and do not throw an error, because the std-lib includes can perhaps be found by Kroki server
-    console.warn(`Skipping preprocessing of PlantUML standard library include file '${url}'`)
+    // Includes a standard library that cannot be resolved locally but might be resolved the by Kroki server
+    logger.info(`Skipping preprocessing of PlantUML standard library include '${url}'`)
     skip = true
   } else if (includeStack.includes(url)) {
     const message = `Preprocessing of PlantUML include failed, because recursive reading already included referenced file '${url}'`
@@ -226,8 +229,8 @@ function readPlantUmlInclude (url, includePaths, includeStack, vfs) {
       try {
         text = read(url)
       } catch (e) {
-        // Only warn and do not throw an error, because the data file can perhaps be found by Kroki server (https://github.com/yuzutech/kroki/issues/60)
-        console.warn(`Skipping preprocessing of PlantUML include, because reading the referenced remote file '${url}' caused an error:\n${e}`)
+        // Includes a remote file that cannot be found but might be resolved by the Kroki server (https://github.com/yuzutech/kroki/issues/60)
+        logger.info(`Skipping preprocessing of PlantUML include, because reading the referenced remote file '${url}' caused an error:\n${e}`)
         skip = true
       }
     } else {
@@ -239,8 +242,8 @@ function readPlantUmlInclude (url, includePaths, includeStack, vfs) {
         try {
           text = read(filePath)
         } catch (e) {
-          // Only warn and do not throw an error, because the data file can perhaps be found by Kroki server
-          console.warn(`Skipping preprocessing of PlantUML include, because reading the referenced local file '${filePath}' caused an error:\n${e}`)
+          // Includes a local file that cannot be found but might be resolved by the Kroki server
+          logger.info(`Skipping preprocessing of PlantUML include, because reading the referenced local file '${filePath}' caused an error:\n${e}`)
           skip = true
         }
       }

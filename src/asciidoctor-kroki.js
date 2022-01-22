@@ -1,3 +1,4 @@
+/* global Opal */
 // @ts-check
 const { KrokiDiagram, KrokiClient } = require('./kroki-client.js')
 
@@ -198,6 +199,7 @@ module.exports.register = function register (registry, context = {}) {
   if (typeof context.contentCatalog !== 'undefined' && typeof context.contentCatalog.addFile === 'function' && typeof context.file !== 'undefined') {
     context.vfs = require('./antora-adapter.js')(context.file, context.contentCatalog, context.vfs)
   }
+  context.logger = Opal.Asciidoctor.LoggerManager.getLogger()
   const names = [
     'actdiag',
     'blockdiag',
