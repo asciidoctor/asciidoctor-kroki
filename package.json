@@ -41,7 +41,7 @@
     "dirty-chai": "2.0.1",
     "libnpmpublish": "4.0.2",
     "lodash": "4.17.21",
-    "mocha": "9.1.4",
+    "mocha": "9.2.0",
     "pacote": "12.0.2",
     "puppeteer": "13.1.3",
     "rimraf": "3.0.2",
