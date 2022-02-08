@@ -1,3 +1,4 @@
 /node_modules/
 .asciidoctor/kroki
 /dist/
+/bin/
