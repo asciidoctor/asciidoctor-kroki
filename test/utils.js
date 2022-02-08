@@ -1,19 +1,21 @@
-const ospath = require('path')
-const fs = require('fs')
-const Path = require('path')
+import ospath from 'path'
+import fs from 'fs'
+import { fileURLToPath } from 'url'
 
-module.exports = {
-  // Until recursive: true is a stable part of Node
-  // See: https://stackoverflow.com/questions/18052762/remove-directory-which-is-not-empty
-  deleteDirWithFiles: function (path) {
-    if (fs.existsSync(path)) {
-      fs.readdirSync(path).forEach((file) => {
-        const curPath = Path.join(path, file)
-        fs.unlinkSync(curPath)
-      })
-      fs.rmdirSync(path)
-    }
-  },
-  fixturePath: (...paths) => ospath.join(__dirname, 'fixtures', ...paths),
-  readFixture: (...paths) => fs.readFileSync(ospath.join(__dirname, 'fixtures', ...paths), 'utf-8')
+const __dirname = ospath.dirname(fileURLToPath(import.meta.url))
+
+// Until recursive: true is a stable part of Node
+// See: https://stackoverflow.com/questions/18052762/remove-directory-which-is-not-empty
+export function deleteDirWithFiles (path) {
+  if (fs.existsSync(path)) {
+    fs.readdirSync(path).forEach((file) => {
+      const curPath = ospath.join(path, file)
+      fs.unlinkSync(curPath)
+    })
+    fs.rmdirSync(path)
+  }
 }
+
+export const fixturePath = (...paths) => ospath.join(__dirname, 'fixtures', ...paths)
+
+export const readFixture = (...paths) => fs.readFileSync(ospath.join(__dirname, 'fixtures', ...paths), 'utf-8')

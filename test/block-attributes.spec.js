@@ -1,12 +1,13 @@
 /* global describe it */
-const chai = require('chai')
-const expect = chai.expect
-const dirtyChai = require('dirty-chai')
+import chai from 'chai'
+import dirtyChai from 'dirty-chai'
+import Asciidoctor from '@asciidoctor/core'
+
+import asciidoctorKroki from '../src/asciidoctor-kroki.js'
 
 chai.use(dirtyChai)
-
-const asciidoctorKroki = require('../src/asciidoctor-kroki.js')
-const asciidoctor = require('@asciidoctor/core')()
+const expect = chai.expect
+const asciidoctor = Asciidoctor()
 
 describe('Block attributes', () => {
   describe('When extension is registered', () => {

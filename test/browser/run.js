@@ -1,6 +1,9 @@
 /* eslint-env node, es6 */
-const path = require('path')
-const puppeteer = require('puppeteer')
+import path from 'path'
+import puppeteer from 'puppeteer'
+import { fileURLToPath } from 'url'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 // puppeteer options
 const opts = {

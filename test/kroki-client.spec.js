@@ -1,14 +1,16 @@
 /* global describe it */
 // @ts-check
-const chai = require('chai')
-const expect = chai.expect
-const dirtyChai = require('dirty-chai')
-chai.use(dirtyChai)
+import chai from 'chai'
+import dirtyChai from 'dirty-chai'
+import Asciidoctor from '@asciidoctor/core'
 
-const { readFixture } = require('./utils.js')
-const { KrokiClient, KrokiDiagram } = require('../src/kroki-client.js')
-const httpClient = require('../src/http/node-http.js')
-const asciidoctor = require('@asciidoctor/core')()
+import { readFixture } from './utils.js'
+import { KrokiClient, KrokiDiagram } from '../src/kroki-client.js'
+import httpClient from '../src/http.js'
+
+chai.use(dirtyChai)
+const expect = chai.expect
+const asciidoctor = Asciidoctor()
 
 describe('Kroki HTTP client', () => {
   describe('kroki-http-method attribute', () => {

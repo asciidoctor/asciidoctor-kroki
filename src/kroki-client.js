@@ -1,8 +1,9 @@
-const pako = require('pako')
+import { Buffer } from 'buffer'
+import pako from 'pako'
 
 const MAX_URI_DEFAULT_VALUE = 4000
 
-module.exports.KrokiDiagram = class KrokiDiagram {
+export class KrokiDiagram {
   constructor (type, format, text) {
     this.text = text
     this.type = type
@@ -23,7 +24,7 @@ module.exports.KrokiDiagram = class KrokiDiagram {
   }
 }
 
-module.exports.KrokiClient = class KrokiClient {
+export class KrokiClient {
   constructor (doc, httpClient) {
     const maxUriLengthValue = parseInt(doc.getAttribute('kroki-max-uri-length', String(MAX_URI_DEFAULT_VALUE)))
     this.maxUriLength = isNaN(maxUriLengthValue) ? MAX_URI_DEFAULT_VALUE : maxUriLengthValue
