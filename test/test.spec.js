@@ -1,22 +1,25 @@
 /* global describe it before */
-const ospath = require('path')
-const fs = require('fs')
-const fsPromises = require('fs').promises
-const rusha = require('rusha')
-const pako = require('pako')
-const path = require('path')
-const chai = require('chai')
-const sinon = require('sinon')
-const rimraf = require('rimraf')
+import ospath from 'path'
+import { fileURLToPath } from 'url'
+import fs from 'fs'
+import { createHash } from 'crypto'
+import pako from 'pako'
+import chai from 'chai'
+import sinon from 'sinon'
+import rimraf from 'rimraf'
+import dirtyChai from 'dirty-chai'
+import Asciidoctor from '@asciidoctor/core'
+
+import { readFixture, fixturePath, deleteDirWithFiles } from './utils.js'
+import http from '../src/http.js'
+import asciidoctorKroki from '../src/asciidoctor-kroki.js'
+
 const expect = chai.expect
-const dirtyChai = require('dirty-chai')
-
 chai.use(dirtyChai)
+const fsPromises = fs.promises
+const asciidoctor = Asciidoctor()
 
-const { readFixture, fixturePath, deleteDirWithFiles } = require('./utils.js')
-const http = require('../src/http/node-http.js')
-const asciidoctorKroki = require('../src/asciidoctor-kroki.js')
-const asciidoctor = require('@asciidoctor/core')()
+const __dirname = ospath.dirname(fileURLToPath(import.meta.url))
 
 describe('Registration', () => {
   it('should register the extension', () => {
@@ -146,7 +149,7 @@ alice -> bob
       const html = asciidoctor.convert(input, {
         safe: 'safe',
         extension_registry: registry,
-        attributes: { 'kroki-plantuml-include-paths': fixturePath('plantuml', 'styles') + path.delimiter + fixturePath('plantuml', 'include') },
+        attributes: { 'kroki-plantuml-include-paths': fixturePath('plantuml', 'styles') + ospath.delimiter + fixturePath('plantuml', 'include') },
         base_dir: fixturePath()
       })
       expect(html).to.contain(`https://kroki.io/plantuml/svg/${encodeText(diagramText)}`)
@@ -166,7 +169,7 @@ plantuml::test/fixtures/alice.puml[png,role=sequence]
         attributes: { 'kroki-fetch-diagram': true }
       })
       const file = fixturePath('alice.puml')
-      const hash = rusha.createHash().update(`https://kroki.io/plantuml/png/${encode(file)}`).digest('hex')
+      const hash = createHash('sha1').update(`https://kroki.io/plantuml/png/${encode(file)}`).digest('hex')
       expect(html).to.contain(`<img src=".asciidoctor/kroki/diag-${hash}.png" alt="Diagram">`)
     }).timeout(5000)
     it('should include the plantuml-config at the top of the diagram', () => {
@@ -198,7 +201,7 @@ plantuml::test/fixtures/alice.puml[png,role=sequence]
       asciidoctorKroki.register(registry)
       const doc = asciidoctor.convertFile(fixturePath('fetch', 'doc.adoc'), { extension_registry: registry, safe: 'unsafe' })
       fs.unlinkSync(doc.getAttributes().outfile)
-      const imageLocation = path.join(doc.base_dir, doc.getAttributes().imagesdir)
+      const imageLocation = ospath.join(doc.base_dir, doc.getAttributes().imagesdir)
       try {
         const files = await fsPromises.readdir(imageLocation)
         expect(files).to.have.lengthOf(1)
@@ -296,7 +299,7 @@ plantuml::{fixtures-dir}/alice.puml[svg,role=sequence]
         attributes: { 'kroki-fetch-diagram': true }
       })
       const file = fixturePath('alice.puml')
-      const hash = rusha.createHash().update(`https://kroki.io/plantuml/svg/${encode(file)}`).digest('hex')
+      const hash = createHash('sha1').update(`https://kroki.io/plantuml/svg/${encode(file)}`).digest('hex')
       expect(html).to.contain(`<img src=".asciidoctor/kroki/diag-${hash}.svg" alt="Diagram">`)
     })
     it('should not download twice the same image with generated name', () => {
@@ -1174,7 +1177,7 @@ plantuml::test/fixtures/alice.puml[svg,role=sequence${blockAttr}]
             attributes: { 'kroki-fetch-diagram': true }
           })
           const file = fixturePath('alice.puml')
-          const hash = rusha.createHash().update(`https://kroki.io/plantuml/svg/${encode(file)}`).digest('hex')
+          const hash = createHash('sha1').update(`https://kroki.io/plantuml/svg/${encode(file)}`).digest('hex')
           expect(html).to.contain(`<object type="image/svg+xml" data=".asciidoctor/kroki/diag-${hash}.svg"><span class="alt">Diagram</span></object>`)
         })
       }

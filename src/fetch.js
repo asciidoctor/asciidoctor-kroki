@@ -1,5 +1,7 @@
-const rusha = require('rusha')
-const path = require('path')
+import { Buffer } from 'buffer'
+import { createHash } from 'crypto'
+import { format as pathFormat, join } from 'path'
+import nodeFs from './fs.js'
 
 const getDirPath = (doc) => {
   const imagesOutputDir = doc.getAttribute('imagesoutdir')
@@ -11,25 +13,26 @@ const getDirPath = (doc) => {
   if (imagesOutputDir) {
     dirPath = imagesOutputDir
   } else if (outDir) {
-    dirPath = path.join(outDir, imagesDir)
+    dirPath = join(outDir, imagesDir)
   } else if (toDir) {
-    dirPath = path.join(toDir, imagesDir)
+    dirPath = join(toDir, imagesDir)
   } else {
-    dirPath = path.join(baseDir, imagesDir)
+    dirPath = join(baseDir, imagesDir)
   }
   return dirPath
 }
 
-module.exports.save = function (krokiDiagram, doc, target, vfs, krokiClient) {
-  const exists = typeof vfs !== 'undefined' && typeof vfs.exists === 'function' ? vfs.exists : require('./node-fs.js').exists
-  const read = typeof vfs !== 'undefined' && typeof vfs.read === 'function' ? vfs.read : require('./node-fs.js').read
-  const add = typeof vfs !== 'undefined' && typeof vfs.add === 'function' ? vfs.add : require('./node-fs.js').add
-
+export const save = function (krokiDiagram, doc, target, vfs, krokiClient) {
+  const fs = {
+    exists: typeof vfs !== 'undefined' && typeof vfs.exists === 'function' ? vfs.exists : nodeFs.exists,
+    read: typeof vfs !== 'undefined' && typeof vfs.read === 'function' ? vfs.read : nodeFs.read,
+    add: typeof vfs !== 'undefined' && typeof vfs.add === 'function' ? vfs.add : nodeFs.add
+  }
   const dirPath = getDirPath(doc)
   const diagramUrl = krokiDiagram.getDiagramUri(krokiClient.getServerUrl())
   const format = krokiDiagram.format
-  const diagramName = `diag-${rusha.createHash().update(diagramUrl).digest('hex')}.${format}`
-  const filePath = path.format({ dir: dirPath, base: diagramName })
+  const diagramName = `diag-${createHash('sha1').update(diagramUrl).digest('hex')}.${format}`
+  const filePath = pathFormat({ dir: dirPath, base: diagramName })
   let encoding
   let mediaType
   if (format === 'txt' || format === 'atxt' || format === 'utxt') {
@@ -43,8 +46,8 @@ module.exports.save = function (krokiDiagram, doc, target, vfs, krokiClient) {
     encoding = 'binary'
   }
   // file is either (already) on the file system or we should read it from Kroki
-  const contents = exists(filePath) ? read(filePath, encoding) : krokiClient.getImage(krokiDiagram, encoding)
-  add({
+  const contents = fs.exists(filePath) ? fs.read(filePath, encoding) : krokiClient.getImage(krokiDiagram, encoding)
+  fs.add({
     relative: dirPath,
     basename: diagramName,
     mediaType: mediaType,

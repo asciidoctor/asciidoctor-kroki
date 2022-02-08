@@ -4,19 +4,21 @@
 // The previous line must be the first non-comment line in the file to enable TypeScript checks:
 // https://www.typescriptlang.org/docs/handbook/intro-to-js-ts.html#ts-check
 
-const fs = require('fs')
-const chai = require('chai')
-const expect = chai.expect
-const dirtyChai = require('dirty-chai')
-const path = require('path')
-const url = require('url')
+import fs from 'fs'
+import chai from 'chai'
+import Asciidoctor from '@asciidoctor/core'
+import dirtyChai from 'dirty-chai'
+import path from 'path'
+import { fileURLToPath, pathToFileURL } from 'url'
+
+import asciidoctorKroki from '../src/asciidoctor-kroki.js'
+import { preprocessVegaLite, preprocessPlantUML } from '../src/preprocess.js'
 
 chai.use(dirtyChai)
+const expect = chai.expect
+const asciidoctor = Asciidoctor()
 
-const asciidoctorKroki = require('../src/asciidoctor-kroki.js')
-const asciidoctor = require('@asciidoctor/core')()
-
-const { preprocessVegaLite } = require('../src/preprocess.js')
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 describe('Vega-Lite preprocessing', () => {
   const cwd = process.cwd().replace(/\\/g, '/')
@@ -63,13 +65,13 @@ Error: ENOENT: no such file or directory, open 'unexisting.csv'`
   })
 
   it('should throw an error for unexisting file referenced with "file" protocol', () => {
-    const unexistingFileUrl = url.pathToFileURL(path.join(cwd, 'unexisting.csv'))
+    const unexistingFileUrl = pathToFileURL(path.join(cwd, 'unexisting.csv'))
     const diagramText = `{
       "data": {
         "url": "${unexistingFileUrl}"
       }
     }`
-    const unexistingPath = url.fileURLToPath(unexistingFileUrl)
+    const unexistingPath = fileURLToPath(unexistingFileUrl)
     expect(() => preprocessVegaLite(diagramText)).to.throw(`Preprocessing of Vega-Lite view specification failed, because reading the local data file '${unexistingFileUrl}' referenced in the diagram caused an error:
 Error: ENOENT: no such file or directory, open '${unexistingPath}'`)
   })
@@ -124,7 +126,7 @@ Error: ENOENT: no such file or directory, open '${unexistingPath}'`)
   })
 
   it('should return diagramText with inlined local file referenced with "file" protocol and absolute path', () => {
-    const fileUrl = url.pathToFileURL(cwd) + '/' + relativePath
+    const fileUrl = pathToFileURL(cwd) + '/' + relativePath
     const diagramText = `{
   "data": {
     "url": "${fileUrl}"
@@ -142,8 +144,6 @@ Error: ENOENT: no such file or directory, open '${unexistingPath}'`)
     expectToBeEqualIgnoreNewlines(preprocessVegaLite(diagramText), diagramTextWithInlinedCsvFile)
   })
 })
-
-const { preprocessPlantUML } = require('../src/preprocess.js')
 
 describe('PlantUML preprocessing', () => {
   const remoteBasePath = 'https://raw.githubusercontent.com/Mogztter/asciidoctor-kroki/master/'

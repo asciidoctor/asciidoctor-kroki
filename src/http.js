@@ -1,3 +1,5 @@
+import { XMLHttpRequest } from 'unxhr'
+
 const httpRequest = (XMLHttpRequest, uri, method, encoding = 'utf8', body) => {
   let data = ''
   let status = -1
@@ -36,15 +38,15 @@ const httpRequest = (XMLHttpRequest, uri, method, encoding = 'utf8', body) => {
   return data
 }
 
-const httpPost = (XMLHttpRequest, uri, body, encoding = 'utf8') => {
+export function post (uri, body, encoding = 'utf8') {
   return httpRequest(XMLHttpRequest, uri, 'POST', encoding, body)
 }
 
-const httpGet = (XMLHttpRequest, uri, encoding = 'utf8') => {
+export function get (uri, encoding = 'utf8') {
   return httpRequest(XMLHttpRequest, uri, 'GET', encoding)
 }
 
-module.exports = {
-  get: httpGet,
-  post: httpPost
+export default {
+  post,
+  get
 }

@@ -1,14 +1,14 @@
-const fs = require('fs')
-const path = require('path')
-const mkdirp = require('mkdirp')
-const url = require('url')
+import fs from 'fs'
+import { format } from 'path'
+import mkdirp from 'mkdirp'
+import url from 'url'
 
-const http = require('./http/node-http.js')
+import { get } from './http.js'
 
-module.exports = {
+export default {
   add: (image) => {
     mkdirp.sync(image.relative)
-    const filePath = path.format({ dir: image.relative, base: image.basename })
+    const filePath = format({ dir: image.relative, base: image.basename })
     fs.writeFileSync(filePath, image.contents, 'binary')
   },
   exists: (path) => {
@@ -16,7 +16,7 @@ module.exports = {
   },
   read: (path, encoding = 'utf8') => {
     if (path.startsWith('http://') || path.startsWith('https://')) {
-      return http.get(path, encoding)
+      return get(path, encoding)
     }
     if (path.startsWith('file://')) {
       return fs.readFileSync(url.fileURLToPath(path), encoding)

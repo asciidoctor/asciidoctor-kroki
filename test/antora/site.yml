@@ -14,7 +14,7 @@ content:
 
 asciidoc:
   extensions:
-    - ./../../src/asciidoctor-kroki.js
+    - ./../../dist/asciidoctor-kroki.cjs
   attributes:
     allow-uri-read: true
 

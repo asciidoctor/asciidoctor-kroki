@@ -1,7 +1,10 @@
 // @ts-check
 // The previous line must be the first non-comment line in the file to enable TypeScript checks:
 // https://www.typescriptlang.org/docs/handbook/intro-to-js-ts.html#ts-check
-const path = require('path')
+import { delimiter, join, dirname } from 'path'
+import JSON5 from 'json5'
+
+import nodeFs from './fs.js'
 
 /**
  * @param {string} diagramText
@@ -9,11 +12,10 @@ const path = require('path')
  * @param {string} diagramDir
  * @returns {string}
  */
-module.exports.preprocessVegaLite = function (diagramText, context = {}, diagramDir = '') {
+export const preprocessVegaLite = function (diagramText, context = {}, diagramDir = '') {
   const logger = 'logger' in context && typeof context.logger !== 'undefined' ? context.logger : console
   let diagramObject
   try {
-    const JSON5 = require('json5')
     diagramObject = JSON5.parse(diagramText)
   } catch (e) {
     const message = `Preprocessing of Vega-Lite view specification failed, because of a parsing error:
@@ -27,11 +29,11 @@ ${diagramText}
   if (!diagramObject || !diagramObject.data || !diagramObject.data.url) {
     return diagramText
   }
-  const read = 'vfs' in context && typeof context.vfs !== 'undefined' && typeof context.vfs.read === 'function' ? context.vfs.read : require('./node-fs.js').read
+  const read = 'vfs' in context && typeof context.vfs !== 'undefined' && typeof context.vfs.read === 'function' ? context.vfs.read : nodeFs.read
   const data = diagramObject.data
   const urlOrPath = data.url
   try {
-    data.values = read(isLocalAndRelative(urlOrPath) ? path.join(diagramDir, urlOrPath) : urlOrPath)
+    data.values = read(isLocalAndRelative(urlOrPath) ? join(diagramDir, urlOrPath) : urlOrPath)
   } catch (e) {
     if (isRemoteUrl(urlOrPath)) {
       // Includes a remote file that cannot be found but might be resolved by the Kroki server (https://github.com/yuzutech/kroki/issues/60)
@@ -87,11 +89,11 @@ function removePlantUmlTags (diagramText) {
  * @param {string} diagramDir - diagram base directory
  * @returns {string}
  */
-module.exports.preprocessPlantUML = function (diagramText, context, diagramIncludePaths = '', diagramDir = '') {
+export const preprocessPlantUML = function (diagramText, context, diagramIncludePaths = '', diagramDir = '') {
   const logger = 'logger' in context ? context.logger : console
   const includeOnce = []
   const includeStack = []
-  const includePaths = diagramIncludePaths ? diagramIncludePaths.split(path.delimiter) : []
+  const includePaths = diagramIncludePaths ? diagramIncludePaths.split(delimiter) : []
   diagramText = preprocessPlantUmlIncludes(diagramText, diagramDir, includeOnce, includeStack, includePaths, context.vfs, logger)
   return removePlantUmlTags(diagramText)
 }
@@ -149,7 +151,7 @@ function preprocessPlantUmlIncludes (diagramText, dirPath, includeOnce, includeS
             text = getPlantUmlTextOrFirstBlock(text)
           }
           includeStack.push(result.filePath)
-          text = preprocessPlantUmlIncludes(text, path.dirname(result.filePath), includeOnce, includeStack, includePaths, vfs, logger)
+          text = preprocessPlantUmlIncludes(text, dirname(result.filePath), includeOnce, includeStack, includePaths, vfs, logger)
           includeStack.pop()
           if (trailingContent !== '') {
             return text + ' ' + trailingContent
@@ -175,10 +177,10 @@ function preprocessPlantUmlIncludes (diagramText, dirPath, includeOnce, includeS
  * @returns {string} the found file or include file path
  */
 function resolveIncludeFile (includeFile, includePaths, vfs) {
-  const exists = typeof vfs !== 'undefined' && typeof vfs.exists === 'function' ? vfs.exists : require('./node-fs.js').exists
+  const exists = typeof vfs !== 'undefined' && typeof vfs.exists === 'function' ? vfs.exists : nodeFs.exists
   let filePath = includeFile
   for (let i = 0; i < includePaths.length; i++) {
-    const localFilePath = path.join(includePaths[i], includeFile)
+    const localFilePath = join(includePaths[i], includeFile)
     if (exists(localFilePath)) {
       filePath = localFilePath
       break
@@ -213,7 +215,7 @@ function parseTarget (value) {
  * @returns {any}
  */
 function readPlantUmlInclude (url, includePaths, includeStack, vfs, logger) {
-  const read = typeof vfs !== 'undefined' && typeof vfs.read === 'function' ? vfs.read : require('./node-fs.js').read
+  const read = typeof vfs !== 'undefined' && typeof vfs.read === 'function' ? vfs.read : nodeFs.read
   let skip = false
   let text = ''
   let filePath = url

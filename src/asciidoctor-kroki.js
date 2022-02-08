@@ -1,6 +1,11 @@
 /* global Opal */
 // @ts-check
-const { KrokiDiagram, KrokiClient } = require('./kroki-client.js')
+import { KrokiClient, KrokiDiagram } from './kroki-client.js'
+import { preprocessPlantUML, preprocessVegaLite } from './preprocess.js'
+import { save } from './fetch.js'
+import nodeFs from './fs.js'
+import httpClient from './http.js'
+import antoraAdapter from './antora-adapter.js'
 
 function UnsupportedFormatError (message) {
   this.name = 'UnsupportedFormatError'
@@ -20,10 +25,6 @@ function InvalidConfigurationError (message) {
 // eslint-disable-next-line new-parens
 InvalidConfigurationError.prototype = new Error
 
-const isBrowser = () => {
-  return typeof window === 'object' && typeof window.XMLHttpRequest === 'object'
-}
-
 // A value of 20 (SECURE) disallows the document from attempting to read files from the file system
 const SAFE_MODE_SECURE = 20
 
@@ -31,7 +32,7 @@ const createImageSrc = (doc, krokiDiagram, target, vfs, krokiClient) => {
   const shouldFetch = doc.isAttribute('kroki-fetch-diagram')
   let imageUrl
   if (shouldFetch && doc.getSafe() < SAFE_MODE_SECURE) {
-    imageUrl = require('./fetch.js').save(krokiDiagram, doc, target, vfs, krokiClient)
+    imageUrl = save(krokiDiagram, doc, target, vfs, krokiClient)
   } else {
     imageUrl = krokiDiagram.getDiagramUri(krokiClient.getServerUrl())
   }
@@ -72,14 +73,14 @@ const processKroki = (processor, parent, attrs, diagramType, diagramText, contex
   }
   if (doc.getSafe() < SAFE_MODE_SECURE) {
     if (diagramType === 'vegalite') {
-      diagramText = require('./preprocess.js').preprocessVegaLite(diagramText, context, diagramDir)
+      diagramText = preprocessVegaLite(diagramText, context, diagramDir)
     } else if (diagramType === 'plantuml' || diagramType === 'c4plantuml') {
       const plantUmlIncludeFile = doc.getAttribute('kroki-plantuml-include')
       if (plantUmlIncludeFile) {
         diagramText = `!include ${plantUmlIncludeFile}\n${diagramText}`
       }
       const plantUmlIncludePaths = doc.getAttribute('kroki-plantuml-include-paths')
-      diagramText = require('./preprocess.js').preprocessPlantUML(diagramText, context, plantUmlIncludePaths, diagramDir)
+      diagramText = preprocessPlantUML(diagramText, context, plantUmlIncludePaths, diagramDir)
     }
   }
   const blockId = attrs.id
@@ -111,7 +112,6 @@ const processKroki = (processor, parent, attrs, diagramType, diagramText, contex
     blockAttrs.id = blockId
   }
   const krokiDiagram = new KrokiDiagram(diagramType, format, diagramText)
-  const httpClient = isBrowser() ? require('./http/browser-http.js') : require('./http/node-http.js')
   const krokiClient = new KrokiClient(doc, httpClient)
   let block
   if (format === 'txt' || format === 'atxt' || format === 'utxt') {
@@ -165,7 +165,7 @@ function diagramBlockMacro (name, context) {
     self.process((parent, target, attrs) => {
       let vfs = context.vfs
       target = parent.applySubstitutions(target, ['attributes'])
-      if (isBrowser()) {
+      if (typeof window !== 'undefined' && typeof window.document !== 'undefined') {
         if (!['file://', 'https://', 'http://'].some(prefix => target.startsWith(prefix))) {
           // if not an absolute URL, prefix with baseDir in the browser environment
           const doc = parent.getDocument()
@@ -175,7 +175,7 @@ function diagramBlockMacro (name, context) {
         }
       } else {
         if (typeof vfs === 'undefined' || typeof vfs.read !== 'function') {
-          vfs = require('./node-fs.js')
+          vfs = nodeFs
           target = parent.normalizeSystemPath(target)
         }
       }
@@ -194,10 +194,10 @@ function diagramBlockMacro (name, context) {
   }
 }
 
-module.exports.register = function register (registry, context = {}) {
+export const register = function register (registry, context = {}) {
   // patch context in case of Antora
   if (typeof context.contentCatalog !== 'undefined' && typeof context.contentCatalog.addFile === 'function' && typeof context.file !== 'undefined') {
-    context.vfs = require('./antora-adapter.js')(context.file, context.contentCatalog, context.vfs)
+    context.vfs = antoraAdapter(context.file, context.contentCatalog, context.vfs)
   }
   context.logger = Opal.Asciidoctor.LoggerManager.getLogger()
   const names = [
@@ -239,4 +239,8 @@ module.exports.register = function register (registry, context = {}) {
     }
   }
   return registry
+}
+
+export default {
+  register: register
 }
