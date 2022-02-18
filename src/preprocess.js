@@ -91,7 +91,8 @@ module.exports.preprocessPlantUML = function (diagramText, context, diagramInclu
   const logger = 'logger' in context ? context.logger : console
   const includeOnce = []
   const includeStack = []
-  const includePaths = diagramIncludePaths ? diagramIncludePaths.split(path.delimiter) : []
+  const delimiters = new RegExp("[" + path.delimiter + ",]");
+  const includePaths = diagramIncludePaths ? diagramIncludePaths.split(delimiters) : []
   diagramText = preprocessPlantUmlIncludes(diagramText, diagramDir, includeOnce, includeStack, includePaths, context.vfs, logger)
   return removePlantUmlTags(diagramText)
 }
