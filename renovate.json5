@@ -10,8 +10,8 @@
   ],
   "packageRules": [
     {
-      // disable libnpmpublish automatic update (too sensitive)
-      "matchPackagePatterns": ["libnpmpublish"],
+      // disable libnpmpublish and pacote automatic updates (too sensitive)
+      "matchPackagePatterns": ["libnpmpublish", "pacote"],
       "enabled": false
     }
   ],
