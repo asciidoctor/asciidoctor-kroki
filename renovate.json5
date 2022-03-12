@@ -1,0 +1,24 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "dependencyDashboard": true,
+  "separateMajorMinor": false,
+  "extends": [
+    ":preserveSemverRanges",
+    "group:all",
+    "schedule:monthly",
+    ":maintainLockFilesMonthly"
+  ],
+  "packageRules": [
+    {
+      // disable libnpmpublish automatic update (too sensitive)
+      "matchPackagePatterns": ["libnpmpublish"],
+      "enabled": false
+    }
+  ],
+  "lockFileMaintenance": {
+    "extends": [
+      "group:all"
+    ],
+    "commitMessageAction": "Update"
+  }
+}
