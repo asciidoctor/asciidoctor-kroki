@@ -24,7 +24,7 @@
     "dist:browser": "shx mkdir -p dist/browser && browserify src/asciidoctor-kroki.js --exclude ./node-fs.js --exclude ./fetch.js --exclude ./antora-adapter.js --standalone AsciidoctorKroki -o dist/browser/asciidoctor-kroki.js"
   },
   "dependencies": {
-    "json5": "2.2.0",
+    "json5": "2.2.1",
     "mkdirp": "1.0.4",
     "pako": "2.0.4",
     "rusha": "0.8.14",
@@ -43,7 +43,7 @@
     "lodash": "4.17.21",
     "mocha": "9.2.2",
     "pacote": "12.0.2",
-    "puppeteer": "13.5.1",
+    "puppeteer": "13.5.2",
     "rimraf": "3.0.2",
     "shx": "0.3.4",
     "sinon": "13.0.1",
