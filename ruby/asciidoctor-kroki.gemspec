@@ -14,15 +14,15 @@ Gem::Specification.new do |s|
   s.license = 'MIT'
   s.metadata = {
     'bug_tracker_uri' => 'https://github.com/Mogztter/asciidoctor-kroki/issues',
-    'source_code_uri' => 'https://github.com/Mogztter/asciidoctor-kroki'
+    'source_code_uri' => 'https://github.com/Mogztter/asciidoctor-kroki',
+    'rubygems_mfa_required' => 'true'
   }
   s.files = `git ls-files`.split($RS)
-  s.test_files = s.files.grep(%r{^(test|spec|features|tasks)/})
   s.require_paths = ['lib']
 
   s.add_runtime_dependency 'asciidoctor', '~> 2.0'
 
   s.add_development_dependency 'rake', '~> 13.0.6'
   s.add_development_dependency 'rspec', '~> 3.10.0'
-  s.add_development_dependency 'rubocop', '~> 1.21'
+  s.add_development_dependency 'rubocop', '~> 1.30'
 end

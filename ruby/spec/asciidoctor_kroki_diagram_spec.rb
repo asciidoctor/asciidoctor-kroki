@@ -51,11 +51,13 @@ describe ::AsciidoctorExtensions::KrokiDiagram do
     kroki_client = ::AsciidoctorExtensions::KrokiClient.new(server_url: 'https://kroki.io', http_method: 'get', http_client: kroki_http_client)
     output_dir_path = "#{__dir__}/../.asciidoctor/kroki"
     # make sure that we are doing only one GET request
-    expect(kroki_http_client).to receive(:get).once
+    diagram_contents = File.read("#{__dir__}/fixtures/plantuml-diagram.png", mode: 'rb')
+    expect(kroki_http_client).to receive(:get).once.and_return(diagram_contents)
     diagram_name = kroki_diagram.save(output_dir_path, kroki_client)
     diagram_path = File.join(output_dir_path, diagram_name)
     expect(File.exist?(diagram_path)).to be_truthy, "expected diagram to be saved at #{diagram_path}"
     # calling again... should read the file from disk (and not do a GET request)
     kroki_diagram.save(output_dir_path, kroki_client)
+    expect(File.size(diagram_path)).to be_eql(diagram_contents.length), 'expected diagram to be fully saved on disk'
   end
 end

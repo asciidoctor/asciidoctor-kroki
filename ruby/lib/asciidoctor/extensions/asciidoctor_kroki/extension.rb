@@ -63,7 +63,7 @@ module AsciidoctorExtensions
 
       unless (path = resolve_target_path(target))
         logger.error message_with_context "#{diagram_type} block macro not found: #{target}.", source_location: parent.document.reader.cursor_at_mark
-        create_block(parent, 'paragraph', unresolved_block_macro_message(diagram_type, target), {})
+        return create_block(parent, 'paragraph', unresolved_block_macro_message(diagram_type, target), {})
       end
 
       begin
@@ -92,7 +92,7 @@ module AsciidoctorExtensions
         require 'open-uri'
         ::OpenURI.open_uri(target, &:read)
       else
-        File.open(target, &:read)
+        File.read(target, mode: 'rb:utf-8:utf-8')
       end
     end
 
@@ -291,19 +291,22 @@ module AsciidoctorExtensions
       diagram_name = "diag-#{Digest::SHA256.hexdigest diagram_url}.#{@format}"
       file_path = File.join(output_dir_path, diagram_name)
       encoding = case @format
-                 when 'txt', 'atxt', 'utxt'
+                 when 'txt', 'atxt', 'utxt', 'svg'
                    'utf8'
-                 when 'svg', 'binary'
+                 else
                    'binary'
                  end
       # file is either (already) on the file system or we should read it from Kroki
-      contents = File.exist?(file_path) ? File.open(file_path, &:read) : kroki_client.get_image(self, encoding)
-      FileUtils.mkdir_p(output_dir_path)
-      if encoding == 'binary'
-        File.binwrite(file_path, contents)
-      else
-        File.write(file_path, contents)
+      unless File.exist?(file_path)
+        contents = kroki_client.get_image(self, encoding)
+        FileUtils.mkdir_p(output_dir_path)
+        if encoding == 'binary'
+          File.binwrite(file_path, contents)
+        else
+          File.write(file_path, contents)
+        end
       end
+
       diagram_name
     end
 
