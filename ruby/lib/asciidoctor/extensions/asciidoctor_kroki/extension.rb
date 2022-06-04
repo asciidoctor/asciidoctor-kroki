@@ -252,10 +252,8 @@ module AsciidoctorExtensions
         images_dir = doc.attr('imagesdir', '')
         if (images_output_dir = doc.attr('imagesoutdir'))
           images_output_dir
-        elsif (out_dir = doc.attr('outdir'))
+        elsif (out_dir = doc.attr('outdir') || (doc.nested? ? doc.parent_document : doc).options[:to_dir])
           File.join(out_dir, images_dir)
-        elsif (to_dir = doc.attr('to_dir'))
-          File.join(to_dir, images_dir)
         else
           File.join(doc.base_dir, images_dir)
         end
