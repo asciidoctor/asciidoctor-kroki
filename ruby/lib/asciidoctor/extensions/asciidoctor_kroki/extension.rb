@@ -154,7 +154,7 @@ module AsciidoctorExtensions
         format = get_format(doc, attrs, diagram_type)
         attrs['role'] = get_role(format, attrs['role'])
         attrs['format'] = format
-        kroki_diagram = KrokiDiagram.new(diagram_type, format, diagram_text)
+        kroki_diagram = KrokiDiagram.new(diagram_type, format, diagram_text, attrs['target'])
         kroki_client = KrokiClient.new({
                                          server_url: server_url(doc),
                                          http_method: http_method(doc),
@@ -269,12 +269,13 @@ module AsciidoctorExtensions
     require 'zlib'
     require 'digest'
 
-    attr_reader :type, :text, :format
+    attr_reader :type, :text, :format, :target
 
-    def initialize(type, format, text)
+    def initialize(type, format, text, target = nil)
       @text = text
       @type = type
       @format = format
+      @target = target
     end
 
     def get_diagram_uri(server_url)
@@ -287,7 +288,7 @@ module AsciidoctorExtensions
 
     def save(output_dir_path, kroki_client)
       diagram_url = get_diagram_uri(kroki_client.server_url)
-      diagram_name = "diag-#{Digest::SHA256.hexdigest diagram_url}.#{@format}"
+      diagram_name = "#{@target || 'diag'}-#{Digest::SHA256.hexdigest diagram_url}.#{@format}"
       file_path = File.join(output_dir_path, diagram_name)
       encoding = case @format
                  when 'txt', 'atxt', 'utxt', 'svg'

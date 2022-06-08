@@ -32,7 +32,28 @@ describe ::AsciidoctorExtensions::KrokiDiagram do
     output_dir_path = "#{__dir__}/../.asciidoctor/kroki"
     diagram_name = kroki_diagram.save(output_dir_path, kroki_client)
     diagram_path = File.join(output_dir_path, diagram_name)
-    expect(File.exist?(diagram_path)).to be_truthy, "expected diagram to be saved at #{diagram_path}"
+    expect(File.exist?(diagram_path)).to be_truthy, "diagram should be saved at: #{diagram_path}"
+    content = <<-TXT.chomp
+     ,-----.          ,---.
+     |alice|          |bob|
+     `--+--'          `-+-'
+        |    hello      |
+        |-------------->|
+     ,--+--.          ,-+-.
+     |alice|          |bob|
+     `-----'          `---'
+    TXT
+    expect(File.read(diagram_path).split("\n").map(&:rstrip).join("\n")).to eq(content)
+  end
+  it 'should fetch a diagram from Kroki and save it to disk using the target name' do
+    kroki_diagram = ::AsciidoctorExtensions::KrokiDiagram.new('plantuml', 'txt', ' alice -> bob: hello', 'hello-world')
+    kroki_http_client = ::AsciidoctorExtensions::KrokiHttpClient
+    kroki_client = ::AsciidoctorExtensions::KrokiClient.new(server_url: 'https://kroki.io', http_method: 'get', http_client: kroki_http_client)
+    output_dir_path = "#{__dir__}/../.asciidoctor/kroki"
+    diagram_name = kroki_diagram.save(output_dir_path, kroki_client)
+    diagram_path = File.join(output_dir_path, diagram_name)
+    expect(diagram_name).to start_with('hello-world-'), "diagram name should use the target as a prefix, got: #{diagram_name}"
+    expect(File.exist?(diagram_path)).to be_truthy, "diagram should be saved at: #{diagram_path}"
     content = <<-TXT.chomp
      ,-----.          ,---.
      |alice|          |bob|
@@ -55,9 +76,9 @@ describe ::AsciidoctorExtensions::KrokiDiagram do
     expect(kroki_http_client).to receive(:get).once.and_return(diagram_contents)
     diagram_name = kroki_diagram.save(output_dir_path, kroki_client)
     diagram_path = File.join(output_dir_path, diagram_name)
-    expect(File.exist?(diagram_path)).to be_truthy, "expected diagram to be saved at #{diagram_path}"
+    expect(File.exist?(diagram_path)).to be_truthy, "diagram should be saved at: #{diagram_path}"
     # calling again... should read the file from disk (and not do a GET request)
     kroki_diagram.save(output_dir_path, kroki_client)
-    expect(File.size(diagram_path)).to be_eql(diagram_contents.length), 'expected diagram to be fully saved on disk'
+    expect(File.size(diagram_path)).to be_eql(diagram_contents.length), 'diagram should be fully saved on disk'
   end
 end
