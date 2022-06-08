@@ -89,7 +89,7 @@ describe ::AsciidoctorExtensions::KrokiBlockMacroProcessor do
 </div>
 </div>)
     end
-    it 'should display unresolved block macro message when the traget cannot be resolved' do
+    it 'should display unresolved block macro message when the target cannot be resolved' do
       # noinspection RubyClassModuleNamingConvention
       class UnresolvedTargetKrokiBlockMacroProcessor < ::AsciidoctorExtensions::KrokiBlockMacroProcessor
         def resolve_target_path(_target)
@@ -104,7 +104,7 @@ describe ::AsciidoctorExtensions::KrokiBlockMacroProcessor do
       ADOC
       output = Asciidoctor.convert(input, standalone: false, extension_registry: registry)
       (expect output).to eql %(<div class="paragraph">
-<p>Unresolved block macro - plantuml::[]</p>
+<p>Unresolved block macro - plantuml::alice.puml[]</p>
 </div>)
     end
     it 'should override the unresolved block macro message' do
