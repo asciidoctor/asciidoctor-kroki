@@ -300,11 +300,7 @@ module AsciidoctorExtensions
       unless File.exist?(file_path)
         contents = kroki_client.get_image(self, encoding)
         FileUtils.mkdir_p(output_dir_path)
-        if encoding == 'binary'
-          File.binwrite(file_path, contents)
-        else
-          File.write(file_path, contents)
-        end
+        File.write(file_path, contents, mode: 'wb')
       end
 
       diagram_name
