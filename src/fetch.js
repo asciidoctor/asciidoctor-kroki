@@ -1,23 +1,24 @@
 const rusha = require('rusha')
 const path = require('path')
 
-const getDirPath = (doc) => {
+const getImagesOutputDirectory = (doc) => {
   const imagesOutputDir = doc.getAttribute('imagesoutdir')
-  const outDir = doc.getAttribute('outdir')
-  const toDir = doc.getAttribute('to_dir')
-  const baseDir = doc.getBaseDir()
-  const imagesDir = doc.getAttribute('imagesdir') || ''
-  let dirPath
   if (imagesOutputDir) {
-    dirPath = imagesOutputDir
-  } else if (outDir) {
-    dirPath = path.join(outDir, imagesDir)
-  } else if (toDir) {
-    dirPath = path.join(toDir, imagesDir)
-  } else {
-    dirPath = path.join(baseDir, imagesDir)
+    return imagesOutputDir
   }
-  return dirPath
+  const outputDirectory = getOutputDirectory(doc)
+  const imagesDir = doc.getAttribute('imagesdir') || ''
+  return path.join(outputDirectory, imagesDir)
+}
+
+const getOutputDirectory = (doc) => {
+  // the nested document logic will become obsolete once https://github.com/asciidoctor/asciidoctor/commit/7edc9da023522be67b17e2a085d72e056703a438 is released
+  const outDir = doc.getAttribute('outdir') || (doc.isNested() ? doc.getParentDocument() : doc).getOptions().to_dir
+  const baseDir = doc.getBaseDir()
+  if (outDir) {
+    return outDir
+  }
+  return baseDir
 }
 
 module.exports.save = function (krokiDiagram, doc, target, vfs, krokiClient) {
@@ -25,11 +26,11 @@ module.exports.save = function (krokiDiagram, doc, target, vfs, krokiClient) {
   const read = typeof vfs !== 'undefined' && typeof vfs.read === 'function' ? vfs.read : require('./node-fs.js').read
   const add = typeof vfs !== 'undefined' && typeof vfs.add === 'function' ? vfs.add : require('./node-fs.js').add
 
-  const dirPath = getDirPath(doc)
+  const imagesOutputDirectory = getImagesOutputDirectory(doc)
   const diagramUrl = krokiDiagram.getDiagramUri(krokiClient.getServerUrl())
   const format = krokiDiagram.format
   const diagramName = `diag-${rusha.createHash().update(diagramUrl).digest('hex')}.${format}`
-  const filePath = path.format({ dir: dirPath, base: diagramName })
+  const filePath = path.format({ dir: imagesOutputDirectory, base: diagramName })
   let encoding
   let mediaType
   if (format === 'txt' || format === 'atxt' || format === 'utxt') {
@@ -45,7 +46,7 @@ module.exports.save = function (krokiDiagram, doc, target, vfs, krokiClient) {
   // file is either (already) on the file system or we should read it from Kroki
   const contents = exists(filePath) ? read(filePath, encoding) : krokiClient.getImage(krokiDiagram, encoding)
   add({
-    relative: dirPath,
+    relative: imagesOutputDirectory,
     basename: diagramName,
     mediaType: mediaType,
     contents: Buffer.from(contents, encoding)
