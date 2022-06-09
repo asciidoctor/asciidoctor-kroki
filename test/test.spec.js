@@ -242,7 +242,7 @@ Hello -> World
       })
       expect(html).to.contain('<img src=".asciidoctor/kroki/diag-7a123c0b2909750ca5526554cd8620774ccf6cd9.svg" alt="hello-world">')
     }).timeout(5000)
-    it('should download and save an image to a local folder and generated name', () => {
+    it('should download and save an image to a local folder using a generated unique name (md5sum)', () => {
       const input = `
 :imagesdir: .asciidoctor/kroki
 
@@ -259,6 +259,69 @@ Hello -> World
         attributes: { 'kroki-fetch-diagram': true }
       })
       expect(html).to.contain('<img src=".asciidoctor/kroki/diag-7a123c0b2909750ca5526554cd8620774ccf6cd9.svg" alt="Diagram">')
+    }).timeout(5000)
+    it('should download and save an image to the images output directory (imagesoutdir attribute and imagesdir)', () => {
+      const input = `
+[plantuml,"",svg,role=sequence]
+....
+Hello -> World
+....
+`
+      const registry = asciidoctor.Extensions.create()
+      asciidoctorKroki.register(registry)
+      asciidoctor.convert(input, {
+        safe: 'safe',
+        extension_registry: registry,
+        attributes: { 'kroki-fetch-diagram': true, imagesoutdir: '.asciidoctor/kroki/images', imagesdir: '../images' },
+        to_dir: '.asciidoctor/kroki/relative',
+        to_file: 'relative.html',
+        standalone: false,
+        mkdirs: true
+      })
+      const html = fs.readFileSync(ospath.join(__dirname, '..', '.asciidoctor', 'kroki', 'relative', 'relative.html'), 'utf8')
+      expect(html).to.contain('<img src="../images/diag-7a123c0b2909750ca5526554cd8620774ccf6cd9.svg" alt="Diagram">')
+    }).timeout(5000)
+    it('should download and save an image to the output directory (to_dir option)', () => {
+      const input = `
+[plantuml,"",svg,role=sequence]
+....
+Hello -> World
+....
+`
+      const registry = asciidoctor.Extensions.create()
+      asciidoctorKroki.register(registry)
+      asciidoctor.convert(input, {
+        safe: 'safe',
+        extension_registry: registry,
+        attributes: { 'kroki-fetch-diagram': true },
+        to_dir: '.asciidoctor/kroki/to_dir',
+        to_file: 'to-dir-option.html',
+        standalone: false,
+        mkdirs: true
+      })
+      const html = fs.readFileSync(ospath.join(__dirname, '..', '.asciidoctor', 'kroki', 'to_dir', 'to-dir-option.html'), 'utf8')
+      expect(html).to.contain('<img src="diag-7a123c0b2909750ca5526554cd8620774ccf6cd9.svg" alt="Diagram">')
+    }).timeout(5000)
+    it('should download and save an image relative to the output directory (to_dir option and imagedir attribute)', () => {
+      const input = `
+[plantuml,"",svg,role=sequence]
+....
+Hello -> World
+....
+`
+      const registry = asciidoctor.Extensions.create()
+      asciidoctorKroki.register(registry)
+      asciidoctor.convert(input, {
+        safe: 'safe',
+        extension_registry: registry,
+        attributes: { 'kroki-fetch-diagram': true, imagesdir: 'img' },
+        to_dir: '.asciidoctor/kroki/to_dir',
+        to_file: 'to-dir-option-with-imagedir-attr.html',
+        standalone: false,
+        mkdirs: true
+      })
+      const html = fs.readFileSync(ospath.join(__dirname, '..', '.asciidoctor', 'kroki', 'to_dir', 'to-dir-option-with-imagedir-attr.html'), 'utf8')
+      expect(html).to.contain('<img src="img/diag-7a123c0b2909750ca5526554cd8620774ccf6cd9.svg" alt="Diagram">')
     }).timeout(5000)
     it('should apply substitutions in diagram block', () => {
       const input = `
