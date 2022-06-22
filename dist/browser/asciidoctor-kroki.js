@@ -2450,31 +2450,52 @@ function unwrapListeners(arr) {
 
 function once(emitter, name) {
   return new Promise(function (resolve, reject) {
-    function eventListener() {
-      if (errorListener !== undefined) {
+    function errorListener(err) {
+      emitter.removeListener(name, resolver);
+      reject(err);
+    }
+
+    function resolver() {
+      if (typeof emitter.removeListener === 'function') {
         emitter.removeListener('error', errorListener);
       }
       resolve([].slice.call(arguments));
     };
-    var errorListener;
 
-    // Adding an error listener is not optional because
-    // if an error is thrown on an event emitter we cannot
-    // guarantee that the actual event we are waiting will
-    // be fired. The result could be a silent way to create
-    // memory or file descriptor leaks, which is something
-    // we should avoid.
+    eventTargetAgnosticAddListener(emitter, name, resolver, { once: true });
     if (name !== 'error') {
-      errorListener = function errorListener(err) {
-        emitter.removeListener(name, eventListener);
-        reject(err);
-      };
-
-      emitter.once('error', errorListener);
+      addErrorHandlerIfEventEmitter(emitter, errorListener, { once: true });
     }
-
-    emitter.once(name, eventListener);
   });
+}
+
+function addErrorHandlerIfEventEmitter(emitter, handler, flags) {
+  if (typeof emitter.on === 'function') {
+    eventTargetAgnosticAddListener(emitter, 'error', handler, flags);
+  }
+}
+
+function eventTargetAgnosticAddListener(emitter, name, listener, flags) {
+  if (typeof emitter.on === 'function') {
+    if (flags.once) {
+      emitter.once(name, listener);
+    } else {
+      emitter.on(name, listener);
+    }
+  } else if (typeof emitter.addEventListener === 'function') {
+    // EventTarget does not have `error` event semantics like Node
+    // EventEmitters, we do not listen for `error` events here.
+    emitter.addEventListener(name, function wrapListener(arg) {
+      // IE does not have builtin `{ once: true }` support so we
+      // have to do it manually.
+      if (flags.once) {
+        emitter.removeEventListener(name, wrapListener);
+      }
+      listener(arg);
+    });
+  } else {
+    throw new TypeError('The "emitter" argument must be of type EventEmitter. Received type ' + typeof emitter);
+  }
 }
 
 },{}],6:[function(require,module,exports){
@@ -2510,7 +2531,8 @@ function validateParams (params) {
   return params
 }
 
-},{"http":32,"url":55}],7:[function(require,module,exports){
+},{"http":33,"url":54}],7:[function(require,module,exports){
+/*! ieee754. BSD-3-Clause License. Feross Aboukhadijeh <https://feross.org/opensource> */
 exports.read = function (buffer, offset, isLE, mLen, nBytes) {
   var e, m
   var eLen = (nBytes * 8) - mLen - 1
@@ -2597,6 +2619,35 @@ exports.write = function (buffer, value, offset, isLE, mLen, nBytes) {
 }
 
 },{}],8:[function(require,module,exports){
+if (typeof Object.create === 'function') {
+  // implementation from standard node.js 'util' module
+  module.exports = function inherits(ctor, superCtor) {
+    if (superCtor) {
+      ctor.super_ = superCtor
+      ctor.prototype = Object.create(superCtor.prototype, {
+        constructor: {
+          value: ctor,
+          enumerable: false,
+          writable: true,
+          configurable: true
+        }
+      })
+    }
+  };
+} else {
+  // old school shim for old browsers
+  module.exports = function inherits(ctor, superCtor) {
+    if (superCtor) {
+      ctor.super_ = superCtor
+      var TempCtor = function () {}
+      TempCtor.prototype = superCtor.prototype
+      ctor.prototype = new TempCtor()
+      ctor.prototype.constructor = ctor
+    }
+  }
+}
+
+},{}],9:[function(require,module,exports){
 (function (global, factory) {
 	typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
 	typeof define === 'function' && define.amd ? define(factory) :
@@ -4308,7 +4359,7 @@ exports.write = function (buffer, value, offset, isLE, mLen, nBytes) {
 
 })));
 
-},{}],9:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 // Top level file is just a mixin of submodules & constants
 'use strict';
 
@@ -4328,7 +4379,7 @@ module.exports.inflateRaw = inflateRaw;
 module.exports.ungzip = ungzip;
 module.exports.constants = constants;
 
-},{"./lib/deflate":10,"./lib/inflate":11,"./lib/zlib/constants":15}],10:[function(require,module,exports){
+},{"./lib/deflate":11,"./lib/inflate":12,"./lib/zlib/constants":16}],11:[function(require,module,exports){
 'use strict';
 
 
@@ -4710,7 +4761,7 @@ module.exports.deflateRaw = deflateRaw;
 module.exports.gzip = gzip;
 module.exports.constants = require('./zlib/constants');
 
-},{"./utils/common":12,"./utils/strings":13,"./zlib/constants":15,"./zlib/deflate":17,"./zlib/messages":22,"./zlib/zstream":24}],11:[function(require,module,exports){
+},{"./utils/common":13,"./utils/strings":14,"./zlib/constants":16,"./zlib/deflate":18,"./zlib/messages":23,"./zlib/zstream":25}],12:[function(require,module,exports){
 'use strict';
 
 
@@ -5131,7 +5182,7 @@ module.exports.inflateRaw = inflateRaw;
 module.exports.ungzip = inflate;
 module.exports.constants = require('./zlib/constants');
 
-},{"./utils/common":12,"./utils/strings":13,"./zlib/constants":15,"./zlib/gzheader":18,"./zlib/inflate":20,"./zlib/messages":22,"./zlib/zstream":24}],12:[function(require,module,exports){
+},{"./utils/common":13,"./utils/strings":14,"./zlib/constants":16,"./zlib/gzheader":19,"./zlib/inflate":21,"./zlib/messages":23,"./zlib/zstream":25}],13:[function(require,module,exports){
 'use strict';
 
 
@@ -5181,7 +5232,7 @@ module.exports.flattenChunks = (chunks) => {
   return result;
 };
 
-},{}],13:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
 // String encode/decode helpers
 'use strict';
 
@@ -5357,7 +5408,7 @@ module.exports.utf8border = (buf, max) => {
   return (pos + _utf8len[buf[pos]] > max) ? pos : max;
 };
 
-},{}],14:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 'use strict';
 
 // Note: adler32 takes 12% for level 0 and 2% for level 6.
@@ -5410,7 +5461,7 @@ const adler32 = (adler, buf, len, pos) => {
 
 module.exports = adler32;
 
-},{}],15:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
 'use strict';
 
 // (C) 1995-2013 Jean-loup Gailly and Mark Adler
@@ -5480,7 +5531,7 @@ module.exports = {
   //Z_NULL:                 null // Use -1 or null inline, depending on var type
 };
 
-},{}],16:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 'use strict';
 
 // Note: we can't get significant speed boost here.
@@ -5541,7 +5592,7 @@ const crc32 = (crc, buf, len, pos) => {
 
 module.exports = crc32;
 
-},{}],17:[function(require,module,exports){
+},{}],18:[function(require,module,exports){
 'use strict';
 
 // (C) 1995-2013 Jean-loup Gailly and Mark Adler
@@ -7393,7 +7444,7 @@ module.exports.deflatePrime = deflatePrime;
 module.exports.deflateTune = deflateTune;
 */
 
-},{"./adler32":14,"./constants":15,"./crc32":16,"./messages":22,"./trees":23}],18:[function(require,module,exports){
+},{"./adler32":15,"./constants":16,"./crc32":17,"./messages":23,"./trees":24}],19:[function(require,module,exports){
 'use strict';
 
 // (C) 1995-2013 Jean-loup Gailly and Mark Adler
@@ -7453,7 +7504,7 @@ function GZheader() {
 
 module.exports = GZheader;
 
-},{}],19:[function(require,module,exports){
+},{}],20:[function(require,module,exports){
 'use strict';
 
 // (C) 1995-2013 Jean-loup Gailly and Mark Adler
@@ -7799,7 +7850,7 @@ module.exports = function inflate_fast(strm, start) {
   return;
 };
 
-},{}],20:[function(require,module,exports){
+},{}],21:[function(require,module,exports){
 'use strict';
 
 // (C) 1995-2013 Jean-loup Gailly and Mark Adler
@@ -9348,7 +9399,7 @@ module.exports.inflateSyncPoint = inflateSyncPoint;
 module.exports.inflateUndermine = inflateUndermine;
 */
 
-},{"./adler32":14,"./constants":15,"./crc32":16,"./inffast":19,"./inftrees":21}],21:[function(require,module,exports){
+},{"./adler32":15,"./constants":16,"./crc32":17,"./inffast":20,"./inftrees":22}],22:[function(require,module,exports){
 'use strict';
 
 // (C) 1995-2013 Jean-loup Gailly and Mark Adler
@@ -9694,7 +9745,7 @@ const inflate_table = (type, lens, lens_index, codes, table, table_index, work, 
 
 module.exports = inflate_table;
 
-},{}],22:[function(require,module,exports){
+},{}],23:[function(require,module,exports){
 'use strict';
 
 // (C) 1995-2013 Jean-loup Gailly and Mark Adler
@@ -9728,7 +9779,7 @@ module.exports = {
   '-6':   'incompatible version' /* Z_VERSION_ERROR (-6) */
 };
 
-},{}],23:[function(require,module,exports){
+},{}],24:[function(require,module,exports){
 'use strict';
 
 // (C) 1995-2013 Jean-loup Gailly and Mark Adler
@@ -10959,7 +11010,7 @@ module.exports._tr_flush_block  = _tr_flush_block;
 module.exports._tr_tally = _tr_tally;
 module.exports._tr_align = _tr_align;
 
-},{}],24:[function(require,module,exports){
+},{}],25:[function(require,module,exports){
 'use strict';
 
 // (C) 1995-2013 Jean-loup Gailly and Mark Adler
@@ -11008,7 +11059,7 @@ function ZStream() {
 
 module.exports = ZStream;
 
-},{}],25:[function(require,module,exports){
+},{}],26:[function(require,module,exports){
 (function (process){(function (){
 // 'path' module extracted from Node.js v8.11.1 (only the posix part)
 // transplited with Babel
@@ -11541,7 +11592,7 @@ posix.posix = posix;
 module.exports = posix;
 
 }).call(this)}).call(this,require('_process'))
-},{"_process":26}],26:[function(require,module,exports){
+},{"_process":27}],27:[function(require,module,exports){
 // shim for using process in browser
 var process = module.exports = {};
 
@@ -11727,7 +11778,7 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}],27:[function(require,module,exports){
+},{}],28:[function(require,module,exports){
 (function (global){(function (){
 /*! https://mths.be/punycode v1.4.1 by @mathias */
 ;(function(root) {
@@ -12264,7 +12315,7 @@ process.umask = function() { return 0; };
 }(this));
 
 }).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],28:[function(require,module,exports){
+},{}],29:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -12350,7 +12401,7 @@ var isArray = Array.isArray || function (xs) {
   return Object.prototype.toString.call(xs) === '[object Array]';
 };
 
-},{}],29:[function(require,module,exports){
+},{}],30:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -12437,13 +12488,14 @@ var objectKeys = Object.keys || function (obj) {
   return res;
 };
 
-},{}],30:[function(require,module,exports){
+},{}],31:[function(require,module,exports){
 'use strict';
 
 exports.decode = exports.parse = require('./decode');
 exports.encode = exports.stringify = require('./encode');
 
-},{"./decode":28,"./encode":29}],31:[function(require,module,exports){
+},{"./decode":29,"./encode":30}],32:[function(require,module,exports){
+/*! safe-buffer. MIT License. Feross Aboukhadijeh <https://feross.org/opensource> */
 /* eslint-disable node/no-deprecated-api */
 var buffer = require('buffer')
 var Buffer = buffer.Buffer
@@ -12509,7 +12561,7 @@ SafeBuffer.allocUnsafeSlow = function (size) {
   return buffer.SlowBuffer(size)
 }
 
-},{"buffer":3}],32:[function(require,module,exports){
+},{"buffer":3}],33:[function(require,module,exports){
 (function (global){(function (){
 var ClientRequest = require('./lib/request')
 var response = require('./lib/response')
@@ -12597,7 +12649,7 @@ http.METHODS = [
 	'UNSUBSCRIBE'
 ]
 }).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./lib/request":34,"./lib/response":35,"builtin-status-codes":4,"url":55,"xtend":52}],33:[function(require,module,exports){
+},{"./lib/request":35,"./lib/response":36,"builtin-status-codes":4,"url":54,"xtend":57}],34:[function(require,module,exports){
 (function (global){(function (){
 exports.fetch = isFunction(global.fetch) && isFunction(global.ReadableStream)
 
@@ -12660,7 +12712,7 @@ function isFunction (value) {
 xhr = null // Help gc
 
 }).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],34:[function(require,module,exports){
+},{}],35:[function(require,module,exports){
 (function (process,global,Buffer){(function (){
 var capability = require('./capability')
 var inherits = require('inherits')
@@ -12718,6 +12770,8 @@ var ClientRequest = module.exports = function (opts) {
 	}
 	self._mode = decideMode(preferBinary, useFetch)
 	self._fetchTimer = null
+	self._socketTimeout = null
+	self._socketTimer = null
 
 	self.on('finish', function () {
 		self._onFinish()
@@ -12759,6 +12813,10 @@ ClientRequest.prototype._onFinish = function () {
 	if (self._destroyed)
 		return
 	var opts = self._opts
+
+	if ('timeout' in opts && opts.timeout !== 0) {
+		self.setTimeout(opts.timeout)
+	}
 
 	var headersObj = self._headers
 	var body = null
@@ -12807,9 +12865,10 @@ ClientRequest.prototype._onFinish = function () {
 			signal: signal
 		}).then(function (response) {
 			self._fetchResponse = response
+			self._resetTimers(false)
 			self._connect()
 		}, function (reason) {
-			global.clearTimeout(self._fetchTimer)
+			self._resetTimers(true)
 			if (!self._destroyed)
 				self.emit('error', reason)
 		})
@@ -12865,6 +12924,7 @@ ClientRequest.prototype._onFinish = function () {
 		xhr.onerror = function () {
 			if (self._destroyed)
 				return
+			self._resetTimers(true)
 			self.emit('error', new Error('XHR error'))
 		}
 
@@ -12896,13 +12956,15 @@ function statusValid (xhr) {
 ClientRequest.prototype._onXHRProgress = function () {
 	var self = this
 
+	self._resetTimers(false)
+
 	if (!statusValid(self._xhr) || self._destroyed)
 		return
 
 	if (!self._response)
 		self._connect()
 
-	self._response._onXHRProgress()
+	self._response._onXHRProgress(self._resetTimers.bind(self))
 }
 
 ClientRequest.prototype._connect = function () {
@@ -12911,7 +12973,7 @@ ClientRequest.prototype._connect = function () {
 	if (self._destroyed)
 		return
 
-	self._response = new IncomingMessage(self._xhr, self._fetchResponse, self._mode, self._fetchTimer)
+	self._response = new IncomingMessage(self._xhr, self._fetchResponse, self._mode, self._resetTimers.bind(self))
 	self._response.on('error', function(err) {
 		self.emit('error', err)
 	})
@@ -12926,16 +12988,35 @@ ClientRequest.prototype._write = function (chunk, encoding, cb) {
 	cb()
 }
 
-ClientRequest.prototype.abort = ClientRequest.prototype.destroy = function () {
+ClientRequest.prototype._resetTimers = function (done) {
+	var self = this
+
+	global.clearTimeout(self._socketTimer)
+	self._socketTimer = null
+
+	if (done) {
+		global.clearTimeout(self._fetchTimer)
+		self._fetchTimer = null
+	} else if (self._socketTimeout) {
+		self._socketTimer = global.setTimeout(function () {
+			self.emit('timeout')
+		}, self._socketTimeout)
+	}
+}
+
+ClientRequest.prototype.abort = ClientRequest.prototype.destroy = function (err) {
 	var self = this
 	self._destroyed = true
-	global.clearTimeout(self._fetchTimer)
+	self._resetTimers(true)
 	if (self._response)
 		self._response._destroyed = true
 	if (self._xhr)
 		self._xhr.abort()
 	else if (self._fetchAbortController)
 		self._fetchAbortController.abort()
+
+	if (err)
+		self.emit('error', err)
 }
 
 ClientRequest.prototype.end = function (data, encoding, cb) {
@@ -12948,8 +13029,17 @@ ClientRequest.prototype.end = function (data, encoding, cb) {
 	stream.Writable.prototype.end.call(self, data, encoding, cb)
 }
 
+ClientRequest.prototype.setTimeout = function (timeout, cb) {
+	var self = this
+
+	if (cb)
+		self.once('timeout', cb)
+
+	self._socketTimeout = timeout
+	self._resetTimers(false)
+}
+
 ClientRequest.prototype.flushHeaders = function () {}
-ClientRequest.prototype.setTimeout = function () {}
 ClientRequest.prototype.setNoDelay = function () {}
 ClientRequest.prototype.setSocketKeepAlive = function () {}
 
@@ -12978,7 +13068,7 @@ var unsafeHeaders = [
 ]
 
 }).call(this)}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer)
-},{"./capability":33,"./response":35,"_process":26,"buffer":3,"inherits":36,"readable-stream":51}],35:[function(require,module,exports){
+},{"./capability":34,"./response":36,"_process":27,"buffer":3,"inherits":8,"readable-stream":51}],36:[function(require,module,exports){
 (function (process,global,Buffer){(function (){
 var capability = require('./capability')
 var inherits = require('inherits')
@@ -12992,7 +13082,7 @@ var rStates = exports.readyStates = {
 	DONE: 4
 }
 
-var IncomingMessage = exports.IncomingMessage = function (xhr, response, mode, fetchTimer) {
+var IncomingMessage = exports.IncomingMessage = function (xhr, response, mode, resetTimers) {
 	var self = this
 	stream.Readable.call(self)
 
@@ -13025,6 +13115,7 @@ var IncomingMessage = exports.IncomingMessage = function (xhr, response, mode, f
 		if (capability.writableStream) {
 			var writable = new WritableStream({
 				write: function (chunk) {
+					resetTimers(false)
 					return new Promise(function (resolve, reject) {
 						if (self._destroyed) {
 							reject()
@@ -13036,11 +13127,12 @@ var IncomingMessage = exports.IncomingMessage = function (xhr, response, mode, f
 					})
 				},
 				close: function () {
-					global.clearTimeout(fetchTimer)
+					resetTimers(true)
 					if (!self._destroyed)
 						self.push(null)
 				},
 				abort: function (err) {
+					resetTimers(true)
 					if (!self._destroyed)
 						self.emit('error', err)
 				}
@@ -13048,7 +13140,7 @@ var IncomingMessage = exports.IncomingMessage = function (xhr, response, mode, f
 
 			try {
 				response.body.pipeTo(writable).catch(function (err) {
-					global.clearTimeout(fetchTimer)
+					resetTimers(true)
 					if (!self._destroyed)
 						self.emit('error', err)
 				})
@@ -13061,15 +13153,15 @@ var IncomingMessage = exports.IncomingMessage = function (xhr, response, mode, f
 			reader.read().then(function (result) {
 				if (self._destroyed)
 					return
+				resetTimers(result.done)
 				if (result.done) {
-					global.clearTimeout(fetchTimer)
 					self.push(null)
 					return
 				}
 				self.push(Buffer.from(result.value))
 				read()
 			}).catch(function (err) {
-				global.clearTimeout(fetchTimer)
+				resetTimers(true)
 				if (!self._destroyed)
 					self.emit('error', err)
 			})
@@ -13128,7 +13220,7 @@ IncomingMessage.prototype._read = function () {
 	}
 }
 
-IncomingMessage.prototype._onXHRProgress = function () {
+IncomingMessage.prototype._onXHRProgress = function (resetTimers) {
 	var self = this
 
 	var xhr = self._xhr
@@ -13175,6 +13267,7 @@ IncomingMessage.prototype._onXHRProgress = function () {
 				}
 			}
 			reader.onload = function () {
+				resetTimers(true)
 				self.push(null)
 			}
 			// reader.onerror = ??? // TODO: this
@@ -13184,41 +13277,13 @@ IncomingMessage.prototype._onXHRProgress = function () {
 
 	// The ms-stream case handles end separately in reader.onload()
 	if (self._xhr.readyState === rStates.DONE && self._mode !== 'ms-stream') {
+		resetTimers(true)
 		self.push(null)
 	}
 }
 
 }).call(this)}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer)
-},{"./capability":33,"_process":26,"buffer":3,"inherits":36,"readable-stream":51}],36:[function(require,module,exports){
-if (typeof Object.create === 'function') {
-  // implementation from standard node.js 'util' module
-  module.exports = function inherits(ctor, superCtor) {
-    if (superCtor) {
-      ctor.super_ = superCtor
-      ctor.prototype = Object.create(superCtor.prototype, {
-        constructor: {
-          value: ctor,
-          enumerable: false,
-          writable: true,
-          configurable: true
-        }
-      })
-    }
-  };
-} else {
-  // old school shim for old browsers
-  module.exports = function inherits(ctor, superCtor) {
-    if (superCtor) {
-      ctor.super_ = superCtor
-      var TempCtor = function () {}
-      TempCtor.prototype = superCtor.prototype
-      ctor.prototype = new TempCtor()
-      ctor.prototype.constructor = ctor
-    }
-  }
-}
-
-},{}],37:[function(require,module,exports){
+},{"./capability":34,"_process":27,"buffer":3,"inherits":8,"readable-stream":51}],37:[function(require,module,exports){
 'use strict';
 
 function _inheritsLoose(subClass, superClass) { subClass.prototype = Object.create(superClass.prototype); subClass.prototype.constructor = subClass; subClass.__proto__ = superClass; }
@@ -13489,7 +13554,7 @@ Object.defineProperty(Duplex.prototype, 'destroyed', {
   }
 });
 }).call(this)}).call(this,require('_process'))
-},{"./_stream_readable":40,"./_stream_writable":42,"_process":26,"inherits":36}],39:[function(require,module,exports){
+},{"./_stream_readable":40,"./_stream_writable":42,"_process":27,"inherits":8}],39:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -13529,7 +13594,7 @@ function PassThrough(options) {
 PassThrough.prototype._transform = function (chunk, encoding, cb) {
   cb(null, chunk);
 };
-},{"./_stream_transform":41,"inherits":36}],40:[function(require,module,exports){
+},{"./_stream_transform":41,"inherits":8}],40:[function(require,module,exports){
 (function (process,global){(function (){
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -14656,7 +14721,7 @@ function indexOf(xs, x) {
   return -1;
 }
 }).call(this)}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../errors":37,"./_stream_duplex":38,"./internal/streams/async_iterator":43,"./internal/streams/buffer_list":44,"./internal/streams/destroy":45,"./internal/streams/from":47,"./internal/streams/state":49,"./internal/streams/stream":50,"_process":26,"buffer":3,"events":5,"inherits":36,"string_decoder/":53,"util":2}],41:[function(require,module,exports){
+},{"../errors":37,"./_stream_duplex":38,"./internal/streams/async_iterator":43,"./internal/streams/buffer_list":44,"./internal/streams/destroy":45,"./internal/streams/from":47,"./internal/streams/state":49,"./internal/streams/stream":50,"_process":27,"buffer":3,"events":5,"inherits":8,"string_decoder/":52,"util":2}],41:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -14858,7 +14923,7 @@ function done(stream, er, data) {
   if (stream._transformState.transforming) throw new ERR_TRANSFORM_ALREADY_TRANSFORMING();
   return stream.push(null);
 }
-},{"../errors":37,"./_stream_duplex":38,"inherits":36}],42:[function(require,module,exports){
+},{"../errors":37,"./_stream_duplex":38,"inherits":8}],42:[function(require,module,exports){
 (function (process,global){(function (){
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -15558,7 +15623,7 @@ Writable.prototype._destroy = function (err, cb) {
   cb(err);
 };
 }).call(this)}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../errors":37,"./_stream_duplex":38,"./internal/streams/destroy":45,"./internal/streams/state":49,"./internal/streams/stream":50,"_process":26,"buffer":3,"inherits":36,"util-deprecate":57}],43:[function(require,module,exports){
+},{"../errors":37,"./_stream_duplex":38,"./internal/streams/destroy":45,"./internal/streams/state":49,"./internal/streams/stream":50,"_process":27,"buffer":3,"inherits":8,"util-deprecate":56}],43:[function(require,module,exports){
 (function (process){(function (){
 'use strict';
 
@@ -15768,7 +15833,7 @@ var createReadableStreamAsyncIterator = function createReadableStreamAsyncIterat
 
 module.exports = createReadableStreamAsyncIterator;
 }).call(this)}).call(this,require('_process'))
-},{"./end-of-stream":46,"_process":26}],44:[function(require,module,exports){
+},{"./end-of-stream":46,"_process":27}],44:[function(require,module,exports){
 'use strict';
 
 function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
@@ -16087,7 +16152,7 @@ module.exports = {
   errorOrDestroy: errorOrDestroy
 };
 }).call(this)}).call(this,require('_process'))
-},{"_process":26}],46:[function(require,module,exports){
+},{"_process":27}],46:[function(require,module,exports){
 // Ported from https://github.com/mafintosh/end-of-stream with
 // permission from the author, Mathias Buus (@mafintosh).
 'use strict';
@@ -16338,27 +16403,6 @@ exports.finished = require('./lib/internal/streams/end-of-stream.js');
 exports.pipeline = require('./lib/internal/streams/pipeline.js');
 
 },{"./lib/_stream_duplex.js":38,"./lib/_stream_passthrough.js":39,"./lib/_stream_readable.js":40,"./lib/_stream_transform.js":41,"./lib/_stream_writable.js":42,"./lib/internal/streams/end-of-stream.js":46,"./lib/internal/streams/pipeline.js":48}],52:[function(require,module,exports){
-module.exports = extend
-
-var hasOwnProperty = Object.prototype.hasOwnProperty;
-
-function extend() {
-    var target = {}
-
-    for (var i = 0; i < arguments.length; i++) {
-        var source = arguments[i]
-
-        for (var key in source) {
-            if (hasOwnProperty.call(source, key)) {
-                target[key] = source[key]
-            }
-        }
-    }
-
-    return target
-}
-
-},{}],53:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -16655,7 +16699,7 @@ function simpleWrite(buf) {
 function simpleEnd(buf) {
   return buf && buf.length ? this.write(buf) : '';
 }
-},{"safe-buffer":31}],54:[function(require,module,exports){
+},{"safe-buffer":32}],53:[function(require,module,exports){
 (function (process,Buffer,__dirname){(function (){
 /**
  * Wrapper for built-in http.js to emulate the browser XMLHttpRequest object.
@@ -17313,7 +17357,7 @@ exports.XMLHttpRequest = function () {
 }
 
 }).call(this)}).call(this,require('_process'),require("buffer").Buffer,"/node_modules/unxhr/lib")
-},{"_process":26,"buffer":3,"child_process":2,"fs":2,"http":32,"https":6,"path":25,"url":55}],55:[function(require,module,exports){
+},{"_process":27,"buffer":3,"child_process":2,"fs":2,"http":33,"https":6,"path":26,"url":54}],54:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -18047,7 +18091,7 @@ Url.prototype.parseHost = function() {
   if (host) this.hostname = host;
 };
 
-},{"./util":56,"punycode":27,"querystring":30}],56:[function(require,module,exports){
+},{"./util":55,"punycode":28,"querystring":31}],55:[function(require,module,exports){
 'use strict';
 
 module.exports = {
@@ -18065,7 +18109,7 @@ module.exports = {
   }
 };
 
-},{}],57:[function(require,module,exports){
+},{}],56:[function(require,module,exports){
 (function (global){(function (){
 
 /**
@@ -18136,7 +18180,29 @@ function config (name) {
 }
 
 }).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{}],57:[function(require,module,exports){
+module.exports = extend
+
+var hasOwnProperty = Object.prototype.hasOwnProperty;
+
+function extend() {
+    var target = {}
+
+    for (var i = 0; i < arguments.length; i++) {
+        var source = arguments[i]
+
+        for (var key in source) {
+            if (hasOwnProperty.call(source, key)) {
+                target[key] = source[key]
+            }
+        }
+    }
+
+    return target
+}
+
 },{}],58:[function(require,module,exports){
+/* global Opal */
 // @ts-check
 const { KrokiDiagram, KrokiClient } = require('./kroki-client.js')
 
@@ -18337,6 +18403,7 @@ module.exports.register = function register (registry, context = {}) {
   if (typeof context.contentCatalog !== 'undefined' && typeof context.contentCatalog.addFile === 'function' && typeof context.file !== 'undefined') {
     context.vfs = require('./antora-adapter.js')(context.file, context.contentCatalog, context.vfs)
   }
+  context.logger = Opal.Asciidoctor.LoggerManager.getLogger()
   const names = [
     'actdiag',
     'blockdiag',
@@ -18454,7 +18521,7 @@ module.exports = {
   post: httpPost
 }
 
-},{"./http-client.js":60,"unxhr":54}],62:[function(require,module,exports){
+},{"./http-client.js":60,"unxhr":53}],62:[function(require,module,exports){
 (function (Buffer){(function (){
 const pako = require('pako')
 
@@ -18527,7 +18594,7 @@ module.exports.KrokiClient = class KrokiClient {
 }
 
 }).call(this)}).call(this,require("buffer").Buffer)
-},{"buffer":3,"pako":9}],63:[function(require,module,exports){
+},{"buffer":3,"pako":10}],63:[function(require,module,exports){
 // @ts-check
 // The previous line must be the first non-comment line in the file to enable TypeScript checks:
 // https://www.typescriptlang.org/docs/handbook/intro-to-js-ts.html#ts-check
@@ -18539,7 +18606,8 @@ const path = require('path')
  * @param {string} diagramDir
  * @returns {string}
  */
-module.exports.preprocessVegaLite = function (diagramText, context, diagramDir = '') {
+module.exports.preprocessVegaLite = function (diagramText, context = {}, diagramDir = '') {
+  const logger = 'logger' in context && typeof context.logger !== 'undefined' ? context.logger : console
   let diagramObject
   try {
     const JSON5 = require('json5')
@@ -18556,16 +18624,15 @@ ${diagramText}
   if (!diagramObject || !diagramObject.data || !diagramObject.data.url) {
     return diagramText
   }
-  const vfs = context.vfs
-  const read = typeof vfs !== 'undefined' && typeof vfs.read === 'function' ? vfs.read : require('./node-fs.js').read
+  const read = 'vfs' in context && typeof context.vfs !== 'undefined' && typeof context.vfs.read === 'function' ? context.vfs.read : require('./node-fs.js').read
   const data = diagramObject.data
   const urlOrPath = data.url
   try {
     data.values = read(isLocalAndRelative(urlOrPath) ? path.join(diagramDir, urlOrPath) : urlOrPath)
   } catch (e) {
     if (isRemoteUrl(urlOrPath)) {
-      // Only warn and do not throw an error, because the data file can perhaps be found by kroki server (https://github.com/yuzutech/kroki/issues/60)
-      console.warn(`Skipping preprocessing of Vega-Lite view specification, because reading the remote data file '${urlOrPath}' referenced in the diagram caused an error:\n${e}`)
+      // Includes a remote file that cannot be found but might be resolved by the Kroki server (https://github.com/yuzutech/kroki/issues/60)
+      logger.info(`Skipping preprocessing of Vega-Lite view specification, because reading the remote data file '${urlOrPath}' referenced in the diagram caused an error:\n${e}`)
       return diagramText
     }
     const message = `Preprocessing of Vega-Lite view specification failed, because reading the local data file '${urlOrPath}' referenced in the diagram caused an error:\n${e}`
@@ -18581,7 +18648,7 @@ ${diagramText}
     if (['json', 'csv', 'tsv', 'dsv', 'topojson'].indexOf(type) < 0) {
       type = 'json'
     }
-    data.format = { type: type }
+    data.format = { type }
   }
   data.url = undefined
   // reconsider once #42 is fixed:
@@ -18618,10 +18685,11 @@ function removePlantUmlTags (diagramText) {
  * @returns {string}
  */
 module.exports.preprocessPlantUML = function (diagramText, context, diagramIncludePaths = '', diagramDir = '') {
+  const logger = 'logger' in context ? context.logger : console
   const includeOnce = []
   const includeStack = []
   const includePaths = diagramIncludePaths ? diagramIncludePaths.split(path.delimiter) : []
-  diagramText = preprocessPlantUmlIncludes(diagramText, diagramDir, includeOnce, includeStack, includePaths, context.vfs)
+  diagramText = preprocessPlantUmlIncludes(diagramText, diagramDir, includeOnce, includeStack, includePaths, context.vfs, logger)
   return removePlantUmlTags(diagramText)
 }
 
@@ -18632,9 +18700,10 @@ module.exports.preprocessPlantUML = function (diagramText, context, diagramInclu
  * @param {string[]} includeStack
  * @param {string[]} includePaths
  * @param {any} vfs
+ * @param {any} logger
  * @returns {string}
  */
-function preprocessPlantUmlIncludes (diagramText, dirPath, includeOnce, includeStack, includePaths, vfs) {
+function preprocessPlantUmlIncludes (diagramText, dirPath, includeOnce, includeStack, includePaths, vfs, logger) {
   // See: http://plantuml.com/en/preprocessing
   // Please note that we cannot use lookbehind for compatibility reasons with Safari: https://caniuse.com/mdn-javascript_builtins_regexp_lookbehind_assertion objects are stateful when they have the global flag set (e.g. /foo/g).
   // const regExInclude = /^\s*!(include(?:_many|_once|url|sub)?)\s+((?:(?<=\\)[ ]|[^ ])+)(.*)/
@@ -18654,7 +18723,7 @@ function preprocessPlantUmlIncludes (diagramText, dirPath, includeOnce, includeS
           const trailingContent = target.comment
           const url = urlSub[0].replace(/\\ /g, ' ')
           const sub = urlSub[1]
-          const result = readPlantUmlInclude(url, [dirPath, ...includePaths], includeStack, vfs)
+          const result = readPlantUmlInclude(url, [dirPath, ...includePaths], includeStack, vfs, logger)
           if (result.skip) {
             return line
           }
@@ -18677,7 +18746,7 @@ function preprocessPlantUmlIncludes (diagramText, dirPath, includeOnce, includeS
             text = getPlantUmlTextOrFirstBlock(text)
           }
           includeStack.push(result.filePath)
-          text = preprocessPlantUmlIncludes(text, path.dirname(result.filePath), includeOnce, includeStack, includePaths, vfs)
+          text = preprocessPlantUmlIncludes(text, path.dirname(result.filePath), includeOnce, includeStack, includePaths, vfs, logger)
           includeStack.pop()
           if (trailingContent !== '') {
             return text + ' ' + trailingContent
@@ -18737,16 +18806,17 @@ function parseTarget (value) {
  * @param {string[]} includePaths
  * @param {string[]} includeStack
  * @param {any} vfs
+ * @param {any} logger
  * @returns {any}
  */
-function readPlantUmlInclude (url, includePaths, includeStack, vfs) {
+function readPlantUmlInclude (url, includePaths, includeStack, vfs, logger) {
   const read = typeof vfs !== 'undefined' && typeof vfs.read === 'function' ? vfs.read : require('./node-fs.js').read
   let skip = false
   let text = ''
   let filePath = url
   if (url.startsWith('<')) {
-    // Only warn and do not throw an error, because the std-lib includes can perhaps be found by Kroki server
-    console.warn(`Skipping preprocessing of PlantUML standard library include file '${url}'`)
+    // Includes a standard library that cannot be resolved locally but might be resolved the by Kroki server
+    logger.info(`Skipping preprocessing of PlantUML standard library include '${url}'`)
     skip = true
   } else if (includeStack.includes(url)) {
     const message = `Preprocessing of PlantUML include failed, because recursive reading already included referenced file '${url}'`
@@ -18756,8 +18826,8 @@ function readPlantUmlInclude (url, includePaths, includeStack, vfs) {
       try {
         text = read(url)
       } catch (e) {
-        // Only warn and do not throw an error, because the data file can perhaps be found by Kroki server (https://github.com/yuzutech/kroki/issues/60)
-        console.warn(`Skipping preprocessing of PlantUML include, because reading the referenced remote file '${url}' caused an error:\n${e}`)
+        // Includes a remote file that cannot be found but might be resolved by the Kroki server (https://github.com/yuzutech/kroki/issues/60)
+        logger.info(`Skipping preprocessing of PlantUML include, because reading the referenced remote file '${url}' caused an error:\n${e}`)
         skip = true
       }
     } else {
@@ -18769,14 +18839,14 @@ function readPlantUmlInclude (url, includePaths, includeStack, vfs) {
         try {
           text = read(filePath)
         } catch (e) {
-          // Only warn and do not throw an error, because the data file can perhaps be found by Kroki server
-          console.warn(`Skipping preprocessing of PlantUML include, because reading the referenced local file '${filePath}' caused an error:\n${e}`)
+          // Includes a local file that cannot be found but might be resolved by the Kroki server
+          logger.info(`Skipping preprocessing of PlantUML include, because reading the referenced local file '${filePath}' caused an error:\n${e}`)
           skip = true
         }
       }
     }
   }
-  return { skip: skip, text: text, filePath: filePath }
+  return { skip, text, filePath }
 }
 
 /**
@@ -18914,5 +18984,5 @@ function isLocalAndRelative (string) {
   }
 }
 
-},{"./node-fs.js":undefined,"json5":8,"path":25}]},{},[58])(58)
+},{"./node-fs.js":undefined,"json5":9,"path":26}]},{},[58])(58)
 });
