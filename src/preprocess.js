@@ -51,7 +51,7 @@ ${diagramText}
     if (['json', 'csv', 'tsv', 'dsv', 'topojson'].indexOf(type) < 0) {
       type = 'json'
     }
-    data.format = { type: type }
+    data.format = { type }
   }
   data.url = undefined
   // reconsider once #42 is fixed:
@@ -249,7 +249,7 @@ function readPlantUmlInclude (url, includePaths, includeStack, vfs, logger) {
       }
     }
   }
-  return { skip: skip, text: text, filePath: filePath }
+  return { skip, text, filePath }
 }
 
 /**

@@ -48,7 +48,7 @@ module.exports.save = function (krokiDiagram, doc, target, vfs, krokiClient) {
   add({
     relative: imagesOutputDirectory,
     basename: diagramName,
-    mediaType: mediaType,
+    mediaType,
     contents: Buffer.from(contents, encoding)
   })
   return diagramName
