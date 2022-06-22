@@ -20,7 +20,7 @@ describe('Antora integration', () => {
     expect(imageElements.length).to.equal(6)
     imageElements.each((i, imageElement) => {
       const src = $(imageElement).attr('src')
-      expect(src).to.startWith('_images/diag-')
+      expect(src).to.startWith('_images/ab-')
     })
   }).timeout(50000)
 })

@@ -29,7 +29,7 @@ module.exports.save = function (krokiDiagram, doc, target, vfs, krokiClient) {
   const imagesOutputDirectory = getImagesOutputDirectory(doc)
   const diagramUrl = krokiDiagram.getDiagramUri(krokiClient.getServerUrl())
   const format = krokiDiagram.format
-  const diagramName = `diag-${rusha.createHash().update(diagramUrl).digest('hex')}.${format}`
+  const diagramName = `${target || 'diag'}-${rusha.createHash().update(diagramUrl).digest('hex')}.${format}`
   const filePath = path.format({ dir: imagesOutputDirectory, base: diagramName })
   let encoding
   let mediaType

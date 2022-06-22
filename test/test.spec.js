@@ -240,7 +240,7 @@ Hello -> World
         extension_registry: registry,
         attributes: { 'kroki-fetch-diagram': true }
       })
-      expect(html).to.contain('<img src=".asciidoctor/kroki/diag-7a123c0b2909750ca5526554cd8620774ccf6cd9.svg" alt="hello-world">')
+      expect(html).to.contain('<img src=".asciidoctor/kroki/hello-world-7a123c0b2909750ca5526554cd8620774ccf6cd9.svg" alt="hello-world">')
     }).timeout(5000)
     it('should download and save an image to a local folder using a generated unique name (md5sum)', () => {
       const input = `
