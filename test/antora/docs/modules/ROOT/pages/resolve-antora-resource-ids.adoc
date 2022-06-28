@@ -1,0 +1,23 @@
+= Resolve Antora Resource IDs
+
+[vegalite]
+....
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+  "data": {"url": "example$barley.json"},
+  "mark": "bar",
+  "encoding": {
+    "x": {"aggregate": "sum", "field": "yield"},
+    "y": {"field": "variety"},
+    "color": {"field": "site"}
+  }
+}
+....
+
+[plantuml]
+....
+!include example$styles.puml
+
+alice -> bob
+bob -> alice
+....
