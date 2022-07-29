@@ -124,7 +124,7 @@ function preprocessPlantUmlIncludes (diagramText, dirPath, includeOnce, includeS
           const target = parseTarget(args[1])
           const urlSub = target.url.split('!')
           const trailingContent = target.comment
-          const url = urlSub[0].replace(/\\ /g, ' ')
+          const url = urlSub[0].replace(/\\ /g, ' ').replace(/(\r\n|\n|\r|\s*)$/mg, '')
           const sub = urlSub[1]
           const result = readPlantUmlInclude(url, [dirPath, ...includePaths], includeStack, vfs, logger)
           if (result.skip) {
