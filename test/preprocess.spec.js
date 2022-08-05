@@ -201,6 +201,14 @@ ${includedText}
     expect(preprocessPlantUML(diagramTextWithExistingLocalIncludeFile, {})).to.be.equal(diagramTextWithIncludedText)
   })
 
+  it('should return diagramText with inlined local file referenced with "!include local-file-or-url", diagramText with Windows EOL line endings (\\r\\n)', () => {
+    const localStyleSheetPath = 'test/fixtures/docs/diagrams/style.puml'
+    const diagramTextWithExistingLocalIncludeFile = `!include ${localStyleSheetPath} \r\n\r\nBob->Alice: Hello\r\n`
+    const includedText = fs.readFileSync(`${localStyleSheetPath}`, 'utf8')
+    const diagramTextWithIncludedText = `${includedText}\n\r\nBob->Alice: Hello\r\n`
+    expect(preprocessPlantUML(diagramTextWithExistingLocalIncludeFile, {})).to.be.equal(diagramTextWithIncludedText)
+  })
+
   it('should return diagramText with inlined local file referenced with "!include local-file-or-url" and first "@startuml ... @enduml" block', () => {
     const localExistingFileNameWithBlocksPath = 'test/fixtures/plantuml/styles/general.puml'
     const diagramTextWithExistingLocalIncludeFile = `
