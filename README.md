@@ -269,6 +269,7 @@ Here's a list of all attributes used in the built-in HTML 5 converter:
 - `float`
 - `align`
 - `role`
+- `title` (used to define an alternative text description of the diagram)
 
 **Options**
 
