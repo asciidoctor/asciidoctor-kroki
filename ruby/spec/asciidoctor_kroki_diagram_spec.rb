@@ -20,6 +20,24 @@ describe ::AsciidoctorExtensions::KrokiDiagram do
     diagram_uri = kroki_diagram.get_diagram_uri('https://my-server/kroki//')
     expect(diagram_uri).to eq('https://my-server/kroki/vegalite/png/eNqrrgUAAXUA-Q==')
   end
+  it 'should compute a diagram URI with query parameters' do
+    text = %q{
+       .---.
+      /-o-/--
+   .-/ / /->
+  ( *  \/
+   '-.  \
+    \ /
+     '
+    }
+    opts = {
+      'stroke-width' => 1,
+      'background' => 'black'
+    }
+    kroki_diagram = ::AsciidoctorExtensions::KrokiDiagram.new('svgbob', 'png', text, nil, opts)
+    diagram_uri = kroki_diagram.get_diagram_uri('http://localhost:8000')
+    expect(diagram_uri).to eq('http://localhost:8000/svgbob/png/eNrjUoAAPV1dXT0uCFtfN19XX1eXCyysrwCEunZAjoaCloJCjD5IWF1XD8gEK49R0IdoUwdTAN3kC7U=?stroke-width=1&background=black')
+  end
   it 'should encode a diagram text definition' do
     kroki_diagram = ::AsciidoctorExtensions::KrokiDiagram.new('plantuml', 'txt', ' alice -> bob: hello')
     diagram_definition_encoded = kroki_diagram.encode

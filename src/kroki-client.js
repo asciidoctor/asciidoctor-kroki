@@ -1,16 +1,20 @@
+const { version } = require('../package.json')
 const pako = require('pako')
 
 const MAX_URI_DEFAULT_VALUE = 4000
+const REFERER = `asciidoctor/kroki.js/${version}`
 
 module.exports.KrokiDiagram = class KrokiDiagram {
-  constructor (type, format, text) {
+  constructor (type, format, text, opts) {
     this.text = text
     this.type = type
     this.format = format
+    this.opts = opts
   }
 
   getDiagramUri (serverUrl) {
-    return `${serverUrl}/${this.type}/${this.format}/${this.encode()}`
+    const queryParams = Object.entries(this.opts).map(([key, value]) => `${key}=${encodeURIComponent(value.toString())}`).join('&')
+    return `${serverUrl}/${this.type}/${this.format}/${this.encode()}${queryParams ? `?${queryParams}` : ''}`
   }
 
   encode () {
@@ -25,7 +29,7 @@ module.exports.KrokiDiagram = class KrokiDiagram {
 
 module.exports.KrokiClient = class KrokiClient {
   constructor (doc, httpClient) {
-    const maxUriLengthValue = parseInt(doc.getAttribute('kroki-max-uri-length', String(MAX_URI_DEFAULT_VALUE)))
+    const maxUriLengthValue = parseInt(doc.getAttribute('kroki-max-uri-length', MAX_URI_DEFAULT_VALUE.toString()))
     this.maxUriLength = isNaN(maxUriLengthValue) ? MAX_URI_DEFAULT_VALUE : maxUriLengthValue
     this.httpClient = httpClient
     const method = doc.getAttribute('kroki-http-method', 'adaptive').toLowerCase()
@@ -47,6 +51,11 @@ module.exports.KrokiClient = class KrokiClient {
     const type = krokiDiagram.type
     const format = krokiDiagram.format
     const text = krokiDiagram.text
+    const opts = krokiDiagram.opts
+    const headers = {
+      Referer: REFERER,
+      ...Object.fromEntries(Object.entries(opts).map(([key, value]) => [`Kroki-Diagram-Options-${key}`, value]))
+    }
     if (this.method === 'adaptive' || this.method === 'get') {
       const uri = krokiDiagram.getDiagramUri(serverUrl)
       if (uri.length > this.maxUriLength) {
@@ -54,13 +63,13 @@ module.exports.KrokiClient = class KrokiClient {
         if (this.method === 'get') {
           // The request might be rejected by the server with a 414 Request-URI Too Large.
           // Consider using the attribute kroki-http-method with the value 'adaptive'.
-          return this.httpClient.get(uri, encoding)
+          return this.httpClient.get(uri, headers, encoding)
         }
-        return this.httpClient.post(`${serverUrl}/${type}/${format}`, text, encoding)
+        return this.httpClient.post(`${serverUrl}/${type}/${format}`, text, headers, encoding)
       }
-      return this.httpClient.get(uri, encoding)
+      return this.httpClient.get(uri, headers, encoding)
     }
-    return this.httpClient.post(`${serverUrl}/${type}/${format}`, text, encoding)
+    return this.httpClient.post(`${serverUrl}/${type}/${format}`, text, headers, encoding)
   }
 
   getServerUrl () {

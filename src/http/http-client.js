@@ -1,9 +1,12 @@
-const httpRequest = (XMLHttpRequest, uri, method, encoding = 'utf8', body) => {
+const httpRequest = (XMLHttpRequest, uri, method, headers, encoding = 'utf8', body) => {
   let data = ''
   let status = -1
   try {
     const xhr = new XMLHttpRequest()
     xhr.open(method, uri, false)
+    for (const [name, value] in Object.entries(headers)) {
+      xhr.setRequestHeader(name, value)
+    }
     if (encoding === 'binary') {
       xhr.responseType = 'arraybuffer'
     }
@@ -36,12 +39,12 @@ const httpRequest = (XMLHttpRequest, uri, method, encoding = 'utf8', body) => {
   return data
 }
 
-const httpPost = (XMLHttpRequest, uri, body, encoding = 'utf8') => {
-  return httpRequest(XMLHttpRequest, uri, 'POST', encoding, body)
+const httpPost = (XMLHttpRequest, uri, body, headers, encoding = 'utf8') => {
+  return httpRequest(XMLHttpRequest, uri, 'POST', headers, encoding, body)
 }
 
-const httpGet = (XMLHttpRequest, uri, encoding = 'utf8') => {
-  return httpRequest(XMLHttpRequest, uri, 'GET', encoding)
+const httpGet = (XMLHttpRequest, uri, headers, encoding = 'utf8') => {
+  return httpRequest(XMLHttpRequest, uri, 'GET', headers, encoding)
 }
 
 module.exports = {

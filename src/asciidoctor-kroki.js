@@ -27,6 +27,23 @@ const isBrowser = () => {
 // A value of 20 (SECURE) disallows the document from attempting to read files from the file system
 const SAFE_MODE_SECURE = 20
 
+const BUILTIN_ATTRIBUTES = [
+  'target',
+  'width',
+  'height',
+  'format',
+  'fallback',
+  'link',
+  'float',
+  'align',
+  'role',
+  'title',
+  'caption',
+  'cloaked-context',
+  '$positional',
+  'subs'
+]
+
 const createImageSrc = (doc, krokiDiagram, target, vfs, krokiClient) => {
   const shouldFetch = doc.isAttribute('kroki-fetch-diagram')
   let imageUrl
@@ -110,7 +127,8 @@ const processKroki = (processor, parent, attrs, diagramType, diagramText, contex
   if (blockId) {
     blockAttrs.id = blockId
   }
-  const krokiDiagram = new KrokiDiagram(diagramType, format, diagramText)
+  const opts = Object.fromEntries(Object.entries(attrs).filter(([key, _]) => !key.endsWith('-option') && !BUILTIN_ATTRIBUTES.includes(key)))
+  const krokiDiagram = new KrokiDiagram(diagramType, format, diagramText, opts)
   const httpClient = isBrowser() ? require('./http/browser-http.js') : require('./http/node-http.js')
   const krokiClient = new KrokiClient(doc, httpClient)
   let block

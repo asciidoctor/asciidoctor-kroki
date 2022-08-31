@@ -18202,6 +18202,86 @@ function extend() {
 }
 
 },{}],58:[function(require,module,exports){
+module.exports={
+  "name": "asciidoctor-kroki",
+  "version": "0.15.4",
+  "description": "Asciidoctor extension to convert diagrams to images using Kroki",
+  "type": "commonjs",
+  "main": "./src/asciidoctor-kroki.js",
+  "exports": {
+    "node": "./src/asciidoctor-kroki.js",
+    "default": "./dist/browser/asciidoctor-kroki.js"
+  },
+  "files": [
+    "src",
+    "dist"
+  ],
+  "scripts": {
+    "test": "npm run test:node && npm run test:browser && npm run test:antora",
+    "test:node": "mocha test/**.spec.js",
+    "test:browser": "node test/browser/run.js",
+    "test:antora": "mocha test/antora/**.spec.js",
+    "lint": "standard src/**.js test/**.js tasks/**.js",
+    "lint-fix": "npm run lint -- --fix",
+    "clean": "shx rm -rf dist/*",
+    "dist": "npm run clean && npm run dist:browser",
+    "dist:browser": "shx mkdir -p dist/browser && browserify src/asciidoctor-kroki.js --exclude ./node-fs.js --exclude ./fetch.js --exclude ./antora-adapter.js --standalone AsciidoctorKroki -o dist/browser/asciidoctor-kroki.js"
+  },
+  "dependencies": {
+    "json5": "2.2.1",
+    "mkdirp": "1.0.4",
+    "pako": "2.0.4",
+    "rusha": "0.8.14",
+    "unxhr": "1.2.0"
+  },
+  "devDependencies": {
+    "@antora/site-generator-default": "~3.0",
+    "@asciidoctor/core": "^2.2",
+    "base64-js": "1.5.1",
+    "browserify": "17.0.0",
+    "chai": "4.3.6",
+    "chai-string": "1.5.0",
+    "cheerio": "1.0.0-rc.12",
+    "dirty-chai": "2.0.1",
+    "libnpmpublish": "4.0.2",
+    "lodash": "4.17.21",
+    "mocha": "10.0.0",
+    "pacote": "12.0.2",
+    "puppeteer": "16.0.0",
+    "rimraf": "3.0.2",
+    "shx": "0.3.4",
+    "sinon": "14.0.0",
+    "standard": "17.0.0"
+  },
+  "peerDependencies": {
+    "@asciidoctor/core": "~2.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Mogztter/asciidoctor-kroki.git"
+  },
+  "keywords": [
+    "asciidoctor",
+    "kroki",
+    "diagrams",
+    "javascript",
+    "extension"
+  ],
+  "author": "Guillaume Grossetie (https://github.com/mogztter)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Mogztter/asciidoctor-kroki/issues"
+  },
+  "homepage": "https://github.com/Mogztter/asciidoctor-kroki#readme",
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=10"
+  }
+}
+
+},{}],59:[function(require,module,exports){
 /* global Opal */
 // @ts-check
 const { KrokiDiagram, KrokiClient } = require('./kroki-client.js')
@@ -18230,6 +18310,23 @@ const isBrowser = () => {
 
 // A value of 20 (SECURE) disallows the document from attempting to read files from the file system
 const SAFE_MODE_SECURE = 20
+
+const BUILTIN_ATTRIBUTES = [
+  'target',
+  'width',
+  'height',
+  'format',
+  'fallback',
+  'link',
+  'float',
+  'align',
+  'role',
+  'title',
+  'caption',
+  'cloaked-context',
+  '$positional',
+  'subs'
+]
 
 const createImageSrc = (doc, krokiDiagram, target, vfs, krokiClient) => {
   const shouldFetch = doc.isAttribute('kroki-fetch-diagram')
@@ -18314,7 +18411,8 @@ const processKroki = (processor, parent, attrs, diagramType, diagramText, contex
   if (blockId) {
     blockAttrs.id = blockId
   }
-  const krokiDiagram = new KrokiDiagram(diagramType, format, diagramText)
+  const opts = Object.fromEntries(Object.entries(attrs).filter(([key, _]) => !key.endsWith('-option') && !BUILTIN_ATTRIBUTES.includes(key)))
+  const krokiDiagram = new KrokiDiagram(diagramType, format, diagramText, opts)
   const httpClient = isBrowser() ? require('./http/browser-http.js') : require('./http/node-http.js')
   const krokiClient = new KrokiClient(doc, httpClient)
   let block
@@ -18445,25 +18543,28 @@ module.exports.register = function register (registry, context = {}) {
   return registry
 }
 
-},{"./antora-adapter.js":undefined,"./fetch.js":undefined,"./http/browser-http.js":59,"./http/node-http.js":61,"./kroki-client.js":62,"./node-fs.js":undefined,"./preprocess.js":63}],59:[function(require,module,exports){
+},{"./antora-adapter.js":undefined,"./fetch.js":undefined,"./http/browser-http.js":60,"./http/node-http.js":62,"./kroki-client.js":63,"./node-fs.js":undefined,"./preprocess.js":64}],60:[function(require,module,exports){
 /* global XMLHttpRequest */
 const httpClient = require('./http-client.js')
 
-const httpPost = (uri, body, encoding = 'utf8') => httpClient.post(XMLHttpRequest, uri, body, encoding)
-const httpGet = (uri, encoding = 'utf8') => httpClient.get(XMLHttpRequest, uri, encoding)
+const httpPost = (uri, body, headers, encoding = 'utf8') => httpClient.post(XMLHttpRequest, uri, body, headers, encoding)
+const httpGet = (uri, headers, encoding = 'utf8') => httpClient.get(XMLHttpRequest, uri, headers, encoding)
 
 module.exports = {
   get: httpGet,
   post: httpPost
 }
 
-},{"./http-client.js":60}],60:[function(require,module,exports){
-const httpRequest = (XMLHttpRequest, uri, method, encoding = 'utf8', body) => {
+},{"./http-client.js":61}],61:[function(require,module,exports){
+const httpRequest = (XMLHttpRequest, uri, method, headers, encoding = 'utf8', body) => {
   let data = ''
   let status = -1
   try {
     const xhr = new XMLHttpRequest()
     xhr.open(method, uri, false)
+    for (const [name, value] in Object.entries(headers)) {
+      xhr.setRequestHeader(name, value)
+    }
     if (encoding === 'binary') {
       xhr.responseType = 'arraybuffer'
     }
@@ -18496,12 +18597,12 @@ const httpRequest = (XMLHttpRequest, uri, method, encoding = 'utf8', body) => {
   return data
 }
 
-const httpPost = (XMLHttpRequest, uri, body, encoding = 'utf8') => {
-  return httpRequest(XMLHttpRequest, uri, 'POST', encoding, body)
+const httpPost = (XMLHttpRequest, uri, body, headers, encoding = 'utf8') => {
+  return httpRequest(XMLHttpRequest, uri, 'POST', headers, encoding, body)
 }
 
-const httpGet = (XMLHttpRequest, uri, encoding = 'utf8') => {
-  return httpRequest(XMLHttpRequest, uri, 'GET', encoding)
+const httpGet = (XMLHttpRequest, uri, headers, encoding = 'utf8') => {
+  return httpRequest(XMLHttpRequest, uri, 'GET', headers, encoding)
 }
 
 module.exports = {
@@ -18509,33 +18610,37 @@ module.exports = {
   post: httpPost
 }
 
-},{}],61:[function(require,module,exports){
+},{}],62:[function(require,module,exports){
 const XMLHttpRequest = require('unxhr').XMLHttpRequest
 const httpClient = require('./http-client.js')
 
-const httpPost = (uri, body, encoding = 'utf8') => httpClient.post(XMLHttpRequest, uri, body, encoding)
-const httpGet = (uri, encoding = 'utf8') => httpClient.get(XMLHttpRequest, uri, encoding)
+const httpPost = (uri, body, headers, encoding = 'utf8') => httpClient.post(XMLHttpRequest, uri, body, headers, encoding)
+const httpGet = (uri, headers, encoding = 'utf8') => httpClient.get(XMLHttpRequest, uri, headers, encoding)
 
 module.exports = {
   get: httpGet,
   post: httpPost
 }
 
-},{"./http-client.js":60,"unxhr":53}],62:[function(require,module,exports){
+},{"./http-client.js":61,"unxhr":53}],63:[function(require,module,exports){
 (function (Buffer){(function (){
+const { version } = require('../package.json')
 const pako = require('pako')
 
 const MAX_URI_DEFAULT_VALUE = 4000
+const REFERER = `asciidoctor/kroki.js/${version}`
 
 module.exports.KrokiDiagram = class KrokiDiagram {
-  constructor (type, format, text) {
+  constructor (type, format, text, opts) {
     this.text = text
     this.type = type
     this.format = format
+    this.opts = opts
   }
 
   getDiagramUri (serverUrl) {
-    return `${serverUrl}/${this.type}/${this.format}/${this.encode()}`
+    const queryParams = Object.entries(this.opts).map(([key, value]) => `${key}=${encodeURIComponent(value.toString())}`).join('&')
+    return `${serverUrl}/${this.type}/${this.format}/${this.encode()}${queryParams ? `?${queryParams}` : ''}`
   }
 
   encode () {
@@ -18550,7 +18655,7 @@ module.exports.KrokiDiagram = class KrokiDiagram {
 
 module.exports.KrokiClient = class KrokiClient {
   constructor (doc, httpClient) {
-    const maxUriLengthValue = parseInt(doc.getAttribute('kroki-max-uri-length', String(MAX_URI_DEFAULT_VALUE)))
+    const maxUriLengthValue = parseInt(doc.getAttribute('kroki-max-uri-length', MAX_URI_DEFAULT_VALUE.toString()))
     this.maxUriLength = isNaN(maxUriLengthValue) ? MAX_URI_DEFAULT_VALUE : maxUriLengthValue
     this.httpClient = httpClient
     const method = doc.getAttribute('kroki-http-method', 'adaptive').toLowerCase()
@@ -18572,6 +18677,11 @@ module.exports.KrokiClient = class KrokiClient {
     const type = krokiDiagram.type
     const format = krokiDiagram.format
     const text = krokiDiagram.text
+    const opts = krokiDiagram.opts
+    const headers = {
+      Referer: REFERER,
+      ...Object.fromEntries(Object.entries(opts).map(([key, value]) => [`Kroki-Diagram-Options-${key}`, value]))
+    }
     if (this.method === 'adaptive' || this.method === 'get') {
       const uri = krokiDiagram.getDiagramUri(serverUrl)
       if (uri.length > this.maxUriLength) {
@@ -18579,13 +18689,13 @@ module.exports.KrokiClient = class KrokiClient {
         if (this.method === 'get') {
           // The request might be rejected by the server with a 414 Request-URI Too Large.
           // Consider using the attribute kroki-http-method with the value 'adaptive'.
-          return this.httpClient.get(uri, encoding)
+          return this.httpClient.get(uri, headers, encoding)
         }
-        return this.httpClient.post(`${serverUrl}/${type}/${format}`, text, encoding)
+        return this.httpClient.post(`${serverUrl}/${type}/${format}`, text, headers, encoding)
       }
-      return this.httpClient.get(uri, encoding)
+      return this.httpClient.get(uri, headers, encoding)
     }
-    return this.httpClient.post(`${serverUrl}/${type}/${format}`, text, encoding)
+    return this.httpClient.post(`${serverUrl}/${type}/${format}`, text, headers, encoding)
   }
 
   getServerUrl () {
@@ -18594,7 +18704,7 @@ module.exports.KrokiClient = class KrokiClient {
 }
 
 }).call(this)}).call(this,require("buffer").Buffer)
-},{"buffer":3,"pako":10}],63:[function(require,module,exports){
+},{"../package.json":58,"buffer":3,"pako":10}],64:[function(require,module,exports){
 // @ts-check
 // The previous line must be the first non-comment line in the file to enable TypeScript checks:
 // https://www.typescriptlang.org/docs/handbook/intro-to-js-ts.html#ts-check
@@ -18721,7 +18831,7 @@ function preprocessPlantUmlIncludes (diagramText, dirPath, includeOnce, includeS
           const target = parseTarget(args[1])
           const urlSub = target.url.split('!')
           const trailingContent = target.comment
-          const url = urlSub[0].replace(/\\ /g, ' ')
+          const url = urlSub[0].replace(/\\ /g, ' ').replace(/\s+$/g, '')
           const sub = urlSub[1]
           const result = readPlantUmlInclude(url, [dirPath, ...includePaths], includeStack, vfs, logger)
           if (result.skip) {
@@ -18984,5 +19094,5 @@ function isLocalAndRelative (string) {
   }
 }
 
-},{"./node-fs.js":undefined,"json5":9,"path":26}]},{},[58])(58)
+},{"./node-fs.js":undefined,"json5":9,"path":26}]},{},[59])(59)
 });
