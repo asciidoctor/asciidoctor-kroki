@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'cgi'
 require 'asciidoctor/extensions' unless RUBY_ENGINE == 'opal'
 
 # Asciidoctor extensions
@@ -137,6 +138,7 @@ module AsciidoctorExtensions
     include Asciidoctor::Logging
 
     TEXT_FORMATS = %w[txt atxt utxt].freeze
+    BUILTIN_ATTRIBUTES = %w[target width height format fallback link float align role caption title cloaked-context subs].freeze
 
     class << self
       # rubocop:disable Metrics/AbcSize
@@ -152,7 +154,8 @@ module AsciidoctorExtensions
         format = get_format(doc, attrs, diagram_type)
         attrs['role'] = get_role(format, attrs['role'])
         attrs['format'] = format
-        kroki_diagram = KrokiDiagram.new(diagram_type, format, diagram_text, attrs['target'])
+        opts = attrs.filter { |key, _| key.is_a?(String) && BUILTIN_ATTRIBUTES.none? { |k| key == k } && !key.end_with?('-option') }
+        kroki_diagram = KrokiDiagram.new(diagram_type, format, diagram_text, attrs['target'], opts)
         kroki_client = KrokiClient.new({
                                          server_url: server_url(doc),
                                          http_method: http_method(doc),
@@ -270,17 +273,19 @@ module AsciidoctorExtensions
     require 'zlib'
     require 'digest'
 
-    attr_reader :type, :text, :format, :target
+    attr_reader :type, :text, :format, :target, :opts
 
-    def initialize(type, format, text, target = nil)
+    def initialize(type, format, text, target = nil, opts = {})
       @text = text
       @type = type
       @format = format
       @target = target
+      @opts = opts
     end
 
     def get_diagram_uri(server_url)
-      _join_uri_segments(server_url, @type, @format, encode)
+      query_params = opts.map { |k, v| "#{k}=#{_url_encode(v.to_s)}" }.join('&') unless opts.empty?
+      _join_uri_segments(server_url, @type, @format, encode) + (query_params ? "?#{query_params}" : '')
     end
 
     def encode
@@ -308,6 +313,10 @@ module AsciidoctorExtensions
     end
 
     private
+
+    def _url_encode(text)
+      CGI.escape(text).gsub(/\+/, '%20')
+    end
 
     def _join_uri_segments(base, *uris)
       segments = []
@@ -355,6 +364,7 @@ module AsciidoctorExtensions
       type = kroki_diagram.type
       format = kroki_diagram.format
       text = kroki_diagram.text
+      opts = kroki_diagram.opts
       if @method == 'adaptive' || @method == 'get'
         uri = kroki_diagram.get_diagram_uri(server_url)
         if uri.length > @max_uri_length
@@ -362,15 +372,15 @@ module AsciidoctorExtensions
           if @method == 'get'
             # The request might be rejected by the server with a 414 Request-URI Too Large.
             # Consider using the attribute kroki-http-method with the value 'adaptive'.
-            @http_client.get(uri, encoding)
+            @http_client.get(uri, opts, encoding)
           else
-            @http_client.post("#{@server_url}/#{type}/#{format}", text, encoding)
+            @http_client.post("#{@server_url}/#{type}/#{format}", text, opts, encoding)
           end
         else
-          @http_client.get(uri, encoding)
+          @http_client.get(uri, opts, encoding)
         end
       else
-        @http_client.post("#{@server_url}/#{type}/#{format}", text, encoding)
+        @http_client.post("#{@server_url}/#{type}/#{format}", text, opts, encoding)
       end
     end
   end
@@ -385,10 +395,11 @@ module AsciidoctorExtensions
     class << self
       REFERER = "asciidoctor/kroki.rb/#{Asciidoctor::AsciidoctorKroki::VERSION}"
 
-      def get(uri, _)
+      def get(uri, opts, _)
         uri = URI(uri)
-        request = ::Net::HTTP::Get.new(uri)
-        request['referer'] = REFERER
+        headers = opts.transform_keys { |key| "Kroki-Diagram-Options-#{key}" }
+                      .merge({ 'referer' => REFERER })
+        request = ::Net::HTTP::Get.new(uri, headers)
         ::Net::HTTP.start(
           uri.hostname,
           uri.port,
@@ -398,12 +409,16 @@ module AsciidoctorExtensions
         end
       end
 
-      def post(uri, data, _)
+      def post(uri, data, opts, _)
+        headers = opts.transform_keys { |key| "Kroki-Diagram-Options-#{key}" }
+                      .merge({
+                               'Content-Type' => 'text/plain',
+                               'referer' => REFERER
+                             })
         res = ::Net::HTTP.post(
           URI(uri),
           data,
-          'Content-Type' => 'text/plain',
-          'Referer' => REFERER
+          headers
         )
         res.body
       end

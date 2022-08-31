@@ -76,6 +76,19 @@ alice -> bob
       expect(html).to.contain('https://kroki.io/plantuml/svg/eNpLzMlMTlXQtVNIyk8CABoDA90=')
       expect(html).to.contain('<div class="imageblock sequence kroki-format-svg kroki">')
     })
+    it('should only pass diagram options as query parameters', () => {
+      const input = `
+[plantuml,alice-bob,svg,role=sequence,width=100,format=svg,link=https://asciidoc.org/,align=center,float=right,theme=bluegray]
+....
+alice -> bob: hello
+....
+`
+      const registry = asciidoctor.Extensions.create()
+      asciidoctorKroki.register(registry)
+      const html = asciidoctor.convert(input, { extension_registry: registry })
+      expect(html).to.contain('https://kroki.io/plantuml/svg/eNpLzMlMTlXQtVNIyk-yUshIzcnJBwA9iwZL?theme=bluegray')
+      expect(html).to.contain('<div class="imageblock right text-center sequence kroki-format-svg kroki">')
+    })
     it('should convert a diagram with an absolute path to an image', () => {
       const file = fixturePath('alice.puml')
       const input = `plantuml::${file}[svg,role=sequence]`
@@ -1048,6 +1061,35 @@ line up $r*0.45 right $r*0.45 then right
         }
       })
       expect(html).to.contain(`https://kroki.io/vegalite/svg/${encodeText(diagramText)}`)
+    })
+
+    describe('Diagram options', () => {
+      it('should pass diagram options as query params', () => {
+        const input = `
+plantuml::test/fixtures/alice.puml[svg,opts=inline,theme=bluegray]
+`
+        const registry = asciidoctor.Extensions.create()
+        asciidoctorKroki.register(registry)
+        const html = asciidoctor.convert(input, {
+          safe: 'safe',
+          extension_registry: registry,
+          attributes: { 'allow-uri-read': '' }
+        })
+        expect(html).to.contain('<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" contentStyleType="text/css" height="148.9583px" preserveAspectRatio="none" style="width:240px;height:148px;background:#00000000;" version="1.1" viewBox="0 0 240 148" width="240.625px" zoomAndPan="magnify"><defs><linearGradient id="g1ky4bouxhyss40" x1="50%" x2="50%" y1="0%" y2="100%"><stop offset="0%" stop-color="#33B2E2"/><stop offset="100%" stop-color="#009FDB"/></linearGradient></defs><g><line style="stroke:#C2C2C2;stroke-width:1.0416666666666667;stroke-dasharray:5.0,5.0;" x1="75" x2="75" y1="57.7084" y2="93.1251"/><line style="stroke:#C2C2C2;stroke-width:1.0416666666666667;stroke-dasharray:5.0,5.0;" x1="203.125" x2="203.125" y1="57.7084" y2="93.1251"/><rect fill="url(#g1ky4bouxhyss40)" height="46.2501" rx="10.4167" ry="10.4167" style="stroke:#33B2E2;stroke-width:1.0416666666666667;" width="57.2917" x="46.875" y="10.4167"/><text fill="#FFFFFF" font-family="&quot;Verdana&quot;" font-size="12.5" lengthAdjust="spacing" textLength="26.0417" x="62.5" y="38.5418">alice</text><rect fill="url(#g1ky4bouxhyss40)" height="46.2501" rx="10.4167" ry="10.4167" style="stroke:#33B2E2;stroke-width:1.0416666666666667;" width="57.2917" x="46.875" y="92.0834"/><text fill="#FFFFFF" font-family="&quot;Verdana&quot;" font-size="12.5" lengthAdjust="spacing" textLength="26.0417" x="62.5" y="120.2085">alice</text><rect fill="url(#g1ky4bouxhyss40)" height="46.2501" rx="10.4167" ry="10.4167" style="stroke:#33B2E2;stroke-width:1.0416666666666667;" width="52.0833" x="177.0833" y="10.4167"/><text fill="#FFFFFF" font-family="&quot;Verdana&quot;" font-size="12.5" lengthAdjust="spacing" textLength="20.8333" x="192.7083" y="38.5418">bob</text><rect fill="url(#g1ky4bouxhyss40)" height="46.2501" rx="10.4167" ry="10.4167" style="stroke:#33B2E2;stroke-width:1.0416666666666667;" width="52.0833" x="177.0833" y="92.0834"/><text fill="#FFFFFF" font-family="&quot;Verdana&quot;" font-size="12.5" lengthAdjust="spacing" textLength="20.8333" x="192.7083" y="120.2085">bob</text><polygon fill="#009FDB" points="190.625,70.2084,201.0417,74.3751,190.625,78.5418,194.7917,74.3751" style="stroke:#009FDB;stroke-width:1.0416666666666667;"/><line style="stroke:#009FDB;stroke-width:3.125;" x1="75.5208" x2="196.875" y1="74.3751" y2="74.3751"/>')
+      }).timeout(5000)
+      it('should pass diagram options as HTTP headers', () => {
+        const input = `
+plantuml::test/fixtures/alice.puml[svg,opts=inline,theme=bluegray]
+`
+        const registry = asciidoctor.Extensions.create()
+        asciidoctorKroki.register(registry)
+        const html = asciidoctor.convert(input, {
+          safe: 'safe',
+          extension_registry: registry,
+          attributes: { 'kroki-fetch-diagram': '', imagesdir: '.asciidoctor/kroki' }
+        })
+        expect(html).to.contain('<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" contentStyleType="text/css" height="148.9583px" preserveAspectRatio="none" style="width:240px;height:148px;background:#00000000;" version="1.1" viewBox="0 0 240 148" width="240.625px" zoomAndPan="magnify"><defs><linearGradient id="g1ky4bouxhyss40" x1="50%" x2="50%" y1="0%" y2="100%"><stop offset="0%" stop-color="#33B2E2"/><stop offset="100%" stop-color="#009FDB"/></linearGradient></defs><g><line style="stroke:#C2C2C2;stroke-width:1.0416666666666667;stroke-dasharray:5.0,5.0;" x1="75" x2="75" y1="57.7084" y2="93.1251"/><line style="stroke:#C2C2C2;stroke-width:1.0416666666666667;stroke-dasharray:5.0,5.0;" x1="203.125" x2="203.125" y1="57.7084" y2="93.1251"/><rect fill="url(#g1ky4bouxhyss40)" height="46.2501" rx="10.4167" ry="10.4167" style="stroke:#33B2E2;stroke-width:1.0416666666666667;" width="57.2917" x="46.875" y="10.4167"/><text fill="#FFFFFF" font-family="&quot;Verdana&quot;" font-size="12.5" lengthAdjust="spacing" textLength="26.0417" x="62.5" y="38.5418">alice</text><rect fill="url(#g1ky4bouxhyss40)" height="46.2501" rx="10.4167" ry="10.4167" style="stroke:#33B2E2;stroke-width:1.0416666666666667;" width="57.2917" x="46.875" y="92.0834"/><text fill="#FFFFFF" font-family="&quot;Verdana&quot;" font-size="12.5" lengthAdjust="spacing" textLength="26.0417" x="62.5" y="120.2085">alice</text><rect fill="url(#g1ky4bouxhyss40)" height="46.2501" rx="10.4167" ry="10.4167" style="stroke:#33B2E2;stroke-width:1.0416666666666667;" width="52.0833" x="177.0833" y="10.4167"/><text fill="#FFFFFF" font-family="&quot;Verdana&quot;" font-size="12.5" lengthAdjust="spacing" textLength="20.8333" x="192.7083" y="38.5418">bob</text><rect fill="url(#g1ky4bouxhyss40)" height="46.2501" rx="10.4167" ry="10.4167" style="stroke:#33B2E2;stroke-width:1.0416666666666667;" width="52.0833" x="177.0833" y="92.0834"/><text fill="#FFFFFF" font-family="&quot;Verdana&quot;" font-size="12.5" lengthAdjust="spacing" textLength="20.8333" x="192.7083" y="120.2085">bob</text><polygon fill="#009FDB" points="190.625,70.2084,201.0417,74.3751,190.625,78.5418,194.7917,74.3751" style="stroke:#009FDB;stroke-width:1.0416666666666667;"/><line style="stroke:#009FDB;stroke-width:3.125;" x1="75.5208" x2="196.875" y1="74.3751" y2="74.3751"/>')
+      }).timeout(5000)
     })
 
     describe('Default options', () => {

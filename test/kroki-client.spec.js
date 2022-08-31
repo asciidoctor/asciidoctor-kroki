@@ -66,7 +66,7 @@ describe('Kroki HTTP client', () => {
     it('should get an image with GET request if the URI length is <= 4000', () => {
       const doc = asciidoctor.load('')
       const krokiClient = new KrokiClient(doc, httpClient)
-      const krokiDiagram = new KrokiDiagram('vegalite', 'svg', readFixture('chart.vlite'))
+      const krokiDiagram = new KrokiDiagram('vegalite', 'svg', readFixture('chart.vlite'), {})
       const image = krokiClient.getImage(krokiDiagram)
         .replace(/\r/, '')
         .replace(/\n/, '')
@@ -78,7 +78,7 @@ describe('Kroki HTTP client', () => {
     it('should get an image with POST request if the URI length is > 4000', () => {
       const doc = asciidoctor.load('')
       const krokiClient = new KrokiClient(doc, httpClient)
-      const krokiDiagram = new KrokiDiagram('vegalite', 'svg', readFixture('cars-repeated-charts.vlite'))
+      const krokiDiagram = new KrokiDiagram('vegalite', 'svg', readFixture('cars-repeated-charts.vlite'), {})
       const image = krokiClient.getImage(krokiDiagram)
         .replace(/\r/, '')
         .replace(/\n/, '')
@@ -98,6 +98,7 @@ describe('Kroki HTTP client', () => {
         type: 'type',
         format: 'format',
         text: 'text',
+        opts: {},
         getDiagramUri: () => 'diagram-uri' // length: 11
       }
       const image = krokiClient.getImage(krokiDiagram)
@@ -114,6 +115,7 @@ describe('Kroki HTTP client', () => {
         type: 'type',
         format: 'format',
         text: 'text',
+        opts: {},
         getDiagramUri: () => 'diagram-uri' // length: 11
       }
       const image = krokiClient.getImage(krokiDiagram)

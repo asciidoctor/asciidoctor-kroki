@@ -20,6 +20,20 @@ describe ::AsciidoctorExtensions::KrokiBlockProcessor do
 </div>
 </div>)
     end
+    it 'should only pass diagram options as query parameters' do
+      input = <<~'ADOC'
+        [plantuml,alice-bob,svg,role=sequence,width=100,format=svg,link=https://asciidoc.org/,align=center,float=right,theme=bluegray]
+        ....
+        alice -> bob: hello
+        ....
+      ADOC
+      output = Asciidoctor.convert(input, standalone: false)
+      (expect output).to eql %(<div class="imageblock right text-center sequence kroki-format-svg kroki">
+<div class="content">
+<a class="image" href="https://asciidoc.org/"><img src="https://kroki.io/plantuml/svg/eNpLzMlMTlXQtVNIyk-yUshIzcnJBwA9iwZL?theme=bluegray" alt="alice-bob" width="100"></a>
+</div>
+</div>)
+    end
     it 'should use the title attribute as the alt value' do
       input = <<~'ADOC'
         [plantuml,title="Alice saying hello to Bob"]

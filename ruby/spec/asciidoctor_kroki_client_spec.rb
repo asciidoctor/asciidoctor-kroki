@@ -37,18 +37,19 @@ describe ::AsciidoctorExtensions::KrokiClient do
           "GET #{uri}"
         end
 
-        def post(uri, data, _)
+        def post(uri, data, _, _)
           "POST #{uri} - #{data}"
         end
       end
     end
     kroki_diagram = Class.new do
-      attr_reader :type, :text, :format
+      attr_reader :type, :text, :format, :opts
 
-      def initialize(type, format, text)
+      def initialize(type, format, text, opts = {})
         @text = text
         @type = type
         @format = format
+        @opts = opts
       end
 
       def get_diagram_uri(_)
@@ -62,22 +63,23 @@ describe ::AsciidoctorExtensions::KrokiClient do
   it 'should get an image with GET request if the URI length is lower or equals than the value configured' do
     kroki_http_client = Class.new do
       class << self
-        def get(uri, _)
+        def get(uri, _, _)
           "GET #{uri}"
         end
 
-        def post(uri, data, _)
+        def post(uri, data, _, _)
           "POST #{uri} - #{data}"
         end
       end
     end
     kroki_diagram = Class.new do
-      attr_reader :type, :text, :format
+      attr_reader :type, :text, :format, :opts
 
-      def initialize(type, format, text)
+      def initialize(type, format, text, opts = {})
         @text = text
         @type = type
         @format = format
+        @opts = opts
       end
 
       def get_diagram_uri(_)
