@@ -36,16 +36,18 @@ describe ::AsciidoctorExtensions::KrokiBlockProcessor do
     end
     it 'should use svg if kroki-default-format is set to png and the diagram type does not support png' do
       input = <<~'ADOC'
-        [mermaid]
+        [nomnoml]
         ....
-        graph TD;
-          A-->B;
+        [Pirate|eyeCount: Int|raid();pillage()|
+          [beard]--[parrot]
+          [beard]-:>[foul mouth]
+        ]
         ....
       ADOC
       output = Asciidoctor.convert(input, attributes: { 'kroki-default-format' => 'png' }, standalone: false)
       (expect output).to eql %(<div class="imageblock kroki">
 <div class="content">
-<img src="https://kroki.io/mermaid/svg/eNpLL0osyFAIcbHmUlBw1NW1c7IGADLKBKY=" alt="Diagram">
+<img src="https://kroki.io/nomnoml/svg/eNqLDsgsSixJrUmtTHXOL80rsVLwzCupKUrMTNHQtC7IzMlJTE_V0KzhUlCITkpNLEqJ1dWNLkgsKsoviUUSs7KLTssvzVHIzS8tyYjligUAMhEd0g==" alt="Diagram">
 </div>
 </div>)
     end
