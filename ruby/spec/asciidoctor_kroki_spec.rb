@@ -20,6 +20,21 @@ describe ::AsciidoctorExtensions::KrokiBlockProcessor do
 </div>
 </div>)
     end
+    it 'should use the title attribute as the alt value' do
+      input = <<~'ADOC'
+        [plantuml,title="Alice saying hello to Bob"]
+        ....
+        alice -> bob: hello
+        ....
+      ADOC
+      output = Asciidoctor.convert(input, standalone: false)
+      (expect output).to eql %(<div class="imageblock kroki">
+<div class="content">
+<img src="https://kroki.io/plantuml/svg/eNpLzMlMTlXQtVNIyk-yUshIzcnJBwA9iwZL" alt="Alice saying hello to Bob">
+</div>
+<div class="title">Figure 1. Alice saying hello to Bob</div>
+</div>)
+    end
     it 'should use png if kroki-default-format is set to png' do
       input = <<~'ADOC'
         [plantuml]

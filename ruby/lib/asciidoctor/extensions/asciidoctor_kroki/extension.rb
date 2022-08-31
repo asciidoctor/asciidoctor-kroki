@@ -148,8 +148,6 @@ module AsciidoctorExtensions
         if (subs = attrs['subs'])
           diagram_text = parent.apply_subs(diagram_text, parent.resolve_subs(subs))
         end
-        title = attrs.delete('title')
-        caption = attrs.delete('caption')
         attrs.delete('opts')
         format = get_format(doc, attrs, diagram_type)
         attrs['role'] = get_role(format, attrs['role'])
@@ -162,11 +160,14 @@ module AsciidoctorExtensions
                                          source_location: doc.reader.cursor_at_mark,
                                          http_client: KrokiHttpClient
                                        }, logger)
+        alt = get_alt(attrs)
+        title = attrs.delete('title')
+        caption = attrs.delete('caption')
         if TEXT_FORMATS.include?(format)
           text_content = kroki_client.text_content(kroki_diagram)
           block = processor.create_block(parent, 'literal', text_content, attrs)
         else
-          attrs['alt'] = get_alt(attrs)
+          attrs['alt'] = alt
           attrs['target'] = create_image_src(doc, kroki_diagram, kroki_client)
           block = processor.create_image_block(parent, attrs)
         end
