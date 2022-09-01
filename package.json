@@ -31,7 +31,7 @@
     "unxhr": "1.2.0"
   },
   "devDependencies": {
-    "@antora/site-generator-default": "~3.0",
+    "@antora/site-generator-default": "~3.1.0",
     "@asciidoctor/core": "^2.2",
     "base64-js": "1.5.1",
     "browserify": "17.0.0",
@@ -43,7 +43,7 @@
     "lodash": "4.17.21",
     "mocha": "10.0.0",
     "pacote": "12.0.2",
-    "puppeteer": "16.0.0",
+    "puppeteer": "17.0.0",
     "rimraf": "3.0.2",
     "shx": "0.3.4",
     "sinon": "14.0.0",
