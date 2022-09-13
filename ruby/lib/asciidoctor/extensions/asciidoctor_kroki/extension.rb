@@ -129,6 +129,7 @@ module AsciidoctorExtensions
       vegalite
       wavedrom
       structurizr
+      diagramsnet
     ].freeze
   end
 
