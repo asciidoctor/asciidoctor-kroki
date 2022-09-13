@@ -1044,6 +1044,35 @@ line up $r*0.45 right $r*0.45 then right
       expect(html).to.contain('https://kroki.io/pikchr/svg/eNptUk1T2zAQvetX7Jgww0cxisEUZ6aHdoYbNzjkwEW2lVhF0TLyJqL_vispSV3g4NFo3-rt2_c88_ADZFkZJ6xx2qs-3b_XFzOfKsHkSlULcQJPpDyBcj1o_lqL3esoTkSL71BoqzfaUQEt2h5WhtJ76DE4qOUprDxuwKqRuOG9HIPokSAOrCLaoUXPjKp7FUu5SI2lhks4k-XNN3kulPcYJiTxNSEspdjgToM364Hgpmx4kygn6q5PgWsVHytj7YG82ZMHuPqKfNlE2qPOIOLez4OGjTIO_NZqoEERrFGPMJJXaTANHrfrIVOMySVmWRlnxuFgELa_dUdXvY5lMugKMKSs6aJZwJTz-fX8DoL6A62moLXj7ZLZy2avMC7c_KdWflSbxT7-_PXwuEhyeXx-kC2a-X8vBx6R8plzvpx4rhz6BO6UhSJz8RkjzUwc2B58KRYvxRSqJGNp3TccP22Zm_KPkcdsHRkLesdzg6Eh2s-xzDynApD1bN--6krQJz-SE1FaqY97XMiyPjKl6_0Uu89yDthtPQVv64knfwGrmf6K')
       expect(html).to.contain('<div class="imageblock kroki">')
     })
+    it('should convert a Diagrams.net diagram to an image', () => {
+      const input = `
+[diagramsnet]
+....
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="Electron" modified="2022-09-13T07:43:35.176Z" agent="5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/20.2.8 Chrome/102.0.5005.167 Electron/19.0.15 Safari/537.36" etag="LhBTAD99BNPTPnW6KKtz" version="20.2.8" type="device">
+  <diagram id="ZahvhYCcWguJS4UQkUxV" name="Page-1">
+    <mxGraphModel dx="1104" dy="725" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="elJO9X42axDvzzEHx44D-1" value="" style="shape=step;perimeter=stepPerimeter;whiteSpace=wrap;html=1;fixedSize=1;" parent="1" vertex="1">
+          <mxGeometry x="340" y="160" width="140" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="elJO9X42axDvzzEHx44D-4" value="" style="shape=step;perimeter=stepPerimeter;whiteSpace=wrap;html=1;fixedSize=1;rotation=-180;" parent="1" vertex="1">
+          <mxGeometry x="320" y="200" width="140" height="30" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
+....
+`
+      const registry = asciidoctor.Extensions.create()
+      asciidoctorKroki.register(registry)
+      const html = asciidoctor.convert(input, { extension_registry: registry })
+      expect(html).to.contain('https://kroki.io/diagramsnet/svg/eNq1VE1zmzAQvedXaHRKZmqQAGM7mGTy0SYTJ6k7duo2NxXWoIlAjKzY2L--Czj1dKY9tNOe2NVqP957K8bndaHIGsxK6jKm3GGUQJnoVJZZTJ_mH3pDen52NC7qpVRAcr2yMX2vILFGl5QUeHEpIY2pxzyvx0Y97s_Z4DTwT_2-wwfhMyUigxKT-g4jxwtZpnqzIo9zwpnDIoIHYRCROgxOyEVVKVjAt4m0bt8fOH5Ijie384f7d0TJFyA3kLzoE5IasXGkdj3meM6QXOVGF-By5jnM6TOGbcMBeRvR5SM85n0yE0th5L4uYrQC8d3nl_OL69Ho8nE6n5aLcDKxO3pgo-tAid1WENMU1jIBenZEyDiVIjOiIBKRP4t8nX-9ShbZ690sePr08lR_pqQUBeZMEXyPtzmYVdQ3RlT5g05BkbRGujkLKEm3MR14fUoy09TjnTGTOyzAUY_sVaawagNWa2Vl1TmJLktE2drCGOS1NZdadVUqbP7DmCVCHbyFTG0e06E36PxbkFneVOLhCFUVTRA7r3KBcjVmhwAxGK3tm9NCugKlWh7wvvvrSNvUtFvw-0ug7j6OvgSeqK_Xu9372zoIrpE6shbqFQfHYey2QYAzoRorC1VUgZEFWDCtO33zok0uLcwqkUC8QcKj3BYq5tFS1tDRyqPDRLwV3EIjBz2M1skFuFrWbAkG_QBnR6V4iN9Nxx9vzvI9dz7aAiXI9kk_I3U7qH-APfhf2I22wjYL3uND9jdMeB0THvsXTIzdw0o1scMTaV-au39q-A9yu5_Q2XelwGNC')
+      expect(html).to.contain('<div class="imageblock kroki">')
+    })
     it('should convert a Vega-Lite diagram and resolve data.url relative to the diagram file', async () => {
       const registry = asciidoctor.Extensions.create()
       asciidoctorKroki.register(registry)
