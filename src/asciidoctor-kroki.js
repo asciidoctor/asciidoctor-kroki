@@ -241,7 +241,8 @@ module.exports.register = function register (registry, context = {}) {
     'vega',
     'vegalite',
     'wavedrom',
-    'structurizr'
+    'structurizr',
+    'diagramsnet'
   ]
   if (typeof registry.register === 'function') {
     registry.register(function () {
