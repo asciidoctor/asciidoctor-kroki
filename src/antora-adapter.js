@@ -29,6 +29,10 @@ module.exports = (file, contentCatalog, vfs) => {
     read: (resourceId, format) => {
       const target = contentCatalog.resolveResource(resourceId, file.src)
       return target ? target.contents.toString() : baseReadFn(resourceId, format)
+    },
+    exists: (resourceId) => {
+      const target = contentCatalog.resolveResource(resourceId, file.src)
+      return target !== undefined
     }
   }
 }
