@@ -33,6 +33,11 @@ include::partial$ab-all.adoc[]
 include::partial$ab.puml[]
 ----
 
+=== Diagram contents in a partial, puml extension, directly injected
+
+.As svg [plantuml,target=ab-inc-partial-1,format=svg]
+plantuml::partial$ab_inc.puml[target=ab-inc-partial-1,format=svg]
+
 === Entire Diagram in an example, puml extension
 
 include::example$ab-all.puml[]

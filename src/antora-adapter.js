@@ -33,6 +33,9 @@ module.exports = (file, contentCatalog, vfs) => {
     exists: (resourceId) => {
       const target = contentCatalog.resolveResource(resourceId, file.src)
       return target !== undefined
+    },
+    dirname: (resourceId) => {
+      return resourceId.substring(0, Math.max(resourceId.lastIndexOf('$'), resourceId.lastIndexOf('/')) + 1)
     }
   }
 }

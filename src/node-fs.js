@@ -22,5 +22,8 @@ module.exports = {
       return fs.readFileSync(url.fileURLToPath(path), encoding)
     }
     return fs.readFileSync(path, encoding)
+  },
+  dirname: (resourceId) => {
+    return resourceId.substring(0, resourceId.lastIndexOf('/') + 1)
   }
 }

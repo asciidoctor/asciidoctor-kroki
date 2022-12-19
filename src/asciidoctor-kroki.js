@@ -201,7 +201,7 @@ function diagramBlockMacro (name, context) {
       const diagramType = name
       try {
         const diagramText = vfs.read(target)
-        const diagramDir = target.substr(0, target.lastIndexOf('/') + 1)
+        const diagramDir = vfs.dirname(target)
         return processKroki(this, parent, attrs, diagramType, diagramText, context, diagramDir)
       } catch (e) {
         console.warn(`Skipping ${diagramType} block macro. ${e.message}`)
