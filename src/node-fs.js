@@ -24,6 +24,6 @@ module.exports = {
     return fs.readFileSync(path, encoding)
   },
   dirname: (resourceId) => {
-    return resourceId.substring(0, resourceId.lastIndexOf('/') + 1)
+    return path.dirname(resourceId)
   }
 }

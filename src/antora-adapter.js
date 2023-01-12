@@ -36,6 +36,9 @@ module.exports = (file, contentCatalog, vfs) => {
     },
     dirname: (resourceId) => {
       return resourceId.substring(0, Math.max(resourceId.lastIndexOf('$'), resourceId.lastIndexOf('/')) + 1)
+    },
+    join: (...args) => {
+      return args.join("/")
     }
   }
 }

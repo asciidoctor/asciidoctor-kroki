@@ -176,9 +176,10 @@ function preprocessPlantUmlIncludes (diagramText, dirPath, includeOnce, includeS
  */
 function resolveIncludeFile (includeFile, includePaths, vfs) {
   const exists = typeof vfs !== 'undefined' && typeof vfs.exists === 'function' ? vfs.exists : require('./node-fs.js').exists
+  const join = typeof vfs !== 'undefined' && typeof vfs.join === 'function' ? vfs.join : path.join
   let filePath = includeFile
   for (let i = 0; i < includePaths.length; i++) {
-    const localFilePath = path.join(includePaths[i], includeFile)
+    const localFilePath = join(includePaths[i], includeFile)
     if (exists(localFilePath)) {
       filePath = localFilePath
       break
