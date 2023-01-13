@@ -1,5 +1,7 @@
 const rusha = require('rusha')
 const path = require('path')
+const os = require('os')
+const fs = require('fs')
 
 const getImagesOutputDirectory = (doc) => {
   const imagesOutputDir = doc.getAttribute('imagesoutdir')
@@ -43,8 +45,20 @@ module.exports.save = function (krokiDiagram, doc, target, vfs, krokiClient) {
     mediaType = 'image/png'
     encoding = 'binary'
   }
-  // file is either (already) on the file system or we should read it from Kroki
-  const contents = exists(filePath) ? read(filePath, encoding) : krokiClient.getImage(krokiDiagram, encoding)
+  const cacheBaseDir = process.env.KROKI_CACHE_DIR ? process.env.KROKI_CACHE_DIR : os.tmpdir()
+  const cacheFilePath = `${fs.realpathSync(cacheBaseDir)}/${diagramName}`
+  // file is either (already) on the file system, in the cache, or we should read it from Kroki
+  let contents
+  if (exists(filePath)) {
+    contents = read(filePath, encoding)
+  } else {
+    if (fs.existsSync(cacheFilePath)) {
+      contents = fs.readFileSync(cacheFilePath, encoding)
+    } else {
+      contents = krokiClient.getImage(krokiDiagram, encoding)
+      fs.writeFileSync(cacheFilePath, contents, encoding)
+    }
+  }
   add({
     relative: imagesOutputDirectory,
     basename: diagramName,

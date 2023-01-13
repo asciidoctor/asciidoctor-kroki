@@ -1,7 +1,10 @@
 // @ts-check
 // The previous line must be the first non-comment line in the file to enable TypeScript checks:
 // https://www.typescriptlang.org/docs/handbook/intro-to-js-ts.html#ts-check
+const fs = require('fs')
+const os = require('os')
 const path = require('path')
+const rusha = require('rusha')
 
 /**
  * @param {string} diagramText
@@ -226,12 +229,19 @@ function readPlantUmlInclude (url, includePaths, includeStack, vfs, logger) {
     throw new Error(message)
   } else {
     if (isRemoteUrl(url)) {
-      try {
-        text = read(url)
-      } catch (e) {
-        // Includes a remote file that cannot be found but might be resolved by the Kroki server (https://github.com/yuzutech/kroki/issues/60)
-        logger.info(`Skipping preprocessing of PlantUML include, because reading the referenced remote file '${url}' caused an error:\n${e}`)
-        skip = true
+      const cacheBaseDir = process.env.KROKI_CACHE_DIR ? process.env.KROKI_CACHE_DIR : os.tmpdir()
+      const cachePath = `${fs.realpathSync(cacheBaseDir)}/${rusha.createHash().update(url).digest('hex')}`
+      if (fs.existsSync(cachePath)) {
+        text = fs.readFileSync(cachePath, 'binary')
+      } else {
+        try {
+          text = read(url)
+          fs.writeFileSync(cachePath, text, 'binary')
+        } catch (e) {
+          // Includes a remote file that cannot be found but might be resolved by the Kroki server (https://github.com/yuzutech/kroki/issues/60)
+          logger.info(`Skipping preprocessing of PlantUML include, because reading the referenced remote file '${url}' caused an error:\n${e}`)
+          skip = true
+        }
       }
     } else {
       filePath = resolveIncludeFile(url, includePaths, vfs)
