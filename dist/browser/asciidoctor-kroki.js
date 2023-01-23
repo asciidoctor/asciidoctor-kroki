@@ -13106,7 +13106,7 @@ var IncomingMessage = exports.IncomingMessage = function (xhr, response, mode, r
 		self.url = response.url
 		self.statusCode = response.status
 		self.statusMessage = response.statusText
-		
+
 		response.headers.forEach(function (header, key){
 			self.headers[key.toLowerCase()] = header
 			self.rawHeaders.push(key, header)
@@ -18508,6 +18508,7 @@ module.exports.register = function register (registry, context = {}) {
     'bpmn',
     'bytefield',
     'c4plantuml',
+    'dbml',
     'ditaa',
     'erd',
     'excalidraw',
