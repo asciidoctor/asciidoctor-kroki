@@ -1105,7 +1105,12 @@ plantuml::test/fixtures/alice.puml[svg,opts=inline,theme=bluegray]
           extension_registry: registry,
           attributes: { 'allow-uri-read': '' }
         })
-        expect(html).to.contain('<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" contentStyleType="text/css" height="148.9583px" preserveAspectRatio="none" style="width:240px;height:148px;background:#00000000;" version="1.1" viewBox="0 0 240 148" width="240.625px" zoomAndPan="magnify"><defs><linearGradient id="g1ky4bouxhyss40" x1="50%" x2="50%" y1="0%" y2="100%"><stop offset="0%" stop-color="#33B2E2"/><stop offset="100%" stop-color="#009FDB"/></linearGradient></defs><g><line style="stroke:#C2C2C2;stroke-width:1.0416666666666667;stroke-dasharray:5.0,5.0;" x1="75" x2="75" y1="57.7084" y2="93.1251"/><line style="stroke:#C2C2C2;stroke-width:1.0416666666666667;stroke-dasharray:5.0,5.0;" x1="203.125" x2="203.125" y1="57.7084" y2="93.1251"/><rect fill="url(#g1ky4bouxhyss40)" height="46.2501" rx="10.4167" ry="10.4167" style="stroke:#33B2E2;stroke-width:1.0416666666666667;" width="57.2917" x="46.875" y="10.4167"/><text fill="#FFFFFF" font-family="&quot;Verdana&quot;" font-size="12.5" lengthAdjust="spacing" textLength="26.0417" x="62.5" y="38.5418">alice</text><rect fill="url(#g1ky4bouxhyss40)" height="46.2501" rx="10.4167" ry="10.4167" style="stroke:#33B2E2;stroke-width:1.0416666666666667;" width="57.2917" x="46.875" y="92.0834"/><text fill="#FFFFFF" font-family="&quot;Verdana&quot;" font-size="12.5" lengthAdjust="spacing" textLength="26.0417" x="62.5" y="120.2085">alice</text><rect fill="url(#g1ky4bouxhyss40)" height="46.2501" rx="10.4167" ry="10.4167" style="stroke:#33B2E2;stroke-width:1.0416666666666667;" width="52.0833" x="177.0833" y="10.4167"/><text fill="#FFFFFF" font-family="&quot;Verdana&quot;" font-size="12.5" lengthAdjust="spacing" textLength="20.8333" x="192.7083" y="38.5418">bob</text><rect fill="url(#g1ky4bouxhyss40)" height="46.2501" rx="10.4167" ry="10.4167" style="stroke:#33B2E2;stroke-width:1.0416666666666667;" width="52.0833" x="177.0833" y="92.0834"/><text fill="#FFFFFF" font-family="&quot;Verdana&quot;" font-size="12.5" lengthAdjust="spacing" textLength="20.8333" x="192.7083" y="120.2085">bob</text><polygon fill="#009FDB" points="190.625,70.2084,201.0417,74.3751,190.625,78.5418,194.7917,74.3751" style="stroke:#009FDB;stroke-width:1.0416666666666667;"/><line style="stroke:#009FDB;stroke-width:3.125;" x1="75.5208" x2="196.875" y1="74.3751" y2="74.3751"/>')
+        const svg = fs.readFileSync(ospath.join(__dirname, 'fixtures', 'expected', 'alice-bluegray.svg'), 'utf8')
+        expect(html).to.equal(`<div class="imageblock kroki">
+<div class="content">
+${svg}
+</div>
+</div>`)
       }).timeout(5000)
       it('should pass diagram options as HTTP headers', () => {
         const input = `
@@ -1118,7 +1123,12 @@ plantuml::test/fixtures/alice.puml[svg,opts=inline,theme=bluegray]
           extension_registry: registry,
           attributes: { 'kroki-fetch-diagram': '', imagesdir: '.asciidoctor/kroki' }
         })
-        expect(html).to.contain('<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" contentStyleType="text/css" height="148.9583px" preserveAspectRatio="none" style="width:240px;height:148px;background:#00000000;" version="1.1" viewBox="0 0 240 148" width="240.625px" zoomAndPan="magnify"><defs><linearGradient id="g1ky4bouxhyss40" x1="50%" x2="50%" y1="0%" y2="100%"><stop offset="0%" stop-color="#33B2E2"/><stop offset="100%" stop-color="#009FDB"/></linearGradient></defs><g><line style="stroke:#C2C2C2;stroke-width:1.0416666666666667;stroke-dasharray:5.0,5.0;" x1="75" x2="75" y1="57.7084" y2="93.1251"/><line style="stroke:#C2C2C2;stroke-width:1.0416666666666667;stroke-dasharray:5.0,5.0;" x1="203.125" x2="203.125" y1="57.7084" y2="93.1251"/><rect fill="url(#g1ky4bouxhyss40)" height="46.2501" rx="10.4167" ry="10.4167" style="stroke:#33B2E2;stroke-width:1.0416666666666667;" width="57.2917" x="46.875" y="10.4167"/><text fill="#FFFFFF" font-family="&quot;Verdana&quot;" font-size="12.5" lengthAdjust="spacing" textLength="26.0417" x="62.5" y="38.5418">alice</text><rect fill="url(#g1ky4bouxhyss40)" height="46.2501" rx="10.4167" ry="10.4167" style="stroke:#33B2E2;stroke-width:1.0416666666666667;" width="57.2917" x="46.875" y="92.0834"/><text fill="#FFFFFF" font-family="&quot;Verdana&quot;" font-size="12.5" lengthAdjust="spacing" textLength="26.0417" x="62.5" y="120.2085">alice</text><rect fill="url(#g1ky4bouxhyss40)" height="46.2501" rx="10.4167" ry="10.4167" style="stroke:#33B2E2;stroke-width:1.0416666666666667;" width="52.0833" x="177.0833" y="10.4167"/><text fill="#FFFFFF" font-family="&quot;Verdana&quot;" font-size="12.5" lengthAdjust="spacing" textLength="20.8333" x="192.7083" y="38.5418">bob</text><rect fill="url(#g1ky4bouxhyss40)" height="46.2501" rx="10.4167" ry="10.4167" style="stroke:#33B2E2;stroke-width:1.0416666666666667;" width="52.0833" x="177.0833" y="92.0834"/><text fill="#FFFFFF" font-family="&quot;Verdana&quot;" font-size="12.5" lengthAdjust="spacing" textLength="20.8333" x="192.7083" y="120.2085">bob</text><polygon fill="#009FDB" points="190.625,70.2084,201.0417,74.3751,190.625,78.5418,194.7917,74.3751" style="stroke:#009FDB;stroke-width:1.0416666666666667;"/><line style="stroke:#009FDB;stroke-width:3.125;" x1="75.5208" x2="196.875" y1="74.3751" y2="74.3751"/>')
+        const svg = fs.readFileSync(ospath.join(__dirname, 'fixtures', 'expected', 'alice-bluegray.svg'), 'utf8')
+        expect(html).to.equal(`<div class="imageblock kroki">
+<div class="content">
+${svg}
+</div>
+</div>`)
       }).timeout(5000)
     })
 
@@ -1240,7 +1250,12 @@ plantuml::test/fixtures/alice.puml[svg,role=sequence${blockAttr}]
             extension_registry: registry,
             attributes: { 'allow-uri-read': true }
           })
-          expect(html).to.contain('<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" contentStyleType="text/css" height="106px" preserveAspectRatio="none" style="width:100px;height:106px;background:#FFFFFF;" version="1.1" viewBox="0 0 100 106" width="100px" zoomAndPan="magnify"><defs/><g><line style="stroke:#181818;stroke-width:0.5;stroke-dasharray:5.0,5.0;" x1="26" x2="26" y1="36.7999" y2="70.7999"/><line style="stroke:#181818;stroke-width:0.5;stroke-dasharray:5.0,5.0;" x1="75" x2="75" y1="36.7999" y2="70.7999"/><rect fill="#E2E2F0" height="30.7999" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="42" x="5" y="5"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="28" x="12" y="25.9999">alice</text><rect fill="#E2E2F0" height="30.7999" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="42" x="5" y="69.7999"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="28" x="12" y="90.7999">alice</text><rect fill="#E2E2F0" height="30.7999" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="37" x="57" y="5"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="23" x="64" y="25.9999">bob</text><rect fill="#E2E2F0" height="30.7999" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="37" x="57" y="69.7999"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="23" x="64" y="90.7999">bob</text><polygon fill="#181818" points="63.5,48.7999,73.5,52.7999,63.5,56.7999,67.5,52.7999" style="stroke:#181818;stroke-width:1.0;"/><line style="stroke:#181818;stroke-width:1.0;" x1="26" x2="69.5" y1="52.7999" y2="52.7999"/>')
+          const svg = fs.readFileSync(ospath.join(__dirname, 'fixtures', 'expected', 'alice.svg'), 'utf8')
+          expect(html).to.equal(`<div class="imageblock sequence kroki-format-svg kroki">
+<div class="content">
+${svg}
+</div>
+</div>`)
         }).timeout(5000)
         it(`should inline (via ${location}) an SVG image with kroki-fetch-diagram`, () => {
           const input = `
