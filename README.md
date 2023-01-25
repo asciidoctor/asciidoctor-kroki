@@ -90,7 +90,7 @@ digraph G {
 **❗ IMPORTANT:**
 If you want to reference a diagram file in a browser environment you will need to define the base directory using the `base_dir` option.
 In addition, you will also need to provide an implementation to read a binary file **synchronously** for a given path.
-You can find an implementation based on `XMLHttpRequest` in the source code: https://github.com/Mogztter/asciidoctor-kroki/blob/9585b969014a1894d0c9fb76df10e1e8c66ce2b2/test/browser/test.js#L2-L34.
+You can find an implementation based on `XMLHttpRequest` in the source code: https://github.com/ggrossetie/asciidoctor-kroki/blob/9585b969014a1894d0c9fb76df10e1e8c66ce2b2/test/browser/test.js#L2-L34.
 Once `httpGet` is defined, here's how we should configure the extension:
 
 ```js

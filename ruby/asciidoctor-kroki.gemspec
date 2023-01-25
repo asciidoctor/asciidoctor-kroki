@@ -10,11 +10,11 @@ Gem::Specification.new do |s|
 
   s.authors = ['Guillaume Grossetie']
   s.email = ['ggrossetie@yuzutech.fr']
-  s.homepage = 'https://github.com/Mogztter/asciidoctor-kroki'
+  s.homepage = 'https://github.com/ggrossetie/asciidoctor-kroki'
   s.license = 'MIT'
   s.metadata = {
-    'bug_tracker_uri' => 'https://github.com/Mogztter/asciidoctor-kroki/issues',
-    'source_code_uri' => 'https://github.com/Mogztter/asciidoctor-kroki',
+    'bug_tracker_uri' => 'https://github.com/ggrossetie/asciidoctor-kroki/issues',
+    'source_code_uri' => 'https://github.com/ggrossetie/asciidoctor-kroki',
     'rubygems_mfa_required' => 'true'
   }
   s.files = `git ls-files`.split($RS)
