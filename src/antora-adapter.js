@@ -7,6 +7,18 @@ module.exports = (file, contentCatalog, vfs) => {
   } else {
     baseReadFn = vfs.read
   }
+  let baseDirnameFn
+  if (typeof vfs === 'undefined' || typeof vfs.dirname !== 'function') {
+    baseDirnameFn = require('./node-fs').dirname
+  } else {
+    baseDirnameFn = vfs.dirname
+  }
+  let baseExistsFn
+  if (typeof vfs === 'undefined' || typeof vfs.exists !== 'function') {
+    baseExistsFn = require('./node-fs').exists
+  } else {
+    baseExistsFn = vfs.exists
+  }
   return {
     add: (image) => {
       const { component, version, module } = file.src
@@ -32,10 +44,11 @@ module.exports = (file, contentCatalog, vfs) => {
     },
     exists: (resourceId) => {
       const target = contentCatalog.resolveResource(resourceId, file.src)
-      return target !== undefined
+      return target ? true : baseExistsFn(resourceId)
     },
     dirname: (resourceId) => {
-      return resourceId.substring(0, Math.max(resourceId.lastIndexOf('$'), resourceId.lastIndexOf('/')) + 1)
+      const target = contentCatalog.resolveResource(resourceId, file.src)
+      return target ? ospath.dirname(target.src.abspath) : baseDirnameFn(resourceId)
     },
     join: (...args) => {
       return args.join('/')

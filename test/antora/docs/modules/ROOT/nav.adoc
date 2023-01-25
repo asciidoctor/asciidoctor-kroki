@@ -1,5 +1,5 @@
 * xref:index.adoc[Home Page]
-* xref:sourcelocation.adoc[Choices for source diagram location]
+* xref:source-location.adoc[Diagram Location]
 * xref:embedding.adoc[Choices for generated html]
 * xref:embeddingblockmacro.adoc[Choices for generated html, using the block macro]
 * xref:attributes.adoc[Choices for positional, named, and page/global attributes]

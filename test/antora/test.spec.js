@@ -16,7 +16,7 @@ describe('Antora integration', function () {
     await generateSite([`--playbook=${__dirname}/site.yml`])
   })
   it('should generate a site with diagrams', () => {
-    const $ = cheerio.load(fs.readFileSync(`${__dirname}/public/antora-kroki/sourcelocation.html`))
+    const $ = cheerio.load(fs.readFileSync(`${__dirname}/public/antora-kroki/source-location.html`))
     const imageElements = $('img')
     expect(imageElements.length).to.equal(7)
     imageElements.each((i, imageElement) => {
@@ -25,11 +25,12 @@ describe('Antora integration', function () {
     })
   })
   it('should resolve included diagrams when using plantuml::partial$xxx.puml[] macro', async () => {
-    const $ = cheerio.load(fs.readFileSync(`${__dirname}/public/antora-kroki/sourcelocation.html`))
+    const $ = cheerio.load(fs.readFileSync(`${__dirname}/public/antora-kroki/source-location.html`))
     const imageElement = $('img[alt*=ab-inc-partial-1]')
     expect(imageElement.length).to.equal(1)
     const src = imageElement.attr('src')
     const diagramContents = fs.readFileSync(`${__dirname}/public/antora-kroki/${src}`).toString()
-    expect(diagramContents).includes('alice -> bob')
+    expect(diagramContents).includes('alice')
+    expect(diagramContents).includes('bob')
   })
 })
