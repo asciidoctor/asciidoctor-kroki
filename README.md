@@ -303,6 +303,7 @@ Kroki currently supports the following diagram libraries:
 * [BPMN](https://github.com/bpmn-io/bpmn-js): `bpmn`
 * [Bytefield](https://github.com/Deep-Symmetry/bytefield-svg/): `bytefield`
 * [C4 (PlantUML)](https://github.com/RicardoNiepel/C4-PlantUML): `c4plantuml`
+* [DBML](https://www.dbml.org/home/): `dbml`
 * [Ditaa](http://ditaa.sourceforge.net): `ditaa`
 * [ERD](https://github.com/BurntSushi/erd): `erd`
 * [Excalidraw](https://github.com/excalidraw/excalidraw): `excalidraw`

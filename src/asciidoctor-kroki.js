@@ -224,6 +224,7 @@ module.exports.register = function register (registry, context = {}) {
     'bpmn',
     'bytefield',
     'c4plantuml',
+    'dbml',
     'ditaa',
     'erd',
     'excalidraw',
