@@ -7,7 +7,6 @@ const pako = require('pako')
 const path = require('path')
 const chai = require('chai')
 const sinon = require('sinon')
-const rimraf = require('rimraf')
 const expect = chai.expect
 const dirtyChai = require('dirty-chai')
 
@@ -39,7 +38,7 @@ describe('Registration', () => {
 
 describe('Conversion', () => {
   before(() => {
-    rimraf.sync(ospath.join(__dirname, '..', '.asciidoctor', 'kroki', '*'))
+    fs.rmSync(ospath.join(__dirname, '..', '.asciidoctor', 'kroki', '*'), { recursive: true, force: true })
   })
 
   function encode (file) {

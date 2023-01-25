@@ -1,7 +1,6 @@
 /* global describe it beforeEach */
 const fs = require('fs')
 const cheerio = require('cheerio')
-const rimrafSync = require('rimraf')
 const chai = require('chai')
 const expect = chai.expect
 chai.use(require('chai-string'))
@@ -12,7 +11,7 @@ const generateSite = require('@antora/site-generator-default')
 describe('Antora integration', function () {
   this.timeout(50000)
   before(async () => {
-    rimrafSync(`${__dirname}/public`, function (error) {})
+    fs.rmSync(`${__dirname}/public`, { recursive: true, force: true })
     await generateSite([`--playbook=${__dirname}/site.yml`])
   })
   it('should generate a site with diagrams', () => {
