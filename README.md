@@ -189,6 +189,25 @@ include::alice-bob.puml[]
 
 ![PlantUML diagram](https://kroki.io/plantuml/png/eNpzKC5JLCopzc3hSszJTE5V0LVTSMpP4nJIzUsBCgIApPUKcg==)
 
+### References and includes with Antora
+
+If you use this Asciidoctor Kroki Extension in combination with Antora, all references and includes MUST use [Antora Resource IDs](https://docs.antora.org/antora/latest/page/resource-id/). The `.puml`-files are best placed in the [_partials_-directory](https://docs.antora.org/antora/latest/page/partials/) of the modules.
+
+#### Block macros
+
+```adoc
+vegalite::partial$chart.vlite[svg,role=chart,opts=interactive]
+```
+#### Includes
+
+```adoc
+[plantuml,alice-bob,svg,role=sequence]
+----
+include::partial$alice-bob.puml[]
+----
+```
+
+
 ### Syntax
 
 You can declare positional and named attributes when using the block or the macro form.
