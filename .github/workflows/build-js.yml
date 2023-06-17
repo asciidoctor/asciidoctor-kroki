@@ -16,8 +16,8 @@ jobs:
           - ubuntu-latest
           - windows-latest
         node-version:
-          - 16.x
-          - 17.x
+          - 16
+          - 18
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v3
