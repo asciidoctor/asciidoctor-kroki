@@ -48,7 +48,7 @@ module.exports = (file, contentCatalog, vfs) => {
     },
     dirname: (resourceId) => {
       const target = contentCatalog.resolveResource(resourceId, file.src)
-      return target ? ospath.dirname(target.src.abspath) : baseDirnameFn(resourceId)
+      return target ? ospath.dirname(target.src.abspath || target.src.path) : baseDirnameFn(resourceId)
     }
   }
 }
