@@ -10,7 +10,8 @@ const { KrokiClient, KrokiDiagram } = require('../src/kroki-client.js')
 const httpClient = require('../src/http/node-http.js')
 const asciidoctor = require('@asciidoctor/core')()
 
-describe('Kroki HTTP client', () => {
+describe('Kroki HTTP client', function () {
+  this.timeout(10000)
   describe('kroki-http-method attribute', () => {
     it('should use post method when kroki-http-method value is post', () => {
       const doc = asciidoctor.load('', { attributes: { 'kroki-http-method': 'post' } })
@@ -74,7 +75,7 @@ describe('Kroki HTTP client', () => {
         .replace(/\r/, '')
         .replace(/\n/, '')
       expect(image).to.equal(expected)
-    }).timeout(5000)
+    })
     it('should get an image with POST request if the URI length is > 4000', () => {
       const doc = asciidoctor.load('')
       const krokiClient = new KrokiClient(doc, httpClient)
@@ -86,7 +87,7 @@ describe('Kroki HTTP client', () => {
         .replace(/\r/, '')
         .replace(/\n/, '')
       expect(image).to.equal(expected)
-    }).timeout(5000)
+    })
     it('should get an image with POST request if the URI length is greater than the value configured', () => {
       const doc = asciidoctor.load('')
       doc.setAttribute('kroki-max-uri-length', '10')

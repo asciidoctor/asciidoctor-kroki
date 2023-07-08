@@ -43,10 +43,10 @@
     "lodash": "4.17.21",
     "mocha": "10.2.0",
     "pacote": "12.0.2",
-    "puppeteer": "19.5.2",
+    "puppeteer": "20.8.0",
     "shx": "0.3.4",
-    "sinon": "15.0.1",
-    "standard": "17.0.0"
+    "sinon": "15.2.0",
+    "standard": "17.1.0"
   },
   "peerDependencies": {
     "@asciidoctor/core": "~2.2"
@@ -73,5 +73,8 @@
   },
   "engines": {
     "node": ">=10"
+  },
+  "volta": {
+    "node": "16.20.1"
   }
 }

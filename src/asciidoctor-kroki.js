@@ -44,6 +44,22 @@ const BUILTIN_ATTRIBUTES = [
   'subs'
 ]
 
+const wrapError = (err, message) => {
+  const errWrapper = new Error(message)
+  errWrapper.stack += `\nCaused by: ${err.stack || 'unknown'}`
+  const result = {
+    err: {
+      package: 'asciidoctor-kroki',
+      message,
+      stack: errWrapper.stack
+    }
+  }
+  result.$inspect = function () {
+    return JSON.stringify(this.err)
+  }
+  return result
+}
+
 const createImageSrc = (doc, krokiDiagram, target, vfs, krokiClient) => {
   const shouldFetch = doc.isAttribute('kroki-fetch-diagram')
   let imageUrl
@@ -79,7 +95,7 @@ function getOption (attrs, document) {
   }
 }
 
-const processKroki = (processor, parent, attrs, diagramType, diagramText, context, diagramDir) => {
+const processKroki = (processor, parent, attrs, diagramType, diagramText, context, resource) => {
   const doc = parent.getDocument()
   // If "subs" attribute is specified, substitute accordingly.
   // Be careful not to specify "specialcharacters" or your diagram code won't be valid anymore!
@@ -89,14 +105,14 @@ const processKroki = (processor, parent, attrs, diagramType, diagramText, contex
   }
   if (doc.getSafe() < SAFE_MODE_SECURE) {
     if (diagramType === 'vegalite') {
-      diagramText = require('./preprocess.js').preprocessVegaLite(diagramText, context, diagramDir)
+      diagramText = require('./preprocess.js').preprocessVegaLite(diagramText, context, (resource && resource.dir) || '')
     } else if (diagramType === 'plantuml' || diagramType === 'c4plantuml') {
       const plantUmlIncludeFile = doc.getAttribute('kroki-plantuml-include')
       if (plantUmlIncludeFile) {
         diagramText = `!include ${plantUmlIncludeFile}\n${diagramText}`
       }
       const plantUmlIncludePaths = doc.getAttribute('kroki-plantuml-include-paths')
-      diagramText = require('./preprocess.js').preprocessPlantUML(diagramText, context, plantUmlIncludePaths, diagramDir)
+      diagramText = require('./preprocess.js').preprocessPlantUML(diagramText, context, plantUmlIncludePaths, resource)
     }
   }
   const blockId = attrs.id
@@ -166,8 +182,9 @@ function diagramBlock (context) {
       const diagramText = reader.$read()
       try {
         return processKroki(this, parent, attrs, diagramType, diagramText, context)
-      } catch (e) {
-        console.warn(`Skipping ${diagramType} block. ${e.message}`)
+      } catch (err) {
+        const errorMessage = wrapError(err, `Skipping ${diagramType} block.`)
+        parent.getDocument().getLogger().warn(errorMessage)
         attrs.role = role ? `${role} kroki-error` : 'kroki-error'
         return this.createBlock(parent, attrs['cloaked-context'], diagramText, attrs)
       }
@@ -192,7 +209,7 @@ function diagramBlockMacro (name, context) {
           target = startDir !== '.' ? doc.normalizeWebPath(target, startDir) : target
         }
       } else {
-        if (typeof vfs === 'undefined' || typeof vfs.read !== 'function') {
+        if (vfs === undefined || typeof vfs.read !== 'function') {
           vfs = require('./node-fs.js')
           target = parent.normalizeSystemPath(target)
         }
@@ -201,12 +218,13 @@ function diagramBlockMacro (name, context) {
       const diagramType = name
       try {
         const diagramText = vfs.read(target)
-        const diagramDir = vfs.dirname(target)
-        return processKroki(this, parent, attrs, diagramType, diagramText, context, diagramDir)
-      } catch (e) {
-        console.warn(`Skipping ${diagramType} block macro. ${e.message}`)
+        const resource = (typeof vfs.parse === 'function' && vfs.parse(target)) || { dir: '' }
+        return processKroki(this, parent, attrs, diagramType, diagramText, context, resource)
+      } catch (err) {
+        const errorMessage = wrapError(err, `Skipping ${diagramType} block.`)
+        parent.getDocument().getLogger().warn(errorMessage)
         attrs.role = role ? `${role} kroki-error` : 'kroki-error'
-        return this.createBlock(parent, 'paragraph', `${e.message} - ${diagramType}::${target}[]`, attrs)
+        return this.createBlock(parent, 'paragraph', `${err.message} - ${diagramType}::${target}[]`, attrs)
       }
     })
   }

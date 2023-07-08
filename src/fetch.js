@@ -1,5 +1,5 @@
 const rusha = require('rusha')
-const path = require('path')
+const path = require('path').posix
 
 const getImagesOutputDirectory = (doc) => {
   const imagesOutputDir = doc.getAttribute('imagesoutdir')

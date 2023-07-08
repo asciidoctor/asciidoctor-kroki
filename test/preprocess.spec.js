@@ -18,7 +18,8 @@ const asciidoctor = require('@asciidoctor/core')()
 
 const { preprocessVegaLite } = require('../src/preprocess.js')
 
-describe('Vega-Lite preprocessing', () => {
+describe('Vega-Lite preprocessing', function () {
+  this.timeout(10000)
   const cwd = process.cwd().replace(/\\/g, '/')
   const relativePath = 'test/fixtures/vegalite-data.csv'
   const diagramTextWithInlinedCsvFile = JSON.stringify({
@@ -145,7 +146,8 @@ Error: ENOENT: no such file or directory, open '${unexistingPath}'`)
 
 const { preprocessPlantUML } = require('../src/preprocess.js')
 
-describe('PlantUML preprocessing', () => {
+describe('PlantUML preprocessing', function () {
+  this.timeout(10000)
   const remoteBasePath = 'https://raw.githubusercontent.com/ggrossetie/asciidoctor-kroki/master/'
   const localUnexistingFilePath = 'test/fixtures/plantuml/unexisting.iuml'
   const localExistingFilePath = 'test/fixtures/plantuml/styles/general.iuml'
@@ -261,23 +263,21 @@ ${includedText}`
   })
 
   it('should throw an error for local file(s) referenced multiple times with "!include_once local-file-or-url"', () => {
-    const localExistingFilePathNormalized = path.normalize(localExistingFilePath)
     const diagramTextWithExistingLocalIncludeOneFile = `
       !include_once ${localExistingFilePath}
       alice -> bob
       !include_once ${localExistingFilePath}`
-    const errorMessage = `Preprocessing of PlantUML include failed, because including multiple times referenced file '${localExistingFilePathNormalized}' with '!include_once' guard`
+    const errorMessage = `Preprocessing of PlantUML include failed, because including multiple times referenced file '${localExistingFilePath}' with '!include_once' guard`
     expect(() => preprocessPlantUML(diagramTextWithExistingLocalIncludeOneFile, {})).to.throw(errorMessage)
   })
 
   it('should throw an error for local file(s) referenced multiple times nested with "!include_once local-file-or-url"', () => {
-    const localExistingFileNameIncldudeOncePath = 'test/fixtures/plantuml/styles/style-include-once-general.iuml'
-    const localExistingFilePathNormalized = path.normalize(localExistingFilePath)
+    const localExistingFileNameIncludedOncePath = 'test/fixtures/plantuml/styles/style-include-once-general.iuml'
     const diagramTextWithExistingLocalIncludeOneFile = `
       !include_once ${localExistingFilePath}
       alice -> bob
-      !include ${localExistingFileNameIncldudeOncePath}`
-    const errorMessage = `Preprocessing of PlantUML include failed, because including multiple times referenced file '${localExistingFilePathNormalized}' with '!include_once' guard`
+      !include ${localExistingFileNameIncludedOncePath}`
+    const errorMessage = `Preprocessing of PlantUML include failed, because including multiple times referenced file '${localExistingFilePath}' with '!include_once' guard`
     expect(() => preprocessPlantUML(diagramTextWithExistingLocalIncludeOneFile, {})).to.throw(errorMessage)
   })
 
@@ -422,22 +422,20 @@ ${includedText2}
 
   it('should throw an error for file recursive included itself', () => {
     const localExistingFileIncludesItselfPath = 'test/fixtures/plantuml/include/itself.iuml'
-    const localExistingFileIncludesItselfPathNormalized = path.normalize(localExistingFileIncludesItselfPath)
     const diagramTextWithIncludeItself = `
       !include ${localExistingFileIncludesItselfPath}
       alice -> bob`
-    const errorMessage = `Preprocessing of PlantUML include failed, because recursive reading already included referenced file '${localExistingFileIncludesItselfPathNormalized}'`
+    const errorMessage = `Preprocessing of PlantUML include failed, because recursive reading already included referenced file '${localExistingFileIncludesItselfPath}'`
     expect(() => preprocessPlantUML(diagramTextWithIncludeItself, {})).to.throw(errorMessage)
   })
 
   it('should throw an error for file recursive included grand parent file', () => {
     const localExistingFileGrandParentName = 'grand-parent.iuml'
     const localExistingFileGrandParentPath = 'test/fixtures/plantuml/include/' + localExistingFileGrandParentName
-    const localExistingFileGrandParentPathNormalized = path.normalize(localExistingFileGrandParentPath)
     const diagramTextWithIncludeGrandParent = `
       !include ${localExistingFileGrandParentPath}
       alice -> bob`
-    const errorMessage = `Preprocessing of PlantUML include failed, because recursive reading already included referenced file '${localExistingFileGrandParentPathNormalized}'`
+    const errorMessage = `Preprocessing of PlantUML include failed, because recursive reading already included referenced file '${localExistingFileGrandParentPath}'`
     expect(() => preprocessPlantUML(diagramTextWithIncludeGrandParent, {})).to.throw(errorMessage)
   })
 

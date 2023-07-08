@@ -1,6 +1,5 @@
-const ospath = require('path')
+const ospath = require('path').posix
 const fs = require('fs')
-const Path = require('path')
 
 module.exports = {
   // Until recursive: true is a stable part of Node
@@ -8,7 +7,7 @@ module.exports = {
   deleteDirWithFiles: function (path) {
     if (fs.existsSync(path)) {
       fs.readdirSync(path).forEach((file) => {
-        const curPath = Path.join(path, file)
+        const curPath = ospath.join(path, file)
         fs.unlinkSync(curPath)
       })
       fs.rmdirSync(path)

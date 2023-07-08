@@ -1,12 +1,12 @@
 /* eslint-env node, es6 */
-const path = require('path')
+const path = require('node:path')
 const puppeteer = require('puppeteer')
 
 // puppeteer options
 const opts = {
-  headless: true,
+  headless: 'new',
   timeout: 10000,
-  args: [ '--allow-file-access-from-files', '--no-sandbox' ]
+  args: ['--allow-file-access-from-files', '--no-sandbox']
 }
 
 const log = async (msg) => {
@@ -22,7 +22,7 @@ const log = async (msg) => {
     log = console[msg.type()]
   }
   if (args.length === 0) {
-   log.apply(this, [msg._text])
+    log.apply(this, [msg._text])
   } else {
     log.apply(this, args)
   }
