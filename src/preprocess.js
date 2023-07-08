@@ -1,7 +1,7 @@
 // @ts-check
 // The previous line must be the first non-comment line in the file to enable TypeScript checks:
 // https://www.typescriptlang.org/docs/handbook/intro-to-js-ts.html#ts-check
-const path = require('path')
+const { delimiter, posix: path } = require('path')
 
 /**
  * @param {string} diagramText
@@ -84,21 +84,22 @@ function removePlantUmlTags (diagramText) {
  * @param {string} diagramText
  * @param {any} context
  * @param {string} diagramIncludePaths - predefined include paths (can be null)
- * @param {string} diagramDir - diagram base directory
+ * @param {{[key: string]: string}} resource - diagram resource identity
  * @returns {string}
  */
-module.exports.preprocessPlantUML = function (diagramText, context, diagramIncludePaths = '', diagramDir = '') {
+module.exports.preprocessPlantUML = function (diagramText, context, diagramIncludePaths = '', resource = { dir: '' }) {
   const logger = 'logger' in context ? context.logger : console
   const includeOnce = []
   const includeStack = []
-  const includePaths = diagramIncludePaths ? diagramIncludePaths.split(path.delimiter) : []
-  diagramText = preprocessPlantUmlIncludes(diagramText, diagramDir, includeOnce, includeStack, includePaths, context.vfs, logger)
+  const includePaths = diagramIncludePaths ? diagramIncludePaths.split(delimiter) : []
+  console.log({ includePaths })
+  diagramText = preprocessPlantUmlIncludes(diagramText, resource, includeOnce, includeStack, includePaths, context.vfs, logger)
   return removePlantUmlTags(diagramText)
 }
 
 /**
  * @param {string} diagramText
- * @param {string} dirPath
+ * @param {{[key: string]: string}} resource
  * @param {string[]} includeOnce
  * @param {string[]} includeStack
  * @param {string[]} includePaths
@@ -106,7 +107,7 @@ module.exports.preprocessPlantUML = function (diagramText, context, diagramInclu
  * @param {any} logger
  * @returns {string}
  */
-function preprocessPlantUmlIncludes (diagramText, dirPath, includeOnce, includeStack, includePaths, vfs, logger) {
+function preprocessPlantUmlIncludes (diagramText, resource, includeOnce, includeStack, includePaths, vfs, logger) {
   // See: http://plantuml.com/en/preprocessing
   // Please note that we cannot use lookbehind for compatibility reasons with Safari: https://caniuse.com/mdn-javascript_builtins_regexp_lookbehind_assertion objects are stateful when they have the global flag set (e.g. /foo/g).
   // const regExInclude = /^\s*!(include(?:_many|_once|url|sub)?)\s+((?:(?<=\\)[ ]|[^ ])+)(.*)/
@@ -126,7 +127,7 @@ function preprocessPlantUmlIncludes (diagramText, dirPath, includeOnce, includeS
           const trailingContent = target.comment
           const url = urlSub[0].replace(/\\ /g, ' ').replace(/\s+$/g, '')
           const sub = urlSub[1]
-          const result = readPlantUmlInclude(url, [dirPath, ...includePaths], includeStack, vfs, logger)
+          const result = readPlantUmlInclude(url, resource, includePaths, includeStack, vfs, logger)
           if (result.skip) {
             return line
           }
@@ -149,7 +150,8 @@ function preprocessPlantUmlIncludes (diagramText, dirPath, includeOnce, includeS
             text = getPlantUmlTextOrFirstBlock(text)
           }
           includeStack.push(result.filePath)
-          text = preprocessPlantUmlIncludes(text, path.dirname(result.filePath), includeOnce, includeStack, includePaths, vfs, logger)
+          const parse = typeof vfs !== 'undefined' && typeof vfs.parse === 'function' ? vfs.parse : require('./node-fs.js').parse
+          text = preprocessPlantUmlIncludes(text, parse(result.filePath, resource), includeOnce, includeStack, includePaths, vfs, logger)
           includeStack.pop()
           if (trailingContent !== '') {
             return text + ' ' + trailingContent
@@ -170,15 +172,21 @@ function preprocessPlantUmlIncludes (diagramText, dirPath, includeOnce, includeS
 
 /**
  * @param {string} includeFile - relative or absolute include file
+ * @param {{[key: string]: string}} resource
  * @param {string[]} includePaths - array with include paths
  * @param {any} vfs
  * @returns {string} the found file or include file path
  */
-function resolveIncludeFile (includeFile, includePaths, vfs) {
+function resolveIncludeFile (includeFile, resource, includePaths, vfs) {
   const exists = typeof vfs !== 'undefined' && typeof vfs.exists === 'function' ? vfs.exists : require('./node-fs.js').exists
+  if (resource.module) {
+    // antora resource id
+    return includeFile
+  }
+  console.log('resolveIncludeFile', { includeFile, resource, paths: [resource.dir, ...includePaths] })
   let filePath = includeFile
-  for (let i = 0; i < includePaths.length; i++) {
-    const localFilePath = path.join(includePaths[i], includeFile)
+  for (const includePath of [resource.dir, ...includePaths]) {
+    const localFilePath = path.join(includePath, includeFile)
     if (exists(localFilePath)) {
       filePath = localFilePath
       break
@@ -206,13 +214,14 @@ function parseTarget (value) {
 
 /**
  * @param {string} url
+ * @param {{[key: string]: string}} resource
  * @param {string[]} includePaths
  * @param {string[]} includeStack
  * @param {any} vfs
  * @param {any} logger
  * @returns {any}
  */
-function readPlantUmlInclude (url, includePaths, includeStack, vfs, logger) {
+function readPlantUmlInclude (url, resource, includePaths, includeStack, vfs, logger) {
   const read = typeof vfs !== 'undefined' && typeof vfs.read === 'function' ? vfs.read : require('./node-fs.js').read
   let skip = false
   let text = ''
@@ -222,6 +231,7 @@ function readPlantUmlInclude (url, includePaths, includeStack, vfs, logger) {
     logger.info(`Skipping preprocessing of PlantUML standard library include '${url}'`)
     skip = true
   } else if (includeStack.includes(url)) {
+    console.log({ includeStack, url })
     const message = `Preprocessing of PlantUML include failed, because recursive reading already included referenced file '${url}'`
     throw new Error(message)
   } else {
@@ -234,13 +244,14 @@ function readPlantUmlInclude (url, includePaths, includeStack, vfs, logger) {
         skip = true
       }
     } else {
-      filePath = resolveIncludeFile(url, includePaths, vfs)
+      filePath = resolveIncludeFile(url, resource, includePaths, vfs)
       if (includeStack.includes(filePath)) {
+        console.log('after resolveIncludeFile', { includeStack, resource, includePaths, url })
         const message = `Preprocessing of PlantUML include failed, because recursive reading already included referenced file '${filePath}'`
         throw new Error(message)
       } else {
         try {
-          text = read(filePath)
+          text = read(filePath, 'utf8', resource)
         } catch (e) {
           // Includes a local file that cannot be found but might be resolved by the Kroki server
           logger.info(`Skipping preprocessing of PlantUML include, because reading the referenced local file '${filePath}' caused an error:\n${e}`)
@@ -335,6 +346,7 @@ function getPlantUmlTextOrFirstBlock (text) {
  * @param {string[]} includeOnce
  */
 function checkIncludeOnce (text, filePath, includeOnce) {
+  console.log('checkIncludeOnce', { filePath, includeOnce })
   if (includeOnce.includes(filePath)) {
     const message = `Preprocessing of PlantUML include failed, because including multiple times referenced file '${filePath}' with '!include_once' guard`
     throw new Error(message)

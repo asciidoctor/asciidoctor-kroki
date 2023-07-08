@@ -23,7 +23,10 @@ module.exports = {
     }
     return fs.readFileSync(path, encoding)
   },
-  dirname: (resourceId) => {
-    return path.dirname(resourceId)
+  parse: (resourceId) => {
+    return {
+      dir: path.dirname(resourceId),
+      path: resourceId
+    }
   }
 }

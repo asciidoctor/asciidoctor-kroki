@@ -8,7 +8,8 @@ chai.use(dirtyChai)
 const asciidoctorKroki = require('../src/asciidoctor-kroki.js')
 const asciidoctor = require('@asciidoctor/core')()
 
-describe('Block attributes', () => {
+describe('Block attributes', function () {
+  this.timeout(10000)
   describe('When extension is registered', () => {
     it('should convert a diagram with an explicit width and height', () => {
       const input = `

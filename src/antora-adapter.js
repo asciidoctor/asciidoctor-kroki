@@ -1,4 +1,4 @@
-const ospath = require('path')
+const ospath = require('path').posix
 
 module.exports = (file, contentCatalog, vfs) => {
   let baseReadFn
@@ -7,11 +7,11 @@ module.exports = (file, contentCatalog, vfs) => {
   } else {
     baseReadFn = vfs.read
   }
-  let baseDirnameFn
-  if (typeof vfs === 'undefined' || typeof vfs.dirname !== 'function') {
-    baseDirnameFn = require('./node-fs').dirname
+  let baseParseFn
+  if (typeof vfs === 'undefined' || typeof vfs.parse !== 'function') {
+    baseParseFn = require('./node-fs').parse
   } else {
-    baseDirnameFn = vfs.dirname
+    baseParseFn = vfs.parse
   }
   let baseExistsFn
   if (typeof vfs === 'undefined' || typeof vfs.exists !== 'function') {
@@ -38,17 +38,19 @@ module.exports = (file, contentCatalog, vfs) => {
         })
       }
     },
-    read: (resourceId, format) => {
-      const target = contentCatalog.resolveResource(resourceId, file.src)
+    read: (resourceId, format, hash) => {
+      const ctx = hash || file.src
+      const target = contentCatalog.resolveResource(resourceId, ctx, ctx.family)
       return target ? target.contents.toString() : baseReadFn(resourceId, format)
     },
     exists: (resourceId) => {
       const target = contentCatalog.resolveResource(resourceId, file.src)
       return target ? true : baseExistsFn(resourceId)
     },
-    dirname: (resourceId) => {
-      const target = contentCatalog.resolveResource(resourceId, file.src)
-      return target ? ospath.dirname(target.src.abspath) : baseDirnameFn(resourceId)
+    parse: (resourceId, hash) => {
+      const ctx = hash || file.src
+      const target = contentCatalog.resolveResource(resourceId, ctx, ctx.family)
+      return target ? target.src : baseParseFn(resourceId)
     }
   }
 }
