@@ -18928,7 +18928,7 @@ module.exports.KrokiClient = class KrokiClient {
 // @ts-check
 // The previous line must be the first non-comment line in the file to enable TypeScript checks:
 // https://www.typescriptlang.org/docs/handbook/intro-to-js-ts.html#ts-check
-const { delimiter, posix: path } = require('path')
+const path = require('path')
 
 /**
  * @param {string} diagramText
@@ -19018,8 +19018,7 @@ module.exports.preprocessPlantUML = function (diagramText, context, diagramInclu
   const logger = 'logger' in context ? context.logger : console
   const includeOnce = []
   const includeStack = []
-  const includePaths = diagramIncludePaths ? diagramIncludePaths.split(delimiter) : []
-  console.log({ includePaths })
+  const includePaths = diagramIncludePaths ? diagramIncludePaths.split(path.delimiter) : []
   diagramText = preprocessPlantUmlIncludes(diagramText, resource, includeOnce, includeStack, includePaths, context.vfs, logger)
   return removePlantUmlTags(diagramText)
 }
@@ -19106,20 +19105,19 @@ function preprocessPlantUmlIncludes (diagramText, resource, includeOnce, include
  */
 function resolveIncludeFile (includeFile, resource, includePaths, vfs) {
   const exists = typeof vfs !== 'undefined' && typeof vfs.exists === 'function' ? vfs.exists : require('./node-fs.js').exists
-  if (resource.module) {
-    // antora resource id
-    return includeFile
-  }
-  console.log('resolveIncludeFile', { includeFile, resource, paths: [resource.dir, ...includePaths] })
-  let filePath = includeFile
-  for (const includePath of [resource.dir, ...includePaths]) {
-    const localFilePath = path.join(includePath, includeFile)
-    if (exists(localFilePath)) {
-      filePath = localFilePath
-      break
+  if (resource.dir) {
+    let filePath = includeFile
+    for (const includePath of [resource.dir, ...includePaths]) {
+      const localFilePath = path.join(includePath, includeFile)
+      if (exists(localFilePath)) {
+        filePath = localFilePath
+        break
+      }
     }
+    return filePath
   }
-  return filePath
+  // antora resource id
+  return includeFile
 }
 
 function parseTarget (value) {
@@ -19158,7 +19156,6 @@ function readPlantUmlInclude (url, resource, includePaths, includeStack, vfs, lo
     logger.info(`Skipping preprocessing of PlantUML standard library include '${url}'`)
     skip = true
   } else if (includeStack.includes(url)) {
-    console.log({ includeStack, url })
     const message = `Preprocessing of PlantUML include failed, because recursive reading already included referenced file '${url}'`
     throw new Error(message)
   } else {
@@ -19173,7 +19170,6 @@ function readPlantUmlInclude (url, resource, includePaths, includeStack, vfs, lo
     } else {
       filePath = resolveIncludeFile(url, resource, includePaths, vfs)
       if (includeStack.includes(filePath)) {
-        console.log('after resolveIncludeFile', { includeStack, resource, includePaths, url })
         const message = `Preprocessing of PlantUML include failed, because recursive reading already included referenced file '${filePath}'`
         throw new Error(message)
       } else {
@@ -19273,7 +19269,6 @@ function getPlantUmlTextOrFirstBlock (text) {
  * @param {string[]} includeOnce
  */
 function checkIncludeOnce (text, filePath, includeOnce) {
-  console.log('checkIncludeOnce', { filePath, includeOnce })
   if (includeOnce.includes(filePath)) {
     const message = `Preprocessing of PlantUML include failed, because including multiple times referenced file '${filePath}' with '!include_once' guard`
     throw new Error(message)
