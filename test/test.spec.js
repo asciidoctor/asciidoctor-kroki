@@ -33,6 +33,7 @@ describe('Registration', () => {
     expect(registry['$registered_for_block_macro?']('pikchr')).to.be.an('object')
     expect(registry['$registered_for_block_macro?']('structurizr')).to.be.an('object')
     expect(registry['$registered_for_block_macro?']('diagramsnet')).to.be.an('object')
+    expect(registry['$registered_for_block_macro?']('wireviz')).to.be.an('object')
   })
 })
 
@@ -1093,6 +1094,44 @@ line up $r*0.45 right $r*0.45 then right
         }
       })
       expect(html).to.contain(`https://kroki.io/vegalite/svg/${encodeText(diagramText)}`)
+    })
+    it('should convert a WireViz diagram to an image', () => {
+      const input = `
+[wireviz]
+....
+connectors:
+  X1:
+    type: D-Sub
+    subtype: female
+    pinlabels: [DCD, RX, TX, DTR, GND, DSR, RTS, CTS, RI]
+  X2:
+    type: Molex KK 254
+    subtype: female
+    pinlabels: [GND, RX, TX]
+
+cables:
+  W1:
+    gauge: 0.25 mm2
+    length: 0.2
+    color_code: DIN
+    wirecount: 3
+    shield: true
+
+connections:
+  -
+    - X1: [5,2,3]
+    - W1: [1,2,3]
+    - X2: [1,3,2]
+  -
+    - X1: 5
+    - W1: s
+....
+`
+      const registry = asciidoctor.Extensions.create()
+      asciidoctorKroki.register(registry)
+      const html = asciidoctor.convert(input, { extension_registry: registry })
+      expect(html).to.contain('https://kroki.io/wireviz/svg/eNqNkMGKwjAQhu99inmAdNF0e8nVgIish7agIGVp41gLaSJtgu7bbzL1UDx5yJD5yJ__n1HWGFTOjpNIAE7rWAHc3x0FyLT0LfWTb2d0xaHRSOzeG920qCcBZ7mRDIoTgyocWRUMtodAZBluRVUy2MRS7OrowZceP1bjE_Z74Pn3R1b08WxVJ4lqWo0U_fiK3jW-C-rVF89hGDgxjaZzN4LUK6vt-KvsJQ65OxB79CMq640TkM1Bbj3qiwA3egxG8556a8gtpSdpXBicc8ZZVr_IMZL1koSBI8kYr9-U-UIz_QMAMGVl')
+      expect(html).to.contain('<div class="imageblock kroki">')
     })
 
     describe('Diagram options', () => {

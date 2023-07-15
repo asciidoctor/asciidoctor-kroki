@@ -18744,7 +18744,8 @@ module.exports.register = function register (registry, context = {}) {
     'vegalite',
     'wavedrom',
     'structurizr',
-    'diagramsnet'
+    'diagramsnet',
+    'wireviz'
   ]
   if (typeof registry.register === 'function') {
     registry.register(function () {
