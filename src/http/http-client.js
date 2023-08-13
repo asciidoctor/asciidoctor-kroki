@@ -32,9 +32,13 @@ const httpRequest = (XMLHttpRequest, uri, method, headers, encoding = 'utf8', bo
   } catch (e) {
     throw new Error(`${method} ${uri} - error; reason: ${e.message}`)
   }
-  // assume that no data means it doesn't exist
-  if (status === 404 || !data) {
-    throw new Error(`${method} ${uri} - server returns an empty response or a 404 status code`)
+  // status != 200 means something went wrong
+  if (status != 200) {
+    throw new Error(`${method} ${uri} - server returns ${status} status code`)
+  }
+  // status == 200 but empty data probably means it doesn't exist
+  if (!data) {
+    throw new Error(`${method} ${uri} - server returns an empty response`)
   }
   return data
 }
