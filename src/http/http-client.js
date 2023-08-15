@@ -22,6 +22,8 @@ const httpRequest = (XMLHttpRequest, uri, method, headers, encoding = 'utf8', bo
         } else {
           data = this.responseText
         }
+      } else if (encoding !== 'binary') {
+        data = this.responseText
       }
     })
     if (body) {
@@ -32,11 +34,15 @@ const httpRequest = (XMLHttpRequest, uri, method, headers, encoding = 'utf8', bo
   } catch (e) {
     throw new Error(`${method} ${uri} - error; reason: ${e.message}`)
   }
-  // assume that no data means it doesn't exist
-  if (status === 404 || !data) {
-    throw new Error(`${method} ${uri} - server returns an empty response or a 404 status code`)
+  if (status >= 200 && status < 400) {
+    // successful status
+    if (data) {
+      return data
+    }
+    throw new Error(`${method} ${uri} - server returns an empty response`)
   }
-  return data
+
+  throw new Error(`${method} ${uri} - server returns ${status} status code; response: ${data}`)
 }
 
 const httpPost = (XMLHttpRequest, uri, body, headers, encoding = 'utf8') => {
