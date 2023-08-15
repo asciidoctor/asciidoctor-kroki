@@ -126,6 +126,7 @@ module AsciidoctorExtensions
       rackdiag
       seqdiag
       svgbob
+      symbolator
       umlet
       vega
       vegalite

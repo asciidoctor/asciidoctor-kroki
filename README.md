@@ -337,6 +337,7 @@ Kroki currently supports the following diagram libraries:
 * [RackDiag](https://github.com/blockdiag/nwdiag): `rackdiag`
 * [SeqDiag](https://github.com/blockdiag/seqdiag): `seqdiag`
 * [SVGBob](https://github.com/ivanceras/svgbob): `svgbob`
+* [Symbolator](https://github.com/zebreus/symbolator): `symbolator`
 * [UMLet](https://github.com/umlet/umlet): `umlet`
 * [Vega](https://github.com/vega/vega): `vega`
 * [Vega-Lite](https://github.com/vega/vega-lite): `vegalite`
