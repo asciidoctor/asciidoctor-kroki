@@ -165,7 +165,6 @@ alice -> bob: hello
         base_dir: fixturePath()
       })
       const encoded = encodeText(diagramText)
-      console.log({ html, file, diagramText, encoded })
       expect(html).to.contain(`https://kroki.io/plantuml/svg/${encoded}`)
       expect(html).to.contain('<div class="imageblock sequence kroki-format-svg kroki">')
     })
