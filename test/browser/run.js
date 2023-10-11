@@ -39,7 +39,7 @@ const log = async (msg) => {
       if (args[0] && typeof args[0] === 'string') {
         if (args[0] === '%d failures') {
           process.exit(parseInt(args[1]))
-        } else if (args[0].startsWith('Unable to start the browser tests suite:')) {
+        } else if (args[0].startsWith('Unable to start the browser tests suite')) {
           process.exit(1)
         }
       }

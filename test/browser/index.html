@@ -1,20 +1,20 @@
 <!DOCTYPE html>
-<html>
-<head>
-  <title>Asciidoctor Kroki Extension tests</title>
-  <meta charset="utf-8"/>
-  <link href="../../node_modules/mocha/mocha.css" rel="stylesheet"/>
-</head>
-<body>
-<div id="mocha"></div>
-<script src="../../node_modules/@asciidoctor/core/dist/browser/asciidoctor.js"></script>
-<script src="../../dist/browser/asciidoctor-kroki.js"></script>
-<script src="../../node_modules/mocha/mocha.js"></script>
-<script src="../../node_modules/chai/chai.js"></script>
-<script src="../../node_modules/dirty-chai/lib/dirty-chai.js"></script>
-<script src="../../node_modules/pako/dist/pako_deflate.js"></script>
-<script src="../../node_modules/base64-js/base64js.min.js"></script>
-<script src="test.js"></script>
-</body>
+<html lang="en">
+  <head>
+    <title>Asciidoctor Kroki Extension tests</title>
+    <meta charset='utf-8' />
+    <link href="../../node_modules/mocha/mocha.css" rel="stylesheet" />
+  </head>
+  <body>
+    <div id="mocha" />
+    <script type="module">
+      import "../../dist/browser/asciidoctor-kroki.js"
+      import "../../node_modules/mocha/mocha.js"
+      import "../../node_modules/chai/chai.js"
+      import "../../node_modules/dirty-chai/lib/dirty-chai.js"
+      import "../../node_modules/pako/dist/pako_deflate.js"
+      import "../../node_modules/base64-js/base64js.min.js"
+      import "./test.js"
+    </script>
+  </body>
 </html>
-

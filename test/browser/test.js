@@ -1,4 +1,6 @@
-/* global it, describe, mocha, chai, Asciidoctor, AsciidoctorKroki, mochaOpts, pako, base64js */
+/* global it, describe, mocha, chai, XMLHttpRequest, AsciidoctorKroki, mochaOpts, pako, base64js */
+import Asciidoctor from '../../node_modules/@asciidoctor/core/dist/browser/asciidoctor.js'
+
 const httpGet = (uri, encoding = 'utf8') => {
   let data = ''
   let status = -1
@@ -43,7 +45,7 @@ const httpGet = (uri, encoding = 'utf8') => {
   mocha.setup({
     ui: 'bdd',
     checkLeaks: false,
-    reporter: reporter
+    reporter
   })
 
   const expect = chai.expect
@@ -96,7 +98,7 @@ alice -> bob
         expect(html).to.contain(`<img src="https://kroki.io/plantuml/svg/${encodeText(text)}" alt="Diagram">`)
       }).timeout(5000)
       it('should convert a diagram with a relative path to an image', () => {
-        const input = `plantuml::../fixtures/alice.puml[svg,role=sequence]`
+        const input = 'plantuml::../fixtures/alice.puml[svg,role=sequence]'
         const registry = asciidoctor.Extensions.create()
         AsciidoctorKroki.register(registry, {
           vfs: {
@@ -124,5 +126,5 @@ alice -> bob
     }
   })
 })().catch(err => {
-  console.error('Unable to start the browser tests suite', err)
+  console.error('Unable to start the browser tests suite', { message: err.message })
 })
