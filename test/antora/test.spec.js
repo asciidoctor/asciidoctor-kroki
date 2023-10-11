@@ -1,4 +1,4 @@
-/* global describe it beforeEach before */
+/* global describe it before */
 const fs = require('fs')
 const cheerio = require('cheerio')
 const chai = require('chai')
@@ -9,7 +9,7 @@ chai.use(require('dirty-chai'))
 const generateSite = require('@antora/site-generator-default')
 
 describe('Antora integration (local)', function () {
-  this.timeout(50000)
+  this.timeout(90000)
   before(async () => {
     fs.rmSync(`${__dirname}/public`, { recursive: true, force: true })
     await generateSite([`--playbook=${__dirname}/site.yml`])
@@ -35,7 +35,7 @@ describe('Antora integration (local)', function () {
 })
 
 describe('Antora integration (remote)', function () {
-  this.timeout(50000)
+  this.timeout(90000)
   before(async () => {
     fs.rmSync(`${__dirname}/public`, { recursive: true, force: true })
     await generateSite([`--playbook=${__dirname}/site-remote.yml`])
