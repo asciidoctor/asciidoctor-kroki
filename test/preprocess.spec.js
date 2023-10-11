@@ -19,7 +19,7 @@ const asciidoctor = require('@asciidoctor/core')()
 const { preprocessVegaLite } = require('../src/preprocess.js')
 
 describe('Vega-Lite preprocessing', function () {
-  this.timeout(10000)
+  this.timeout(30000)
   const cwd = process.cwd().replace(/\\/g, '/')
   const relativePath = 'test/fixtures/vegalite-data.csv'
   const diagramTextWithInlinedCsvFile = JSON.stringify({
@@ -147,7 +147,7 @@ Error: ENOENT: no such file or directory, open '${unexistingPath}'`)
 const { preprocessPlantUML } = require('../src/preprocess.js')
 
 describe('PlantUML preprocessing', function () {
-  this.timeout(10000)
+  this.timeout(30000)
   const remoteBasePath = 'https://raw.githubusercontent.com/ggrossetie/asciidoctor-kroki/master/'
   const localUnexistingFilePath = 'test/fixtures/plantuml/unexisting.iuml'
   const localExistingFilePath = 'test/fixtures/plantuml/styles/general.iuml'

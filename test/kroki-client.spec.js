@@ -11,7 +11,7 @@ const httpClient = require('../src/http/node-http.js')
 const asciidoctor = require('@asciidoctor/core')()
 
 describe('Kroki HTTP client', function () {
-  this.timeout(10000)
+  this.timeout(30000)
   describe('kroki-http-method attribute', () => {
     it('should use post method when kroki-http-method value is post', () => {
       const doc = asciidoctor.load('', { attributes: { 'kroki-http-method': 'post' } })
