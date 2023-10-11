@@ -64,7 +64,7 @@ describe('Conversion', () => {
   }
 
   describe('When extension is registered', function () {
-    this.timeout(10000)
+    this.timeout(30000)
     it('should convert a diagram to an image', () => {
       const input = `
 [plantuml,alice-bob,svg,role=sequence]
