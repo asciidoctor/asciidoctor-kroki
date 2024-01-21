@@ -33,7 +33,7 @@ describe('Registration', () => {
     expect(registry['$registered_for_block_macro?']('pikchr')).to.be.an('object')
     expect(registry['$registered_for_block_macro?']('structurizr')).to.be.an('object')
     expect(registry['$registered_for_block_macro?']('diagramsnet')).to.be.an('object')
-    expect(registry['$registered_for_block_macro?']('onlinewardleymaps')).to.be.an('object')
+    expect(registry['$registered_for_block_macro?']('wardleymap')).to.be.an('object')
     expect(registry['$registered_for_block_macro?']('wireviz')).to.be.an('object')
   })
 })

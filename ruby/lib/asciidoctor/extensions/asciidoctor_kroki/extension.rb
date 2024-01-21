@@ -133,7 +133,7 @@ module AsciidoctorExtensions
       wavedrom
       structurizr
       diagramsnet
-      onlinewardleymaps
+      wardleymap
       wireviz
     ].freeze
   end

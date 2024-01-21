@@ -264,7 +264,7 @@ module.exports.register = function register (registry, context = {}) {
     'wavedrom',
     'structurizr',
     'diagramsnet',
-    'onlinewardleymaps',
+    'wardleymap',
     'wireviz'
   ]
   if (typeof registry.register === 'function') {
