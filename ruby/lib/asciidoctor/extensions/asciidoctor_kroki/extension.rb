@@ -294,7 +294,7 @@ module AsciidoctorExtensions
     end
 
     def encode
-      Base64.urlsafe_encode64(Zlib::Deflate.deflate(@text, 9))
+      ([Zlib::Deflate.deflate(@text, 9)].pack 'm0').tr '+/', '-_'
     end
 
     def save(output_dir_path, kroki_client)
