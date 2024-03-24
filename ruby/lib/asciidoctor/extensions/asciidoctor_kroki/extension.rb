@@ -53,6 +53,12 @@ module AsciidoctorExtensions
       super(name, config)
     end
 
+    # Processes the diagram block or block macro by converting it into an image or literal block.
+    #
+    # @param parent [Asciidoctor::AbstractBlock] the parent asciidoc block of the block or block macro being processed
+    # @param target [String] the target value of a block macro
+    # @param attrs [Hash] the attributes of the block or block macro
+    # @return [Asciidoctor::AbstractBlock] a new block that replaces the original block or block macro
     def process(parent, target, attrs)
       diagram_type = @name
       target = parent.apply_subs(target, [:attributes])
@@ -62,7 +68,7 @@ module AsciidoctorExtensions
         return create_block(parent, :paragraph, link.convert, {}, content_model: :raw)
       end
 
-      unless (path = resolve_target_path(target))
+      unless (path = resolve_target_path(parent, target))
         logger.error message_with_context "#{diagram_type} block macro not found: #{target}.", source_location: parent.document.reader.cursor_at_mark
         return create_block(parent, 'paragraph', unresolved_block_macro_message(diagram_type, target), {})
       end
@@ -80,8 +86,10 @@ module AsciidoctorExtensions
 
     attr_reader :logger
 
-    def resolve_target_path(target)
-      target
+    # @param parent [Asciidoctor::AbstractBlock] the parent asciidoc block of the block or block macro being processed
+    # @param target [Asciidoctor::Reader, String] the target value of a block macro
+    def resolve_target_path(parent, target)
+      parent.normalize_system_path(target)
     end
 
     def read_allowed?(_target)
