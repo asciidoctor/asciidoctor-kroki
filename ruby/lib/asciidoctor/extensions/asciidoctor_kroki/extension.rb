@@ -87,7 +87,7 @@ module AsciidoctorExtensions
     attr_reader :logger
 
     # @param parent [Asciidoctor::AbstractBlock] the parent asciidoc block of the block or block macro being processed
-    # @param target [Asciidoctor::Reader, String] the target value of a block macro
+    # @param target [String] the target value of a block macro
     def resolve_target_path(parent, target)
       parent.normalize_system_path(target)
     end
