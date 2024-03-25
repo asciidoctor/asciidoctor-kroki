@@ -9,10 +9,18 @@ require_relative '../lib/asciidoctor/extensions/asciidoctor_kroki/extension'
 describe ::AsciidoctorExtensions::KrokiBlockMacroProcessor do
   context 'convert to html5' do
     it 'should catch exception if target is not readable' do
+      class PlainResolutionKrokiMacroProcessor < ::AsciidoctorExtensions::KrokiBlockMacroProcessor
+        def resolve_target_path(_parent, target)
+          target
+        end
+      end
+      registry = Asciidoctor::Extensions.create do
+        block_macro PlainResolutionKrokiMacroProcessor, 'plantuml'
+      end
       input = <<~'ADOC'
         plantuml::spec/fixtures/missing.puml[svg,role=sequence]
       ADOC
-      output = Asciidoctor.convert(input, standalone: false)
+      output = Asciidoctor.convert(input, standalone: false, extension_registry: registry)
       (expect output).to eql %(<div class="paragraph">
 <p>Unresolved block macro - plantuml::spec/fixtures/missing.puml[]</p>
 </div>)
@@ -22,6 +30,10 @@ describe ::AsciidoctorExtensions::KrokiBlockMacroProcessor do
     it 'should disallow read' do
       # noinspection RubyClassModuleNamingConvention
       class DisallowReadKrokiBlockMacroProcessor < ::AsciidoctorExtensions::KrokiBlockMacroProcessor
+        def resolve_target_path(_parent, target)
+          target
+        end
+
         def read_allowed?(_target)
           false
         end
@@ -72,7 +84,7 @@ describe ::AsciidoctorExtensions::KrokiBlockMacroProcessor do
     it 'should override the resolve target method' do
       # noinspection RubyClassModuleNamingConvention
       class FixtureResolveTargetKrokiBlockMacroProcessor < ::AsciidoctorExtensions::KrokiBlockMacroProcessor
-        def resolve_target_path(target)
+        def resolve_target_path(_parent, target)
           "spec/fixtures/#{target}"
         end
       end
@@ -92,7 +104,7 @@ describe ::AsciidoctorExtensions::KrokiBlockMacroProcessor do
     it 'should display unresolved block macro message when the target cannot be resolved' do
       # noinspection RubyClassModuleNamingConvention
       class UnresolvedTargetKrokiBlockMacroProcessor < ::AsciidoctorExtensions::KrokiBlockMacroProcessor
-        def resolve_target_path(_target)
+        def resolve_target_path(_target, _parent)
           nil
         end
       end
@@ -110,6 +122,10 @@ describe ::AsciidoctorExtensions::KrokiBlockMacroProcessor do
     it 'should override the unresolved block macro message' do
       # noinspection RubyClassModuleNamingConvention
       class CustomUnresolvedTargetMessageKrokiBlockMacroProcessor < ::AsciidoctorExtensions::KrokiBlockMacroProcessor
+        def resolve_target_path(_parent, target)
+          target
+        end
+
         def unresolved_block_macro_message(name, target)
           "*[ERROR: #{name}::#{target}[] - unresolved block macro]*"
         end
