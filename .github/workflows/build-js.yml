@@ -2,9 +2,18 @@ name: Build JavaScript
 
 on:
   push:
+    paths-ignore:
+      - 'README.md'
+      - 'RELEASE.md'
+      - 'ruby/**'
     branches:
       - master
+      
   pull_request:
+    paths-ignore:
+      - 'README.md'
+      - 'RELEASE.md'
+      - 'ruby/**'
     branches:
       - '*'
 
