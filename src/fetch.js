@@ -23,7 +23,6 @@ const getOutputDirectory = (doc) => {
 
 module.exports.save = function (krokiDiagram, doc, target, vfs, krokiClient) {
   const exists = typeof vfs !== 'undefined' && typeof vfs.exists === 'function' ? vfs.exists : require('./node-fs.js').exists
-  const read = typeof vfs !== 'undefined' && typeof vfs.read === 'function' ? vfs.read : require('./node-fs.js').read
   const add = typeof vfs !== 'undefined' && typeof vfs.add === 'function' ? vfs.add : require('./node-fs.js').add
 
   const imagesOutputDirectory = getImagesOutputDirectory(doc)
@@ -44,12 +43,14 @@ module.exports.save = function (krokiDiagram, doc, target, vfs, krokiClient) {
     encoding = 'binary'
   }
   // file is either (already) on the file system or we should read it from Kroki
-  const contents = exists(filePath) ? read(filePath, encoding) : krokiClient.getImage(krokiDiagram, encoding)
-  add({
-    relative: imagesOutputDirectory,
-    basename: diagramName,
-    mediaType,
-    contents: Buffer.from(contents, encoding)
-  })
+  if (!exists(filePath)) {
+    const contents = krokiClient.getImage(krokiDiagram, encoding)
+    add({
+      relative: imagesOutputDirectory,
+      basename: diagramName,
+      mediaType,
+      contents: Buffer.from(contents, encoding)
+    })
+  }
   return diagramName
 }
