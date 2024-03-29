@@ -1,6 +1,7 @@
 # rubocop:disable Lint/ConstantDefinitionInBlock
 # frozen_string_literal: true
 
+require 'tmpdir'
 require 'rspec_helper'
 require 'asciidoctor'
 require_relative '../lib/asciidoctor/extensions/asciidoctor_kroki'
@@ -104,7 +105,7 @@ describe ::AsciidoctorExtensions::KrokiBlockMacroProcessor do
     it 'should display unresolved block macro message when the target cannot be resolved' do
       # noinspection RubyClassModuleNamingConvention
       class UnresolvedTargetKrokiBlockMacroProcessor < ::AsciidoctorExtensions::KrokiBlockMacroProcessor
-        def resolve_target_path(_target, _parent)
+        def resolve_target_path(_, _)
           nil
         end
       end
@@ -140,6 +141,28 @@ describe ::AsciidoctorExtensions::KrokiBlockMacroProcessor do
       (expect output).to eql %(<div class="paragraph">
 <p><strong>[ERROR: plantuml::spec/fixtures/missing.puml[] - unresolved block macro]</strong></p>
 </div>)
+    end
+
+    it 'should properly resolve relative path to files' do
+      Dir.mktmpdir('rspec-') do |temp_dir|
+        temp_file = "#{temp_dir}/test.adoc"
+        assets_dir = "#{temp_dir}/_assets"
+
+        File.open(temp_file, 'w') do |f|
+          content = <<~'ADOC'
+            plantuml::_assets/alice.puml[svg,role=sequence]
+          ADOC
+          f.write(content)
+        end
+        Dir.mkdir(assets_dir)
+        FileUtils.cp('spec/fixtures/alice.puml', "#{assets_dir}/alice.puml")
+        Asciidoctor.convert_file(temp_file, standalone: false)
+        (expect File.read("#{temp_dir}/test.html")).to eql %(<div class="imageblock sequence kroki-format-svg kroki">
+<div class="content">
+<img src="https://kroki.io/plantuml/svg/eNpLzMlMTlXQtVNIyk-yUshIzcnJ5wIAQ-AGVQ==" alt="Diagram">
+</div>
+</div>)
+      end
     end
   end
 end
