@@ -1,4 +1,4 @@
-const XMLHttpRequest = require('unxhr').XMLHttpRequest
+const XMLHttpRequest = require('xmlhttprequest').XMLHttpRequest
 const httpClient = require('./http-client.js')
 
 const httpPost = (uri, body, headers, encoding = 'utf8') => httpClient.post(XMLHttpRequest, uri, body, headers, encoding)
