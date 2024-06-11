@@ -21,7 +21,7 @@ const getOutputDirectory = (doc) => {
   return baseDir
 }
 
-module.exports.save = function (krokiDiagram, doc, target, vfs, krokiClient) {
+module.exports.save = function (krokiDiagram, doc, target, vfs, krokiClient, use_data_url = false) {
   const exists = typeof vfs !== 'undefined' && typeof vfs.exists === 'function' ? vfs.exists : require('./node-fs.js').exists
   const read = typeof vfs !== 'undefined' && typeof vfs.read === 'function' ? vfs.read : require('./node-fs.js').read
   const add = typeof vfs !== 'undefined' && typeof vfs.add === 'function' ? vfs.add : require('./node-fs.js').add
@@ -31,6 +31,7 @@ module.exports.save = function (krokiDiagram, doc, target, vfs, krokiClient) {
   const format = krokiDiagram.format
   const diagramName = `${target || 'diag'}-${rusha.createHash().update(diagramUrl).digest('hex')}.${format}`
   const filePath = path.format({ dir: imagesOutputDirectory, base: diagramName })
+
   let encoding
   let mediaType
   if (format === 'txt' || format === 'atxt' || format === 'utxt') {
@@ -43,13 +44,26 @@ module.exports.save = function (krokiDiagram, doc, target, vfs, krokiClient) {
     mediaType = 'image/png'
     encoding = 'binary'
   }
+  
   // file is either (already) on the file system or we should read it from Kroki
-  const contents = exists(filePath) ? read(filePath, encoding) : krokiClient.getImage(krokiDiagram, encoding)
-  add({
-    relative: imagesOutputDirectory,
-    basename: diagramName,
-    mediaType,
-    contents: Buffer.from(contents, encoding)
-  })
-  return diagramName
+
+  let contents
+
+  if(!exists(filePath)) {
+    contents = read(diagramUrl)
+
+    add({
+      relative: imagesOutputDirectory,
+      basename: diagramName,
+      mediaType,
+      contents: Buffer.from(contents, encoding)
+    })
+  }
+
+  if (use_data_url) {
+    if (!contents) contents = read(filePath)
+    return 'data:' + mediaType + ";base64," + Buffer.from(contents, encoding).toString('base64')
+  } else {
+    return diagramName
+  }
 }

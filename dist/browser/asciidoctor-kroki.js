@@ -20057,7 +20057,7 @@ function extend() {
 },{}],70:[function(require,module,exports){
 module.exports={
   "name": "asciidoctor-kroki",
-  "version": "0.17.0",
+  "version": "0.18.1",
   "description": "Asciidoctor extension to convert diagrams to images using Kroki",
   "type": "commonjs",
   "main": "./src/asciidoctor-kroki.js",
