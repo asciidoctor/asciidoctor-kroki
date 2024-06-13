@@ -4,8 +4,10 @@ const httpRequest = (XMLHttpRequest, uri, method, headers, encoding = 'utf8', bo
   try {
     const xhr = new XMLHttpRequest()
     xhr.open(method, uri, false)
-    for (const [name, value] in Object.entries(headers)) {
-      xhr.setRequestHeader(name, value)
+    if (headers) {
+      for (const [name, value] in Object.entries(headers)) {
+        xhr.setRequestHeader(name, value)
+      }
     }
     if (encoding === 'binary') {
       xhr.responseType = 'arraybuffer'
