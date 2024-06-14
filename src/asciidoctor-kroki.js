@@ -64,7 +64,7 @@ const createImageSrc = (doc, krokiDiagram, target, vfs, krokiClient) => {
   const shouldFetch = doc.isAttribute('kroki-fetch-diagram')
   let imageUrl
   if (shouldFetch && doc.getSafe() < SAFE_MODE_SECURE) {
-    imageUrl = require('./fetch.js').save(krokiDiagram, doc, target, vfs, krokiClient, true)
+    imageUrl = require('./fetch.js').save(krokiDiagram, doc, target, vfs, krokiClient)
   } else {
     imageUrl = krokiDiagram.getDiagramUri(krokiClient.getServerUrl())
   }
