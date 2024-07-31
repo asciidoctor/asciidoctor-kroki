@@ -210,6 +210,18 @@ plantuml::test/fixtures/alice.puml[png,role=sequence]
       expect(html).to.contain(`https://kroki.io/plantuml/svg/${encode(macroFile)}`)
       expect(html).to.contain('<div class="imageblock sequence kroki-format-svg kroki">')
     })
+    it('should download and embed an SVG image with kroki-fetch-diagram and kroki-data-uri', () => {
+      const registry = asciidoctor.Extensions.create()
+      asciidoctorKroki.register(registry)
+      const html = asciidoctor.convert(fs.readFileSync(fixturePath('fetch', 'doc.adoc')), {
+        attributes: {
+          'kroki-data-uri': ''
+        },
+        extension_registry: registry,
+        safe: 'unsafe'
+      })
+      expect(html).to.contain('<img src="data:image/svg+xml;base64,PD94bWwgdmVyc2l')
+    })
     it('should create diagrams in imagesdir if kroki-fetch-diagram is set', async () => {
       const registry = asciidoctor.Extensions.create()
       asciidoctorKroki.register(registry)
@@ -428,7 +440,7 @@ Bob->Alice : hello
         http.get.restore()
       }
     })
-    it('should embed an SVG image with built-in allow-uri-read and data-uri (available in Asciidoctor.js 2+)', () => {
+    it('should embed an SVG image with built-in allow-uri-read and data-uri', () => {
       const input = `
 :imagesdir: .asciidoctor/kroki
 
@@ -1277,7 +1289,7 @@ paragraph
         }
       ]
       for (const { location, pageAttr, blockAttr } of inlineOptionsFixtures) {
-        it(`should inline (via ${location}) an SVG image with built-in allow-uri-read (available in Asciidoctor.js 2+)`, () => {
+        it(`should inline (via ${location}) an SVG image with built-in allow-uri-read`, () => {
           const input = `
 :imagesdir: .asciidoctor/kroki
 ${pageAttr}
@@ -1334,7 +1346,7 @@ bytefield::test/fixtures/simple.bytefield[svg,role=bytefield${blockAttr}]
         }
       ]
       for (const { location, pageAttr, blockAttr } of interactiveOptionsFixtures) {
-        it(`should include an interactive (via ${location}) SVG image with built-in allow-uri-read and data-uri (available in Asciidoctor.js 2+)`, () => {
+        it(`should include an interactive (via ${location}) SVG image with built-in allow-uri-read and data-uri`, () => {
           const input = `
 :imagesdir: .asciidoctor/kroki
 ${pageAttr}

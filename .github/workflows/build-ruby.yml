@@ -3,12 +3,12 @@ name: Build Ruby
 on:
   push:
     paths:
-      - 'ruby'
+      - 'ruby/**'
     branches:
       - master
   pull_request:
     paths:
-      - 'ruby'
+      - 'ruby/**'
     branches:
       - '*'
 

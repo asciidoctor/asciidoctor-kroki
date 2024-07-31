@@ -20057,7 +20057,7 @@ function extend() {
 },{}],70:[function(require,module,exports){
 module.exports={
   "name": "asciidoctor-kroki",
-  "version": "0.17.0",
+  "version": "0.18.1",
   "description": "Asciidoctor extension to convert diagrams to images using Kroki",
   "type": "commonjs",
   "main": "./src/asciidoctor-kroki.js",
@@ -20440,8 +20440,10 @@ const httpRequest = (XMLHttpRequest, uri, method, headers, encoding = 'utf8', bo
   try {
     const xhr = new XMLHttpRequest()
     xhr.open(method, uri, false)
-    for (const [name, value] in Object.entries(headers)) {
-      xhr.setRequestHeader(name, value)
+    if (headers) {
+      for (const [name, value] in Object.entries(headers)) {
+        xhr.setRequestHeader(name, value)
+      }
     }
     if (encoding === 'binary') {
       xhr.responseType = 'arraybuffer'
