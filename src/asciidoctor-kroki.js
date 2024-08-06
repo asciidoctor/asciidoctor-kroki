@@ -113,6 +113,8 @@ const processKroki = (processor, parent, attrs, diagramType, diagramText, contex
       }
       const plantUmlIncludePaths = doc.getAttribute('kroki-plantuml-include-paths')
       diagramText = require('./preprocess.js').preprocessPlantUML(diagramText, context, plantUmlIncludePaths, resource)
+    } else if (diagramType === 'structurizr') {
+      diagramText = require('./preprocess.js').preprocessStructurizr(diagramText, context, resource)
     }
   }
   const blockId = attrs.id
