@@ -20100,7 +20100,7 @@ module.exports={
     "lodash": "4.17.21",
     "mocha": "10.2.0",
     "pacote": "12.0.2",
-    "puppeteer": "~21.3",
+    "puppeteer": "~24.10",
     "shx": "0.3.4",
     "sinon": "~16.1",
     "standard": "17.1.0"
@@ -20132,7 +20132,7 @@ module.exports={
     "node": ">=10"
   },
   "volta": {
-    "node": "16.20.1"
+    "node": "22.15.0"
   }
 }
 
@@ -20252,6 +20252,8 @@ const processKroki = (processor, parent, attrs, diagramType, diagramText, contex
       }
       const plantUmlIncludePaths = doc.getAttribute('kroki-plantuml-include-paths')
       diagramText = require('./preprocess.js').preprocessPlantUML(diagramText, context, plantUmlIncludePaths, resource)
+    } else if (diagramType === 'structurizr') {
+      diagramText = require('./preprocess.js').preprocessStructurizr(diagramText, context, resource)
     }
   }
   const blockId = attrs.id
@@ -20397,6 +20399,7 @@ module.exports.register = function register (registry, context = {}) {
     'seqdiag',
     'svgbob',
     'symbolator',
+    'tikz',
     'umlet',
     'vega',
     'vegalite',
@@ -20773,7 +20776,8 @@ function resolveIncludeFile (includeFile, resource, includePaths, vfs) {
   const exists = typeof vfs !== 'undefined' && typeof vfs.exists === 'function' ? vfs.exists : require('./node-fs.js').exists
   if (resource.module) {
     // antora resource id
-    return includeFile
+    const dirPath = path.dirname(resource.relative)
+    return path.join(dirPath, includeFile)
   }
   let filePath = includeFile
   for (const includePath of [resource.dir, ...includePaths]) {
@@ -20784,6 +20788,16 @@ function resolveIncludeFile (includeFile, resource, includePaths, vfs) {
     }
   }
   return filePath
+}
+
+function parseStructurizrTarget (value, tokens) {
+  for (const token of tokens) {
+    const i = value.indexOf(token)
+    if (i > 0 && value.charAt(i - 1) !== '\\') {
+      return { url: value.substr(0, i).trim(), comment: value.substr(i).trim() }
+    }
+  }
+  return { url: value, comment: '' }
 }
 
 function parseTarget (value) {
@@ -20801,6 +20815,42 @@ function parseTarget (value) {
     }
   }
   return { url: value, comment: '' }
+}
+
+function readStructurizrInclude (url, resource, includePaths, includeStack, vfs, logger) {
+  const read = typeof vfs !== 'undefined' && typeof vfs.read === 'function' ? vfs.read : require('./node-fs.js').read
+  let skip = false
+  let text = ''
+  let filePath = url
+  if (includeStack.includes(url)) {
+    const message = `Preprocessing of Structurizr include failed, because recursive reading already included referenced file '${url}'`
+    throw new Error(message)
+  } else {
+    if (isRemoteUrl(url)) {
+      try {
+        text = read(url)
+      } catch (e) {
+        // Includes a remote file that cannot be found but might be resolved by the Kroki server (https://github.com/yuzutech/kroki/issues/60)
+        logger.info(`Skipping preprocessing of Structurizr include, because reading the referenced remote file '${url}' caused an error:\n${e}`)
+        skip = true
+      }
+    } else {
+      filePath = resolveIncludeFile(url, resource, includePaths, vfs)
+      if (includeStack.includes(filePath)) {
+        const message = `Preprocessing of Structurizr include failed, because recursive reading already included referenced file '${filePath}'`
+        throw new Error(message)
+      } else {
+        try {
+          text = read(filePath, 'utf8', resource)
+        } catch (e) {
+          // Includes a local file that cannot be found but might be resolved by the Kroki server
+          logger.info(`Skipping preprocessing of PlantUML include, because reading the referenced local file '${filePath}' caused an error:\n${e}`)
+          skip = true
+        }
+      }
+    }
+  }
+  return { skip, text, filePath }
 }
 
 /**
@@ -20941,6 +20991,66 @@ function checkIncludeOnce (text, filePath, includeOnce) {
   } else {
     includeOnce.push(filePath)
   }
+}
+
+/**
+ * @param {string} diagramText
+ * @param {any} context
+ * @param {{[key: string]: string}} resource - diagram resource identity
+ * @returns {string}
+ */
+module.exports.preprocessStructurizr = function (diagramText, context, resource = { dir: '' }) {
+  const logger = 'logger' in context ? context.logger : console
+  const includeStack = []
+  return preprocessStructurizrIncludes(diagramText, resource, includeStack, context.vfs, logger)
+}
+
+/**
+ * @param {string} diagramText
+ * @param {{[key: string]: string}} resource
+ * @param {string[]} includeStack
+ * @param {any} vfs
+ * @param {any} logger
+ * @returns {string}
+ */
+function preprocessStructurizrIncludes (diagramText, resource, includeStack, vfs, logger) {
+  // See: https://docs.structurizr.com/dsl/includes
+  const regExInclude = /^\s*!include\s+([\s\S]*)/
+  const diagramLines = diagramText.split('\n')
+  let insideCommentBlock = false
+  const diagramProcessed = diagramLines.map(line => {
+    let result = line
+    // replace the !include directive unless inside a comment block
+    if (!insideCommentBlock) {
+      result = line.replace(
+        regExInclude,
+        (match, ...args) => {
+          const target = parseStructurizrTarget(args[0], [' #', ' //', '/*'])
+          const trailingContent = target.comment
+          const url = target.url.replace(/\\ /g, ' ').replace(/\s+$/g, '')
+          const result = readStructurizrInclude(url, resource, [], includeStack, vfs, logger)
+          if (result.skip) {
+            return line
+          }
+          let text = result.text
+          includeStack.push(result.filePath)
+          const parse = typeof vfs !== 'undefined' && typeof vfs.parse === 'function' ? vfs.parse : require('./node-fs.js').parse
+          text = preprocessStructurizrIncludes(text, parse(result.filePath, resource), includeStack, vfs, logger)
+          includeStack.pop()
+          if (trailingContent !== '') {
+            return text + ' ' + trailingContent
+          }
+          return text
+        })
+    }
+    let position = 0
+    while ((position = insideCommentBlock ? line.indexOf('*/', position) : line.indexOf('/*', position)) !== -1) {
+      insideCommentBlock = !insideCommentBlock
+      position += 2
+    }
+    return result
+  })
+  return diagramProcessed.join('\n')
 }
 
 /**

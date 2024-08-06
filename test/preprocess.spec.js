@@ -538,3 +538,198 @@ skinparam BackgroundColor black
     expect(html).to.contain('https://kroki.io/plantuml/svg/eNorzs7MK0gsSsxVyM3Py0_OKMrPTVUoKSpN5eJyyk_StXPMyUxOtVLwSM3JyQcAc1EPvA==')
   })
 })
+
+const { preprocessStructurizr } = require('../src/preprocess.js')
+
+describe('Structurizr preprocessing', function () {
+  this.timeout(30000)
+  const remoteBasePath = 'https://raw.githubusercontent.com/ggrossetie/asciidoctor-kroki/master/'
+  const localUnexistingFilePath = 'test/fixtures/structurizr/unexisting.dsl'
+  const localExistingFilePath = 'test/fixtures/structurizr/model/person.dsl'
+  const diagramTextHead = `
+     workspace {
+       model {`
+  const diagramTextTail = `
+        }
+        views {
+          systemContext s {
+            include *
+            autolayout lr
+          }
+        }
+      }`
+
+  it('should return original diagramText without "!include ..."', () => {
+    const diagramTextWithoutInclude = `
+      ${diagramTextHead}
+          u = person "User"
+          s = softwareSystem "Software System"
+          u -> s "Uses"
+      ${diagramTextTail}`
+    expect(preprocessStructurizr(diagramTextWithoutInclude, {})).to.be.equal(diagramTextWithoutInclude)
+  })
+
+  it('should log and return original diagramText for unexisting local file referenced with "!include local-file-or-url", because it can perhaps be found by kroki server', () => {
+    const memoryLogger = asciidoctor.MemoryLogger.create()
+    const diagramTextWithUnexistingLocalIncludeFile = `
+      ${diagramTextHead}
+          !include ${localUnexistingFilePath}
+          s = softwareSystem "Software System"
+          u -> s "Uses"
+      ${diagramTextTail}`
+    expect(preprocessStructurizr(diagramTextWithUnexistingLocalIncludeFile, { logger: memoryLogger })).to.be.equal(diagramTextWithUnexistingLocalIncludeFile)
+    const logs = memoryLogger.getMessages()
+    expect(logs.length).to.equal(1)
+    expect(logs[0].message).to.includes(`Skipping preprocessing of Structurizr include, because reading the referenced local file '${localUnexistingFilePath}' caused an error:`)
+  })
+
+  it('should log and return original diagramText for unexisting remote file referenced with "!include remote-url", because it can perhaps be found by kroki server', () => {
+    const memoryLogger = asciidoctor.MemoryLogger.create()
+    const remoteUnexistingIncludeFilePath = `${remoteBasePath}${localUnexistingFilePath}`
+    const diagramTextWithUnexistingRemoteIncludeFile = `
+      ${diagramTextHead}
+          !include ${remoteUnexistingIncludeFilePath}
+          s = softwareSystem "Software System"
+          u -> s "Uses"
+      ${diagramTextTail}`
+    expect(preprocessStructurizr(diagramTextWithUnexistingRemoteIncludeFile, { logger: memoryLogger })).to.be.equal(diagramTextWithUnexistingRemoteIncludeFile)
+    const logs = memoryLogger.getMessages()
+    expect(logs.length).to.equal(1)
+    expect(logs[0].message).to.includes(`Skipping preprocessing of Structurizr include, because reading the referenced remote file '${remoteUnexistingIncludeFilePath}' caused an error:`)
+  })
+
+  it('should return diagramText with inlined local file referenced with "!include local-file-or-url"', () => {
+    const diagramTextWithExistingLocalIncludeFile = `
+      ${diagramTextHead}
+          !include ${localExistingFilePath}
+          s = softwareSystem "Software System"
+          u -> s "Uses"
+      ${diagramTextTail}`
+    const includedText = fs.readFileSync(`${localExistingFilePath}`, 'utf8')
+    const diagramTextWithIncludedText = `
+      ${diagramTextHead}
+${includedText}
+          s = softwareSystem "Software System"
+          u -> s "Uses"
+      ${diagramTextTail}`
+    expect(preprocessStructurizr(diagramTextWithExistingLocalIncludeFile, {})).to.be.equal(diagramTextWithIncludedText)
+  })
+
+  it('should return diagramText while preserving inline and block comments"', () => {
+    const diagramTextWithExistingLocalIncludeFile = `
+      ${diagramTextHead}
+          // !include ${localExistingFilePath}// the whole line is preserved
+          # !include ${localExistingFilePath}# the whole line is preserved
+          !include ${localExistingFilePath}
+          /*
+              !include ${localExistingFilePath}
+              the whole block is preserved
+          */ s = softwareSystem "Software System" /* this also should be preserved */
+          u -> s "Uses"
+      ${diagramTextTail}`
+    const includedText = fs.readFileSync(`${localExistingFilePath}`, 'utf8')
+    const diagramTextWithIncludedText = `
+      ${diagramTextHead}
+          // !include ${localExistingFilePath}// the whole line is preserved
+          # !include ${localExistingFilePath}# the whole line is preserved
+${includedText}
+          /*
+              !include ${localExistingFilePath}
+              the whole block is preserved
+          */ s = softwareSystem "Software System" /* this also should be preserved */
+          u -> s "Uses"
+      ${diagramTextTail}`
+    expect(preprocessStructurizr(diagramTextWithExistingLocalIncludeFile, {})).to.be.equal(diagramTextWithIncludedText)
+  })
+
+  it('should return diagramText while preserving trailing block comment"', () => {
+    const diagramTextWithExistingLocalIncludeFile = `
+      ${diagramTextHead}
+          !include ${localExistingFilePath} /*
+              this is a trailing block comment
+          */
+          s = softwareSystem "Software System"
+          u -> s "Uses"
+      ${diagramTextTail}`
+    const includedText = fs.readFileSync(`${localExistingFilePath}`, 'utf8')
+    const diagramTextWithIncludedText = `
+      ${diagramTextHead}
+${includedText} /*
+              this is a trailing block comment
+          */
+          s = softwareSystem "Software System"
+          u -> s "Uses"
+      ${diagramTextTail}`
+    expect(preprocessStructurizr(diagramTextWithExistingLocalIncludeFile, {})).to.be.equal(diagramTextWithIncludedText)
+  })
+
+  it('should return diagramText with inlined local file referenced with "!include local-file-name-with-spaces"', () => {
+    const localExistingFileNameWithSpacesPath = 'test/fixtures/structurizr/model/person with spaces.dsl'
+    const localExistingFileNameWithSpacesPathEscaped = localExistingFileNameWithSpacesPath.replace(/ /g, '\\ ')
+    const diagramTextWithExistingLocalIncludeFile = `
+      ${diagramTextHead}
+          !include ${localExistingFileNameWithSpacesPathEscaped}
+          s = softwareSystem "Software System"
+          u -> s "Uses"
+      ${diagramTextTail}`
+    const includedText = fs.readFileSync(`${localExistingFileNameWithSpacesPath}`, 'utf8')
+    const diagramTextWithIncludedText = `
+      ${diagramTextHead}
+${includedText}
+          s = softwareSystem "Software System"
+          u -> s "Uses"
+      ${diagramTextTail}`
+    expect(preprocessStructurizr(diagramTextWithExistingLocalIncludeFile, {})).to.be.equal(diagramTextWithIncludedText)
+  })
+
+  it('should return diagramText with inlined multiple local files referenced with "!include local-file-or-url"', () => {
+    const localExistingFilePath1 = 'test/fixtures/structurizr/model/software-system.dsl'
+    const diagramTextWithExistingLocalIncludeFiles = `
+      ${diagramTextHead}
+          !include ${localExistingFilePath}
+          !include ${localExistingFilePath1}
+          u -> s "Uses"
+      ${diagramTextTail}`
+    const includedText = fs.readFileSync(`${localExistingFilePath}`, 'utf8')
+    const includedText1 = fs.readFileSync(`${localExistingFilePath1}`, 'utf8')
+    const diagramTextWithIncludedText = `
+      ${diagramTextHead}
+${includedText}
+${includedText1}
+          u -> s "Uses"
+      ${diagramTextTail}`
+    expect(preprocessStructurizr(diagramTextWithExistingLocalIncludeFiles, {})).to.be.equal(diagramTextWithIncludedText)
+  })
+
+  it('should return diagramText with inlined recursive local files referenced with "!include local-file-or-url"', () => {
+    const localExistingFilePath1 = 'test/fixtures/structurizr/model/software-system.dsl'
+    const localExistingFilePath2 = 'test/fixtures/structurizr/model/person+software-system.dsl'
+    const diagramTextWithExistingRecursiveLocalIncludeFile = `
+      ${diagramTextHead}
+          !include ${localExistingFilePath2}
+          u -> s "Uses"
+      ${diagramTextTail}`
+    const includedText = fs.readFileSync(`${localExistingFilePath}`, 'utf8')
+    const includedText1 = fs.readFileSync(`${localExistingFilePath1}`, 'utf8')
+    const diagramTextWithIncludedText = `
+      ${diagramTextHead}
+${includedText}
+${includedText1}
+
+          u -> s "Uses"
+      ${diagramTextTail}`
+    expect(preprocessStructurizr(diagramTextWithExistingRecursiveLocalIncludeFile, {})).to.be.equal(diagramTextWithIncludedText)
+  })
+
+  it('should throw an error for file recursive included itself', () => {
+    const localExistingFileIncludesItselfPath = 'test/fixtures/structurizr/include/itself.dsl'
+    const diagramTextWithIncludeItself = `
+      ${diagramTextHead}
+          !include ${localExistingFileIncludesItselfPath}
+          s = softwareSystem "Software System"
+          u -> s "Uses"
+      ${diagramTextTail}`
+    const errorMessage = `Preprocessing of Structurizr include failed, because recursive reading already included referenced file '${localExistingFileIncludesItselfPath}'`
+    expect(() => preprocessStructurizr(diagramTextWithIncludeItself, {})).to.throw(errorMessage)
+  })
+})
