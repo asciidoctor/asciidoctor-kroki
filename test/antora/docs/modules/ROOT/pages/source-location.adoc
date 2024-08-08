@@ -65,6 +65,16 @@ plantuml::partial$ab_inc.puml[target=ab-inc-partial-1,format=svg]
 
 NOTE: `ab_inc.puml` is using the PlantUML `!include` directive to include another file.
 
+== Include a partial from subfolder using plantuml macro
+
+....
+plantuml::partial$sub/ab_sub_inc.puml[target=ab-inc-sub-partial-1,format=svg]
+....
+
+plantuml::partial$sub/ab_sub_inc.puml[target=ab-inc-sub-partial-1,format=svg]
+
+NOTE: `sub/ab_sub_inc.puml` is using the PlantUML `!include` directive to include another file.
+
 == Include an example (.puml extension)
 
 ....

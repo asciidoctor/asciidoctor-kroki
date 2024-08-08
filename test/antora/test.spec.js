@@ -17,7 +17,7 @@ describe('Antora integration (local)', function () {
   it('should generate a site with diagrams', () => {
     const $ = cheerio.load(fs.readFileSync(`${__dirname}/public/antora-kroki/source-location.html`))
     const imageElements = $('img')
-    expect(imageElements.length).to.equal(7)
+    expect(imageElements.length).to.equal(8)
     imageElements.each((i, imageElement) => {
       const src = $(imageElement).attr('src')
       expect(src).to.startWith('_images/ab-')
@@ -26,6 +26,15 @@ describe('Antora integration (local)', function () {
   it('should resolve included diagrams when using plantuml::partial$xxx.puml[] macro', async () => {
     const $ = cheerio.load(fs.readFileSync(`${__dirname}/public/antora-kroki/source-location.html`))
     const imageElement = $('img[alt*=ab-inc-partial-1]')
+    expect(imageElement.length).to.equal(1)
+    const src = imageElement.attr('src')
+    const diagramContents = fs.readFileSync(`${__dirname}/public/antora-kroki/${src}`).toString()
+    expect(diagramContents).includes('alice')
+    expect(diagramContents).includes('bob')
+  })
+  it('should resolve included diagrams from subfolders when using plantuml::partial$subfolder/xxx.puml[] macro', async () => {
+    const $ = cheerio.load(fs.readFileSync(`${__dirname}/public/antora-kroki/source-location.html`))
+    const imageElement = $('img[alt*=ab-inc-sub-partial-1]')
     expect(imageElement.length).to.equal(1)
     const src = imageElement.attr('src')
     const diagramContents = fs.readFileSync(`${__dirname}/public/antora-kroki/${src}`).toString()
