@@ -202,9 +202,9 @@ vegalite::partial$chart.vlite[svg,role=chart,opts=interactive]
 
 ```adoc
 [plantuml,alice-bob,svg,role=sequence]
-----
+....
 include::partial$alice-bob.puml[]
-----
+....
 ```
 
 
