@@ -248,6 +248,7 @@ module.exports.register = function register (registry, context = {}) {
     'erd',
     'excalidraw',
     'graphviz',
+    'tikz',
     'mermaid',
     'nomnoml',
     'nwdiag',
