@@ -135,6 +135,7 @@ module AsciidoctorExtensions
       seqdiag
       svgbob
       symbolator
+      tikz
       umlet
       vega
       vegalite

@@ -258,6 +258,7 @@ module.exports.register = function register (registry, context = {}) {
     'seqdiag',
     'svgbob',
     'symbolator',
+    'tikz',
     'umlet',
     'vega',
     'vegalite',
