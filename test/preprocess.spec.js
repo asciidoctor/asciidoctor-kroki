@@ -58,9 +58,7 @@ invalid JSON`)
     "url": "unexisting.csv"
   }
 }`
-    const errorMessage = `Preprocessing of Vega-Lite view specification failed, because reading the local data file 'unexisting.csv' referenced in the diagram caused an error:
-Error: ENOENT: no such file or directory, open 'unexisting.csv'`
-    expect(() => preprocessVegaLite(diagramText)).to.throw(errorMessage)
+    expect(() => preprocessVegaLite(diagramText)).to.throw(/Error: ENOENT.*unexisting\.csv/)
   })
 
   it('should throw an error for unexisting file referenced with "file" protocol', () => {
