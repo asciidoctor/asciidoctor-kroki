@@ -180,7 +180,8 @@ function resolveIncludeFile (includeFile, resource, includePaths, vfs) {
   const exists = typeof vfs !== 'undefined' && typeof vfs.exists === 'function' ? vfs.exists : require('./node-fs.js').exists
   if (resource.module) {
     // antora resource id
-    return includeFile
+    const dirPath = path.dirname(resource.relative)
+    return path.join(dirPath, includeFile)
   }
   let filePath = includeFile
   for (const includePath of [resource.dir, ...includePaths]) {
