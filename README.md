@@ -24,15 +24,15 @@ const kroki = require('asciidoctor-kroki')
 
 const input = 'plantuml::hello.puml[svg,role=sequence]'
 
-kroki.register(asciidoctor.Extensions) // ❶
+kroki.register(asciidoctor.Extensions) // 1️⃣
 console.log(asciidoctor.convert(input, { safe: 'safe' }))
 
 const registry = asciidoctor.Extensions.create()
-kroki.register(registry) // ❷
+kroki.register(registry) // 2️⃣
 console.log(asciidoctor.convert(input, { safe: 'safe', extension_registry: registry }))
 ```
-❶ Register the extension in the global registry <br/>
-❷ Register the extension in a dedicated registry
+1️⃣ Register the extension in the global registry <br/>
+2️⃣ Register the extension in a dedicated registry
 
 ### Browser
 
@@ -65,14 +65,14 @@ digraph G {
       const asciidoctor = Asciidoctor()
 
       const registry = asciidoctor.Extensions.create()
-      AsciidoctorKroki.register(registry) // ❶
+      AsciidoctorKroki.register(registry) // 1️⃣
       const result = asciidoctor.convert(input, { safe: 'safe', extension_registry: registry })
       document.getElementById('content').innerHTML = result
     </script>
   </body>
 </html>
 ```
-❶ Register the extension in a dedicated registry
+1️⃣ Register the extension in a dedicated registry
 
 > [!IMPORTANT]
 > If you want to reference a diagram file in a browser environment, you will need to define the base directory using the `base_dir` option.
