@@ -90,7 +90,11 @@ alice -> bob
             },
             add: (_) => {
               // no-op
-            }
+            },
+            parse: (path) => ({
+              dir: path.substring(0, path.lastIndexOf('/') - 1),
+              path
+            })
           }
         })
         const text = httpGet(`${baseDir}/test/fixtures/alice.puml`, 'utf8')
@@ -110,7 +114,11 @@ alice -> bob
             },
             add: (_) => {
               // no-op
-            }
+            },
+            parse: (path) => ({
+              dir: path.substring(0, path.lastIndexOf('/') - 1),
+              path
+            })
           }
         })
         const text = httpGet(`${baseDir}/test/fixtures/alice.puml`, 'utf8')
