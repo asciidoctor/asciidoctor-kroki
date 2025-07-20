@@ -17,7 +17,13 @@ Gem::Specification.new do |s|
     'source_code_uri' => 'https://github.com/ggrossetie/asciidoctor-kroki',
     'rubygems_mfa_required' => 'true'
   }
-  s.files = `git ls-files`.split($RS)
+  # NOTE: the logic to build the list of files is designed to produce a usable package even when the git command is not available
+  begin
+    files = (result = `git ls-files -z`.split "\0").empty? ? Dir['**/*'] : result
+  rescue StandardError
+    files = Dir['**/*']
+  end
+  s.files = files + ['../README.md']
   s.require_paths = ['lib']
 
   s.add_dependency 'asciidoctor', '~> 2.0'
