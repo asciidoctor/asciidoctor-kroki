@@ -32,3 +32,6 @@ Metrics/ParameterLists:
 
 Gemspec/RequiredRubyVersion:
   Enabled: false
+
+Gemspec/DevelopmentDependencies:
+  EnforcedStyle: gemspec

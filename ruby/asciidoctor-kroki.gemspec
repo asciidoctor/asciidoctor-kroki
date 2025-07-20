@@ -20,9 +20,9 @@ Gem::Specification.new do |s|
   s.files = `git ls-files`.split($RS)
   s.require_paths = ['lib']
 
-  s.add_runtime_dependency 'asciidoctor', '~> 2.0'
+  s.add_dependency 'asciidoctor', '~> 2.0'
 
-  s.add_development_dependency 'rake', '~> 13.0.6'
-  s.add_development_dependency 'rspec', '~> 3.10.0'
-  s.add_development_dependency 'rubocop', '~> 1.30'
+  s.add_development_dependency 'rake', '~> 13.3.0'
+  s.add_development_dependency 'rspec', '~> 3.13.1'
+  s.add_development_dependency 'rubocop', '~> 1.78'
 end

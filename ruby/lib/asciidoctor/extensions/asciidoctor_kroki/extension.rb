@@ -22,7 +22,7 @@ module AsciidoctorExtensions
     #
     def initialize(name = nil, config = {})
       @logger = (config || {}).delete(:logger) { ::Asciidoctor::LoggerManager.logger }
-      super(name, config)
+      super
     end
 
     def process(parent, reader, attrs)
@@ -50,7 +50,7 @@ module AsciidoctorExtensions
     #
     def initialize(name = nil, config = {})
       @logger = (config || {}).delete(:logger) { ::Asciidoctor::LoggerManager.logger }
-      super(name, config)
+      super
     end
 
     # Processes the diagram block or block macro by converting it into an image or literal block.
@@ -329,7 +329,7 @@ module AsciidoctorExtensions
     private
 
     def _url_encode(text)
-      CGI.escape(text).gsub(/\+/, '%20')
+      CGI.escape(text).gsub('+', '%20')
     end
 
     def _join_uri_segments(base, *uris)
