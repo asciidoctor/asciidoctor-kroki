@@ -8,26 +8,13 @@
 
 An extension for [Asciidoctor.js](https://github.com/asciidoctor/asciidoctor.js) to convert diagrams to images using [Kroki](https://kroki.io)!
 
-  * [Install](#install)
-    + [Node.js](#nodejs)
-    + [Browser](#browser)
-    + [Ruby](#ruby)
-    + [Antora Integration](#antora-integration)
-  * [Usage](#usage)
-    + [Supported diagram types](#supported-diagram-types)
-  * [Configuration](#configuration)
-  * [Using Your Own Kroki](#using-your-own-kroki)
-  * [Contributing](#contributing)
-    + [Setup](#setup)
-    + [Building](#building)
-
 ## Install
 
 ### Node.js
 
 Install the dependencies:
 
-    $ npm i asciidoctor asciidoctor-kroki
+    npm i asciidoctor asciidoctor-kroki
 
 Create a file named `kroki.js` with following content and run it:
 
@@ -51,7 +38,7 @@ console.log(asciidoctor.convert(input, { safe: 'safe', extension_registry: regis
 
 Install the dependencies:
 
-    $ npm i asciidoctor asciidoctor-kroki
+    npm i asciidoctor asciidoctor-kroki
 
 Create a file named `kroki.html` with the following content and open it in your browser:
 
@@ -87,11 +74,11 @@ digraph G {
 ```
 **<1>** Register the extension in a dedicated registry
 
-**❗ IMPORTANT:**
-If you want to reference a diagram file in a browser environment you will need to define the base directory using the `base_dir` option.
-In addition, you will also need to provide an implementation to read a binary file **synchronously** for a given path.
-You can find an implementation based on `XMLHttpRequest` in the source code: https://github.com/ggrossetie/asciidoctor-kroki/blob/9585b969014a1894d0c9fb76df10e1e8c66ce2b2/test/browser/test.js#L2-L34.
-Once `httpGet` is defined, here's how we should configure the extension:
+> [!IMPORTANT]
+> If you want to reference a diagram file in a browser environment, you will need to define the base directory using the `base_dir` option.
+> In addition, you will also need to provide an implementation to read a binary file **synchronously** for a given path.
+> You can find an implementation based on `XMLHttpRequest` in the source code: https://github.com/ggrossetie/asciidoctor-kroki/blob/9585b969014a1894d0c9fb76df10e1e8c66ce2b2/test/browser/test.js#L2-L34.
+> Once `httpGet` is defined, here's how we should configure the extension:
 
 ```js
 const registry = asciidoctor.Extensions.create()
@@ -110,11 +97,11 @@ asciidoctor.convert(input, { safe: 'safe', base_dir: window.location.origin, ext
 
 Install the dependency:
 
-    $ gem install asciidoctor-kroki
+    gem install asciidoctor-kroki
 
 Require the library using the `--require` (or `-r`) option from the Asciidoctor CLI:
 
-    $ asciidoctor -r asciidoctor-kroki doc.adoc
+    asciidoctor -r asciidoctor-kroki doc.adoc
 
 ### Antora Integration
 
@@ -122,7 +109,7 @@ If you are using [Antora](https://antora.org/), you can integrate Kroki in your 
 
 1. Install the extension in your playbook project:
 
-       $ npm i asciidoctor-kroki
+       npm i asciidoctor-kroki
 
 2. Register the extension in your playbook file:
 
@@ -136,10 +123,10 @@ If you are using [Antora](https://antora.org/), you can integrate Kroki in your 
 
 3. Enjoy!
 
-**💡 TIP**:
-You can use the `kroki-fetch-diagram` option to download the images from Kroki at build time.
-In other words, while viewing pages you won't rely on Kroki anymore.
-However, in Antora, this is not currently compatible with inline SVG images.
+> [!TIP]
+> You can use the `kroki-fetch-diagram` option to download the images from Kroki at build time.
+> In other words, while viewing pages you won't rely on Kroki anymore.
+> However, in Antora, this is not currently compatible with inline SVG images.
 
 ```yaml
 asciidoc:
@@ -235,7 +222,7 @@ graph TD;
 
 In the above example,
 the diagram type is `mermaid`,
-the file name (i.e. target) is `abcd-flowchart`,
+the file name (i.e., target) is `abcd-flowchart`,
 and the image format is `svg`.
 
 When using the macro form:
@@ -345,7 +332,7 @@ Kroki currently supports the following diagram libraries:
 * [Structurizr](https://github.com/structurizr/dsl): `structurizr`
 * [Diagrams.net](https://github.com/jgraph/drawio): `diagramsnet` _(only available via [Using Your Own Kroki](#using-your-own-kroki "Using Your Own Kroki"))_
 
-Each diagram libraries support one or more output formats.
+Each diagram library supports one or more output formats.
 Consult the [Kroki documentation](https://kroki.io/#support) to find out which formats are supported.
 
 ## Configuration
@@ -360,9 +347,9 @@ Consult the [Kroki documentation](https://kroki.io/#support) to find out which f
 | `kroki-plantuml-include-paths` | Search path(s) that will be used to resolve `!include file` additionally to current diagram directory, similar to PlantUML property [plantuml.include.path](https://plantuml.com/de/preprocessing). Please use directory delimiter `;` (Windows) or `:` (Unix) for multiple paths, e.g.: `"c:/docu/styles;c:/docu/library"` or `"~/docu/styles:~/docu/library"` |                    |
 | `kroki-max-uri-length`         | Define the max URI length before using a POST request when using `adaptive` HTTP method (`kroki-http-method`)                                                                                                                                                                                                                                                   | `4000`             |
 
-**❗ IMPORTANT:**
-`kroki-fetch-diagram` and `kroki-plantuml-include` are only available when safe mode is `server` or lower.
-If you want to learn more about Asciidoctor safe modes: https://docs.asciidoctor.org/asciidoctor/latest/safe-modes/
+> [!IMPORTANT]
+> `kroki-fetch-diagram` and `kroki-plantuml-include` are only available when safe mode is `server` or lower.
+> If you want to learn more about Asciidoctor safe modes: https://docs.asciidoctor.org/asciidoctor/latest/safe-modes/
 
 ### Default configuration
 
@@ -375,9 +362,9 @@ To alter this, set the `kroki-default-format` attribute:
 
 You can unset this with `:kroki-default-format!:` or `:kroki-default-format: svg`.
 
-**ℹ️ NOTE:**
-An AsciiDoc attribute can be defined through the CLI or API, in the document’s header or in the document’s body.
-In addition, if you are using Antora, you can define AsciiDoc attributes in your playbook and/or in your component descriptor.
+> [!NOTE]
+> An AsciiDoc attribute can be defined through the CLI or API, in the document’s header or in the document’s body.
+> In addition, if you are using Antora, you can define AsciiDoc attributes in your playbook and/or in your component descriptor.
 
 References:
 
@@ -406,7 +393,7 @@ You can unset this with `:kroki-default-options: none` or `:kroki-default-option
 ## Preprocessing
 
 Some diagram libraries allow referencing external entities by URL or accessing resources from the filesystem.
-For example PlantUML allows the `!import` directive to pull fragments from the filesystem or a remote URL or the standard library.
+For example, PlantUML allows the `!import` directive to pull fragments from the filesystem or a remote URL or the standard library.
 Similarly, Vega-Lite can load data from a URL using the `url` property.
 
 By default, the Kroki server is running in `SECURE` mode which restrict access to files on the file system and on the network.
@@ -414,15 +401,32 @@ By default, the Kroki server is running in `SECURE` mode which restrict access t
 For ease of use and convenience, Asciidoctor Kroki will try to resolve and load external resources before sending a request to the Kroki server.
 This feature is only available when Asciidoctor safe mode is `server` or lower.
 
+## Troubleshooting
+
+### 414 URI Too Long
+
+By default, the extension retrieves images from the Kroki server using a GET request.
+Be aware that the Kroki server will return a 414 (Request-URI Too Long) response if the requested URI exceeds the maximum length the server can process.
+The default maximum URI length is 4096 characters.
+
+
+To work around this limitation, you can:
+- **Increase the max URI length** if you are using a self-hosted instance of Kroki. For more information, see the Kroki documentation: https://docs.kroki.io/kroki/setup/configuration/#_max_uri_length.
+- **Use POST requests** by enabling `kroki-fetch-diagram` and setting `kroki-http-method` to `adaptive` or `post`.
+
+> [!NOTE]
+> If you switch to POST requests, the extension will download the images from the server.
+> In fact, it is no longer possible to retrieve images via GET requests, so the images need to be downloaded and displayed using a relative path.
+
 ## Using Your Own Kroki
 
 By default, this extension sends information and receives diagrams back from https://kroki.io.
 
 You may choose to use your own server due to:
 
-* Network restrictions - if Kroki is not available behind your corporate firewall
-* Network latency - you are far from the European public instance
-* Privacy - you don't want to send your diagrams to a remote server on the internet
+* Network restrictions — if Kroki is not available behind your corporate firewall
+* Network latency — you are far from the European public instance
+* Privacy — you don't want to send your diagrams to a remote server on the internet
 
 This is done using the `kroki-server-url` attribute.
 Typically, this is at the top of the document (under the title):
@@ -449,42 +453,20 @@ asciidoctor.convertFile('file.adoc', { safe: 'safe', attributes: { 'kroki-server
 
 ### Setup
 
-To build this project, you will need the latest active LTS of Node.js and npm (we recommend `nvm` to manage multiple active Node.js versions).
-
-The current latest Node LTS version is: `v14.15.x`
-
-Please use latest npm version `v7.x` to generate lockfile using v2 format (i.e., `"lockfileVersion": 2`), see [lockfileversion](https://docs.npmjs.com/cli/v7/configuring-npm/package-lock-json#lockfileversion)
-
-#### Update NPM @ Linux
-
-    npm i -g npm
-
-#### Update NPM @ Windows
-
-1. Open PowerShell as Administrator selecting `Run as Administrator`
-
-2. Install `npm-windows-upgrade`
-
-        Set-ExecutionPolicy Unrestricted -Scope CurrentUser -Force
-        npm install --global --production npm-windows-upgrade
-
-3. Upgrade npm
-
-        npm-windows-upgrade
-
-Reference: [npm-windows-upgrade](https://github.com/felixrieseberg/npm-windows-upgrade)
+To build this project, you will need the latest active LTS of Node.js.
+We recommend [`volta`](https://volta.sh/) to manage multiple active Node.js versions.
 
 ### Building
 
 1. Install the dependencies:
 
-       $ npm i
+       npm i
 
 2. Generate a distribution:
 
-       $ npm run dist
+       npm run dist
 
-When working on a new feature or when fixing a bug, make sure to run the linter and the tests suite:
+When working on a new feature or when fixing a bug, make sure to run the linter and the test suite:
 
-    $ npm run lint
-    $ npm run test
+    npm run lint
+    npm run test
