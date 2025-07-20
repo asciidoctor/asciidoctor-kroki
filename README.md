@@ -99,7 +99,11 @@ AsciidoctorKroki.register(registry, {
   vfs: {
     read: (path, encoding = 'utf8') => httpGet(path, encoding),
     exists: (_) => false,
-    add: (_) => { /* no-op */ }
+    add: (_) => { /* no-op */ },
+    parse: (path) => ({
+      dir: path.substring(0, path.lastIndexOf('/') - 1),
+      path
+    })
   }
 })
 const input = 'plantuml::hello.puml[svg,role=sequence]'
