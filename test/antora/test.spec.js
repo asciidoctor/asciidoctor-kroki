@@ -52,7 +52,7 @@ describe('Antora integration (remote)', function () {
   it('should generate a site with diagrams', () => {
     const $ = cheerio.load(fs.readFileSync(`${__dirname}/public/antora-kroki/source-location.html`))
     const imageElements = $('img')
-    expect(imageElements.length).to.equal(7)
+    expect(imageElements.length).to.equal(8)
     imageElements.each((i, imageElement) => {
       const src = $(imageElement).attr('src')
       expect(src).to.startWith('_images/ab-')
