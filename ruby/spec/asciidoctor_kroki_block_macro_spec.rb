@@ -7,10 +7,10 @@ require 'asciidoctor'
 require_relative '../lib/asciidoctor/extensions/asciidoctor_kroki'
 require_relative '../lib/asciidoctor/extensions/asciidoctor_kroki/extension'
 
-describe ::AsciidoctorExtensions::KrokiBlockMacroProcessor do
+describe AsciidoctorExtensions::KrokiBlockMacroProcessor do
   context 'convert to html5' do
     it 'should catch exception if target is not readable' do
-      class PlainResolutionKrokiMacroProcessor < ::AsciidoctorExtensions::KrokiBlockMacroProcessor
+      class PlainResolutionKrokiMacroProcessor < AsciidoctorExtensions::KrokiBlockMacroProcessor
         def resolve_target_path(_parent, target)
           target
         end
@@ -18,7 +18,7 @@ describe ::AsciidoctorExtensions::KrokiBlockMacroProcessor do
       registry = Asciidoctor::Extensions.create do
         block_macro PlainResolutionKrokiMacroProcessor, 'plantuml'
       end
-      input = <<~'ADOC'
+      input = <<~ADOC
         plantuml::spec/fixtures/missing.puml[svg,role=sequence]
       ADOC
       output = Asciidoctor.convert(input, standalone: false, extension_registry: registry)
@@ -30,7 +30,7 @@ describe ::AsciidoctorExtensions::KrokiBlockMacroProcessor do
   context 'using a custom block macro' do
     it 'should disallow read' do
       # noinspection RubyClassModuleNamingConvention
-      class DisallowReadKrokiBlockMacroProcessor < ::AsciidoctorExtensions::KrokiBlockMacroProcessor
+      class DisallowReadKrokiBlockMacroProcessor < AsciidoctorExtensions::KrokiBlockMacroProcessor
         def resolve_target_path(_parent, target)
           target
         end
@@ -42,7 +42,7 @@ describe ::AsciidoctorExtensions::KrokiBlockMacroProcessor do
       registry = Asciidoctor::Extensions.create do
         block_macro DisallowReadKrokiBlockMacroProcessor, 'plantuml'
       end
-      input = <<~'ADOC'
+      input = <<~ADOC
         plantuml::spec/fixtures/alice.puml[svg,role=sequence]
       ADOC
       output = Asciidoctor.convert(input, standalone: false, extension_registry: registry)
@@ -52,7 +52,7 @@ describe ::AsciidoctorExtensions::KrokiBlockMacroProcessor do
     end
     it 'should allow read if target is not a URI' do
       # noinspection RubyClassModuleNamingConvention
-      class DisallowUriReadKrokiBlockMacroProcessor < ::AsciidoctorExtensions::KrokiBlockMacroProcessor
+      class DisallowUriReadKrokiBlockMacroProcessor < AsciidoctorExtensions::KrokiBlockMacroProcessor
         def read_allowed?(target)
           return false if ::Asciidoctor::Helpers.uriish?(target)
 
@@ -62,7 +62,7 @@ describe ::AsciidoctorExtensions::KrokiBlockMacroProcessor do
       registry = Asciidoctor::Extensions.create do
         block_macro DisallowUriReadKrokiBlockMacroProcessor, 'plantuml'
       end
-      input = <<~'ADOC'
+      input = <<~ADOC
         plantuml::https://domain.org/alice.puml[svg,role=sequence]
 
         plantuml::file://path/to/alice.puml[svg,role=sequence]
@@ -84,7 +84,7 @@ describe ::AsciidoctorExtensions::KrokiBlockMacroProcessor do
     end
     it 'should override the resolve target method' do
       # noinspection RubyClassModuleNamingConvention
-      class FixtureResolveTargetKrokiBlockMacroProcessor < ::AsciidoctorExtensions::KrokiBlockMacroProcessor
+      class FixtureResolveTargetKrokiBlockMacroProcessor < AsciidoctorExtensions::KrokiBlockMacroProcessor
         def resolve_target_path(_parent, target)
           "spec/fixtures/#{target}"
         end
@@ -92,7 +92,7 @@ describe ::AsciidoctorExtensions::KrokiBlockMacroProcessor do
       registry = Asciidoctor::Extensions.create do
         block_macro FixtureResolveTargetKrokiBlockMacroProcessor, 'plantuml'
       end
-      input = <<~'ADOC'
+      input = <<~ADOC
         plantuml::alice.puml[svg,role=sequence]
       ADOC
       output = Asciidoctor.convert(input, standalone: false, extension_registry: registry)
@@ -104,7 +104,7 @@ describe ::AsciidoctorExtensions::KrokiBlockMacroProcessor do
     end
     it 'should display unresolved block macro message when the target cannot be resolved' do
       # noinspection RubyClassModuleNamingConvention
-      class UnresolvedTargetKrokiBlockMacroProcessor < ::AsciidoctorExtensions::KrokiBlockMacroProcessor
+      class UnresolvedTargetKrokiBlockMacroProcessor < AsciidoctorExtensions::KrokiBlockMacroProcessor
         def resolve_target_path(_, _)
           nil
         end
@@ -112,7 +112,7 @@ describe ::AsciidoctorExtensions::KrokiBlockMacroProcessor do
       registry = Asciidoctor::Extensions.create do
         block_macro UnresolvedTargetKrokiBlockMacroProcessor, 'plantuml'
       end
-      input = <<~'ADOC'
+      input = <<~ADOC
         plantuml::alice.puml[svg,role=sequence]
       ADOC
       output = Asciidoctor.convert(input, standalone: false, extension_registry: registry)
@@ -122,7 +122,7 @@ describe ::AsciidoctorExtensions::KrokiBlockMacroProcessor do
     end
     it 'should override the unresolved block macro message' do
       # noinspection RubyClassModuleNamingConvention
-      class CustomUnresolvedTargetMessageKrokiBlockMacroProcessor < ::AsciidoctorExtensions::KrokiBlockMacroProcessor
+      class CustomUnresolvedTargetMessageKrokiBlockMacroProcessor < AsciidoctorExtensions::KrokiBlockMacroProcessor
         def resolve_target_path(_parent, target)
           target
         end
@@ -134,7 +134,7 @@ describe ::AsciidoctorExtensions::KrokiBlockMacroProcessor do
       registry = Asciidoctor::Extensions.create do
         block_macro CustomUnresolvedTargetMessageKrokiBlockMacroProcessor, 'plantuml'
       end
-      input = <<~'ADOC'
+      input = <<~ADOC
         plantuml::spec/fixtures/missing.puml[svg,role=sequence]
       ADOC
       output = Asciidoctor.convert(input, standalone: false, extension_registry: registry)
@@ -149,7 +149,7 @@ describe ::AsciidoctorExtensions::KrokiBlockMacroProcessor do
         assets_dir = "#{temp_dir}/_assets"
 
         File.open(temp_file, 'w') do |f|
-          content = <<~'ADOC'
+          content = <<~ADOC
             plantuml::_assets/alice.puml[svg,role=sequence]
           ADOC
           f.write(content)
