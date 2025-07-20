@@ -1,4 +1,4 @@
-# 🖍 Asciidoctor Kroki Extension
+# ✏️ Asciidoctor Kroki Extension
 
 [![Build JavaScript](https://github.com/ggrossetie/asciidoctor-kroki/actions/workflows/build-js.yml/badge.svg)](https://github.com/ggrossetie/asciidoctor-kroki/actions/workflows/build-js.yml)
 [![Build JavaScript](https://github.com/ggrossetie/asciidoctor-kroki/actions/workflows/build-ruby.yml/badge.svg)](https://github.com/ggrossetie/asciidoctor-kroki/actions/workflows/build-ruby.yml)
