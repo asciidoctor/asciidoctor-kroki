@@ -146,7 +146,7 @@ const { preprocessPlantUML } = require('../src/preprocess.js')
 
 describe('PlantUML preprocessing', function () {
   this.timeout(30000)
-  const remoteBasePath = 'https://raw.githubusercontent.com/ggrossetie/asciidoctor-kroki/master/'
+  const remoteBasePath = 'https://raw.githubusercontent.com/asciidoctor/asciidoctor-kroki/master/'
   const localUnexistingFilePath = 'test/fixtures/plantuml/unexisting.iuml'
   const localExistingFilePath = 'test/fixtures/plantuml/styles/general.iuml'
 
@@ -543,7 +543,7 @@ const { preprocessStructurizr } = require('../src/preprocess.js')
 
 describe('Structurizr preprocessing', function () {
   this.timeout(30000)
-  const remoteBasePath = 'https://raw.githubusercontent.com/ggrossetie/asciidoctor-kroki/master/'
+  const remoteBasePath = 'https://raw.githubusercontent.com/ggrossetie/asciidoctor-kroki/feature/preprocess-structurizr-include/'
   const localUnexistingFilePath = 'test/fixtures/structurizr/unexisting.dsl'
   const localExistingFilePath = 'test/fixtures/structurizr/model/person.dsl'
   const diagramTextHead = `

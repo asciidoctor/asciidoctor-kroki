@@ -8,8 +8,8 @@ site:
 
 content:
   sources:
-    - url: https://github.com/asciidoctor/asciidoctor-kroki.git
-      branches: master
+    - url: https://github.com/ggrossetie/asciidoctor-kroki.git
+      branches: feature/preprocess-structurizr-include
       start_path: test/antora/docs
 
 asciidoc:

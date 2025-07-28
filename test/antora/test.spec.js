@@ -17,7 +17,7 @@ describe('Antora integration (local)', function () {
   it('should generate a site with diagrams', () => {
     const $ = cheerio.load(fs.readFileSync(`${__dirname}/public/antora-kroki/source-location.html`))
     const imageElements = $('img')
-    expect(imageElements.length).to.equal(8)
+    expect(imageElements.length).to.equal(9)
     imageElements.each((i, imageElement) => {
       const src = $(imageElement).attr('src')
       expect(src).to.startWith('_images/ab-')
@@ -61,7 +61,7 @@ describe('Antora integration (remote)', function () {
   it('should generate a site with diagrams', () => {
     const $ = cheerio.load(fs.readFileSync(`${__dirname}/public/antora-kroki/source-location.html`))
     const imageElements = $('img')
-    expect(imageElements.length).to.equal(8)
+    expect(imageElements.length).to.equal(9)
     imageElements.each((i, imageElement) => {
       const src = $(imageElement).attr('src')
       expect(src).to.startWith('_images/ab-')

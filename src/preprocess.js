@@ -248,7 +248,7 @@ function readStructurizrInclude (url, resource, includePaths, includeStack, vfs,
           text = read(filePath, 'utf8', resource)
         } catch (e) {
           // Includes a local file that cannot be found but might be resolved by the Kroki server
-          logger.info(`Skipping preprocessing of PlantUML include, because reading the referenced local file '${filePath}' caused an error:\n${e}`)
+          logger.info(`Skipping preprocessing of Structurizr include, because reading the referenced local file '${filePath}' caused an error:\n${e}`)
           skip = true
         }
       }
