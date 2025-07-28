@@ -23,10 +23,14 @@ jobs:
       matrix:
         os:
           - ubuntu-latest
-          - windows-latest
+          - windows-2025
         node-version:
           - 22
           - 24
+        exclude:
+          # excludes node 22 on windows
+          - os: windows-2025
+            node-version: 22
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v4
