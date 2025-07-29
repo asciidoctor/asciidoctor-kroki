@@ -17,7 +17,7 @@ describe('Antora integration (local)', function () {
   it('should generate a site with diagrams', () => {
     const $ = cheerio.load(fs.readFileSync(`${__dirname}/public/antora-kroki/source-location.html`))
     const imageElements = $('img')
-    expect(imageElements.length).to.equal(8)
+    expect(imageElements.length).to.equal(9)
     imageElements.each((i, imageElement) => {
       const src = $(imageElement).attr('src')
       expect(src).to.startWith('_images/ab-')
@@ -41,6 +41,15 @@ describe('Antora integration (local)', function () {
     expect(diagramContents).includes('alice')
     expect(diagramContents).includes('bob')
   })
+  it('should resolve included diagrams when using structurizr::partial$xxx.dsl[] macro', async () => {
+    const $ = cheerio.load(fs.readFileSync(`${__dirname}/public/antora-kroki/source-location.html`))
+    const imageElement = $('img[alt*=ab-inc-partial-2]')
+    expect(imageElement.length).to.equal(1)
+    const src = imageElement.attr('src')
+    const diagramContents = fs.readFileSync(`${__dirname}/public/antora-kroki/${src}`).toString()
+    expect(diagramContents).includes('User')
+    expect(diagramContents).includes('Software System')
+  })
 })
 
 describe('Antora integration (remote)', function () {
@@ -52,7 +61,7 @@ describe('Antora integration (remote)', function () {
   it('should generate a site with diagrams', () => {
     const $ = cheerio.load(fs.readFileSync(`${__dirname}/public/antora-kroki/source-location.html`))
     const imageElements = $('img')
-    expect(imageElements.length).to.equal(8)
+    expect(imageElements.length).to.equal(9)
     imageElements.each((i, imageElement) => {
       const src = $(imageElement).attr('src')
       expect(src).to.startWith('_images/ab-')
@@ -66,5 +75,14 @@ describe('Antora integration (remote)', function () {
     const diagramContents = fs.readFileSync(`${__dirname}/public/antora-kroki/${src}`).toString()
     expect(diagramContents).includes('alice')
     expect(diagramContents).includes('bob')
+  })
+  it('should resolve included diagrams when using structurizr::partial$xxx.dsl[] macro', async () => {
+    const $ = cheerio.load(fs.readFileSync(`${__dirname}/public/antora-kroki/source-location.html`))
+    const imageElement = $('img[alt*=ab-inc-partial-2]')
+    expect(imageElement.length).to.equal(1)
+    const src = imageElement.attr('src')
+    const diagramContents = fs.readFileSync(`${__dirname}/public/antora-kroki/${src}`).toString()
+    expect(diagramContents).includes('User')
+    expect(diagramContents).includes('Software System')
   })
 })
