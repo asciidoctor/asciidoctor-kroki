@@ -1,6 +1,6 @@
 = {page-component-title}
 
-Ways of using https://github.com/ggrossetie/asciidoctor-kroki[asciidoctor-kroki].
+Ways of using https://github.com/asciidoctor/asciidoctor-kroki[asciidoctor-kroki].
 
 For this example, you must install `asciidoctor-kroki` so it is accessible to your Antora installation.
 If you have installed Antora globally, you can run:

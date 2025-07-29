@@ -51,7 +51,7 @@ include::partial$ab.puml[]
 .no set attributes block macro.
 plantuml::partial$ab.puml[]
 
-// inline + fetch does not work, see https://github.com/ggrossetie/asciidoctor-kroki/issues/88
+// inline + fetch does not work, see https://github.com/asciidoctor/asciidoctor-kroki/issues/88
 ////
 === With fetched diagrams (kroki-fetch-diagram set)
 
