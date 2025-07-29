@@ -77,13 +77,13 @@ Error: ENOENT: no such file or directory, open '${unexistingPath}'`)
     const memoryLogger = asciidoctor.MemoryLogger.create()
     const diagramText = `{
   "data": {
-    "url": "https://raw.githubusercontent.com/ggrossetie/asciidoctor-kroki/master/unexisting.csv"
+    "url": "https://raw.githubusercontent.com/asciidoctor/asciidoctor-kroki/master/unexisting.csv"
   }
 }`
     expectToBeEqualIgnoreNewlines(preprocessVegaLite(diagramText, { logger: memoryLogger }), diagramText)
     const logs = memoryLogger.getMessages()
     expect(logs.length).to.equal(1)
-    expect(logs[0].message).to.includes('Skipping preprocessing of Vega-Lite view specification, because reading the remote data file \'https://raw.githubusercontent.com/ggrossetie/asciidoctor-kroki/master/unexisting.csv\' referenced in the diagram caused an error:')
+    expect(logs[0].message).to.includes('Skipping preprocessing of Vega-Lite view specification, because reading the remote data file \'https://raw.githubusercontent.com/asciidoctor/asciidoctor-kroki/master/unexisting.csv\' referenced in the diagram caused an error:')
   })
 
   it('should return diagramText with inlined local file referenced with relative path', () => {
@@ -135,7 +135,7 @@ Error: ENOENT: no such file or directory, open '${unexistingPath}'`)
   it('should return diagramText with inlined remote file referenced with "http" protocol', () => {
     const diagramText = `{
   "data": {
-    "url": "https://raw.githubusercontent.com/ggrossetie/asciidoctor-kroki/master/${relativePath}"
+    "url": "https://raw.githubusercontent.com/asciidoctor/asciidoctor-kroki/master/${relativePath}"
   }
 }`
     expectToBeEqualIgnoreNewlines(preprocessVegaLite(diagramText), diagramTextWithInlinedCsvFile)
@@ -543,7 +543,7 @@ const { preprocessStructurizr } = require('../src/preprocess.js')
 
 describe('Structurizr preprocessing', function () {
   this.timeout(30000)
-  const remoteBasePath = 'https://raw.githubusercontent.com/ggrossetie/asciidoctor-kroki/feature/preprocess-structurizr-include/'
+  const remoteBasePath = 'https://raw.githubusercontent.com/asciidoctor/asciidoctor-kroki/master/'
   const localUnexistingFilePath = 'test/fixtures/structurizr/unexisting.dsl'
   const localExistingFilePath = 'test/fixtures/structurizr/model/person.dsl'
   const diagramTextHead = `
