@@ -46,7 +46,8 @@
     "puppeteer": "~24.10",
     "shx": "0.3.4",
     "sinon": "~16.1",
-    "standard": "17.1.0"
+    "standard": "17.1.0",
+    "testcontainers": "11.4.0"
   },
   "peerDependencies": {
     "@asciidoctor/core": ">=2.2 <4.0"
