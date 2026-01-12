@@ -123,14 +123,13 @@ If you are using [Antora](https://antora.org/), you can integrate Kroki in your 
         - asciidoctor-kroki
     ```
 
-    https://docs.antora.org/antora/2.3/playbook/configure-asciidoc/#extensions
+    https://docs.antora.org/antora/latest/playbook/asciidoc-extensions/
 
 3. Enjoy!
 
 > [!TIP]
 > You can use the `kroki-fetch-diagram` option to download the images from Kroki at build time.
 > In other words, while viewing pages you won't rely on Kroki anymore.
-> However, in Antora, this is not currently compatible with inline SVG images.
 
 ```yaml
 asciidoc:
