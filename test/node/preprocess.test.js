@@ -8,12 +8,12 @@ import path, { dirname } from 'node:path'
 import { describe, it } from 'node:test'
 import url, { fileURLToPath } from 'node:url'
 import { convertFile, Extensions, MemoryLogger } from '@asciidoctor/core'
-import asciidoctorKroki from '../src/asciidoctor-kroki.js'
+import asciidoctorKroki from '../../src/asciidoctor-kroki.js'
 import {
   preprocessPlantUML,
   preprocessStructurizr,
   preprocessVegaLite,
-} from '../src/preprocess.js'
+} from '../../src/preprocess.js'
 import { assertNotContains } from './utils.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -686,7 +686,7 @@ skinparam BackgroundColor black
   it('should include a PlantUML file from an absolute path', () => {
     // eslint-disable-next-line
     const diagramTextWithExistingIncludeFile = `
-      !include ${__dirname}/fixtures/plantuml/include/parent/child/handwritten.iuml
+      !include ${__dirname}/../fixtures/plantuml/include/parent/child/handwritten.iuml
       alice -> bob`
     const diagramTextWithIncludedText = `
 skinparam Handwritten true
@@ -725,7 +725,7 @@ skinparam BackgroundColor black
   it('should resolve PlantUML includes from the diagram directory', async () => {
     const registry = Extensions.create()
     asciidoctorKroki.register(registry)
-    const file = path.join(__dirname, 'fixtures', 'docs', 'hello.adoc')
+    const file = path.join(__dirname, '..', 'fixtures', 'docs', 'hello.adoc')
     const html = await convertFile(file, {
       safe: 'safe',
       extension_registry: registry,

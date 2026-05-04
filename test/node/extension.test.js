@@ -17,8 +17,8 @@ import {
 import pako from 'pako'
 import sinon from 'sinon'
 import { GenericContainer } from 'testcontainers'
-import asciidoctorKroki from '../src/asciidoctor-kroki.js'
-import http from '../src/http/node-http.js'
+import asciidoctorKroki from '../../src/asciidoctor-kroki.js'
+import http from '../../src/http/node-http.js'
 import {
   assertContains,
   deleteDirWithFiles,
@@ -79,7 +79,7 @@ describe('Conversion', () => {
       before(
         async () => {
           fs.rmSync(
-            ospath.join(__dirname, '..', '.asciidoctor', 'kroki', '*'),
+            ospath.join(__dirname, '..', '..', '.asciidoctor', 'kroki', '*'),
             {
               recursive: true,
               force: true,
@@ -515,6 +515,7 @@ Hello -> World
           ospath.join(
             __dirname,
             '..',
+            '..',
             '.asciidoctor',
             'kroki',
             'relative',
@@ -549,6 +550,7 @@ Hello -> World
           ospath.join(
             __dirname,
             '..',
+            '..',
             '.asciidoctor',
             'kroki',
             'to_dir',
@@ -582,6 +584,7 @@ Hello -> World
         const html = fs.readFileSync(
           ospath.join(
             __dirname,
+            '..',
             '..',
             '.asciidoctor',
             'kroki',
@@ -1541,6 +1544,7 @@ plantuml::test/fixtures/alice.puml[svg,opts=inline,theme=bluegray]
           const svg = fs.readFileSync(
             ospath.join(
               __dirname,
+              '..',
               'fixtures',
               'expected',
               'alice-bluegray.svg',
@@ -1574,6 +1578,7 @@ plantuml::test/fixtures/alice.puml[svg,opts=inline,theme=bluegray]
           const svg = fs.readFileSync(
             ospath.join(
               __dirname,
+              '..',
               'fixtures',
               'expected',
               'alice-bluegray.svg',
@@ -1726,7 +1731,7 @@ plantuml::test/fixtures/alice.puml[svg,role=sequence${blockAttr}]
               },
             })
             const svg = fs.readFileSync(
-              ospath.join(__dirname, 'fixtures', 'expected', 'alice.svg'),
+              ospath.join(__dirname, '..', 'fixtures', 'expected', 'alice.svg'),
               'utf8',
             )
             assert.strictEqual(
@@ -1756,7 +1761,7 @@ bytefield::test/fixtures/simple.bytefield[svg,role=bytefield${blockAttr}]
               },
             })
             const svg = fs.readFileSync(
-              ospath.join(__dirname, 'fixtures', 'expected', 'bytefield.svg'),
+              ospath.join(__dirname, '..', 'fixtures', 'expected', 'bytefield.svg'),
               'utf8',
             )
             assertContains(html, svg)
@@ -1833,12 +1838,6 @@ plantuml::test/fixtures/alice.puml[svg,role=sequence${blockAttr}]
             const hash = createHash('sha1')
               .update(`${krokiServerUrl}/plantuml/svg/${encode(file)}`)
               .digest('hex')
-            console.log(
-              'test',
-              `${krokiServerUrl}/plantuml/svg/${encode(file)}`,
-            )
-            console.log('test', hash)
-            console.log('test', html)
             assertContains(
               html,
               `<object type="image/svg+xml" data=".asciidoctor/kroki/diag-${hash}.svg"><span class="alt">Diagram</span></object>`,
