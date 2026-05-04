@@ -1,9 +1,9 @@
-const { describe, it, before } = require('node:test')
-const assert = require('node:assert')
-const fs = require('node:fs')
-const cheerio = require('cheerio')
+import { describe, it, before } from 'node:test'
+import assert from 'node:assert'
+import fs from 'node:fs'
+import cheerio from 'cheerio'
 
-const generateSite = require('@antora/site-generator-default')
+import generateSite from '@antora/site-generator-default'
 
 describe('Antora integration (local)', { timeout: 90000 }, () => {
   before(async () => {

@@ -1,20 +1,24 @@
-const { describe, it, before, after } = require('node:test')
-const assert = require('node:assert')
-const ospath = require('node:path')
-const os = require('node:os')
-const fs = require('node:fs')
-const fsPromises = require('node:fs/promises')
-const rusha = require('rusha')
-const pako = require('pako')
-const sinon = require('sinon')
-const { GenericContainer } = require('testcontainers')
+import { describe, it, before, after } from 'node:test'
+import assert from 'node:assert'
+import ospath, { dirname } from 'node:path'
+import os from 'node:os'
+import fs from 'node:fs'
+import fsPromises from 'node:fs/promises'
+import rusha from 'rusha'
+import pako from 'pako'
+import sinon from 'sinon'
+import { GenericContainer } from 'testcontainers'
 
-const { readFixture, fixturePath, deleteDirWithFiles } = require('./utils.js')
-const http = require('../src/http/node-http.js')
-const asciidoctorKroki = require('../src/asciidoctor-kroki.js')
-const asciidoctor = require('@asciidoctor/core')()
+import { readFixture, fixturePath, deleteDirWithFiles } from './utils.js'
+import http from '../src/http/node-http.js'
+import asciidoctorKroki from '../src/asciidoctor-kroki.js'
+import Asciidoctor from '@asciidoctor/core'
+import { fileURLToPath } from 'node:url'
 let container
 let krokiServerUrl
+
+const asciidoctor = Asciidoctor()
+const __dirname = dirname(fileURLToPath(import.meta.url))
 
 describe('Registration', () => {
   it('should register the extension', () => {

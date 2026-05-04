@@ -1,16 +1,18 @@
 // @ts-check
-const { describe, it, before, after } = require('node:test')
-const assert = require('node:assert')
-const { GenericContainer } = require('testcontainers')
-const os = require('node:os')
+import { describe, it, before, after } from 'node:test'
+import assert from 'node:assert'
+import { GenericContainer } from 'testcontainers'
+import os from 'node:os'
 
-const { readFixture } = require('./utils.js')
-const { KrokiClient, KrokiDiagram } = require('../src/kroki-client.js')
-const httpClient = require('../src/http/node-http.js')
+import { readFixture } from './utils.js'
+import { KrokiClient, KrokiDiagram } from '../src/kroki-client.js'
+import httpClient from '../src/http/node-http.js'
 
-const asciidoctor = require('@asciidoctor/core')()
+import Asciidoctor from '@asciidoctor/core'
 let container
 let krokiServerUrl
+
+const asciidoctor = Asciidoctor()
 
 describe('Kroki HTTP client', { timeout: 30000 }, () => {
   describe('kroki-http-method attribute', () => {

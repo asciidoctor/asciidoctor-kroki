@@ -1,6 +1,6 @@
 /* eslint-env node, es6 */
-const path = require('node:path')
-const puppeteer = require('puppeteer')
+import path from 'node:path'
+import puppeteer from 'puppeteer'
 
 // puppeteer options
 const opts = {

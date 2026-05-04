@@ -1,6 +1,6 @@
 'use strict'
-const path = require('node:path')
-const { execFileSync } = require('node:child_process')
+import path from 'node:path'
+import { execFileSync } from 'node:child_process'
 
 const publish = (directory) => {
   const pkg = require(path.join(directory, 'package.json'))
