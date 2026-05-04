@@ -2,26 +2,30 @@
   "name": "asciidoctor-kroki",
   "version": "0.18.1",
   "description": "Asciidoctor extension to convert diagrams to images using Kroki",
-  "type": "commonjs",
-  "main": "./src/asciidoctor-kroki.js",
+  "type": "module",
+  "main": "build/node/index.cjs",
+  "module": "src/asciidoctor-kroki.js",
   "exports": {
-    "node": "./src/asciidoctor-kroki.js",
-    "default": "./dist/browser/asciidoctor-kroki.js"
+    ".": {
+      "browser": "./build/browser/index.js",
+      "require": "./build/node/index.cjs",
+      "import": "./src/asciidoctor-kroki.js"
+    }
   },
   "files": [
     "src",
-    "dist"
+    "build"
   ],
   "scripts": {
     "test": "npm run test:node && npm run test:browser && npm run test:antora",
-    "test:node": "node --test test/*.spec.js",
-    "test:browser": "node test/browser/run.js",
-    "test:antora": "node --test test/antora/*.spec.js",
+    "test:node": "node --test test/*.test.js",
+    "test:browser": "vitest run --config vitest.browser.config.js",
+    "test:antora": "node --test test/antora/*.test.js",
     "lint": "biome check src/ test/ tasks/",
     "lint-fix": "biome check --write src/ test/ tasks/",
-    "clean": "shx rm -rf dist/*",
-    "dist": "npm run clean && npm run dist:browser",
-    "dist:browser": "shx mkdir -p dist/browser && browserify src/asciidoctor-kroki.js --exclude ./node-fs.js --exclude ./fetch.js --exclude ./antora-adapter.js --standalone AsciidoctorKroki -o dist/browser/asciidoctor-kroki.js"
+    "clean": "shx rm -rf build/*",
+    "build": "npm run clean && npm run build:browser",
+    "build:browser": "shx mkdir -p build/browser && browserify src/asciidoctor-kroki.js --exclude ./node-fs.js --exclude ./fetch.js --exclude ./antora-adapter.js --standalone AsciidoctorKroki -o dist/browser/asciidoctor-kroki.js"
   },
   "dependencies": {
     "json5": "2.2.3",
@@ -34,6 +38,8 @@
     "@antora/site-generator-default": "~3.1",
     "@asciidoctor/core": ">=2.2 <4.0",
     "@biomejs/biome": "~2.4",
+    "@vitest/browser": "^4.1.5",
+    "@vitest/browser-playwright": "^4.1.5",
     "base64-js": "1.5.1",
     "browserify": "17.0.0",
     "cheerio": "1.0.0-rc.12",

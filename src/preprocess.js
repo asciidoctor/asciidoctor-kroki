@@ -1,7 +1,9 @@
 // @ts-check
 // The previous line must be the first non-comment line in the file to enable TypeScript checks:
 // https://www.typescriptlang.org/docs/handbook/intro-to-js-ts.html#ts-check
-const { delimiter, posix: path } = require('node:path')
+import { delimiter, posix as path } from 'node:path'
+import JSON5 from 'json5'
+import fs from './node-fs.js'
 
 /**
  * @param {string} diagramText
@@ -9,18 +11,17 @@ const { delimiter, posix: path } = require('node:path')
  * @param {string} diagramDir
  * @returns {string}
  */
-module.exports.preprocessVegaLite = (
+export function preprocessVegaLite (
   diagramText,
   context = {},
   diagramDir = '',
-) => {
+)  {
   const logger =
     'logger' in context && typeof context.logger !== 'undefined'
       ? context.logger
       : console
   let diagramObject
   try {
-    const JSON5 = require('json5')
     diagramObject = JSON5.parse(diagramText)
   } catch (e) {
     const message = `Preprocessing of Vega-Lite view specification failed, because of a parsing error:
@@ -39,7 +40,7 @@ ${diagramText}
     typeof context.vfs !== 'undefined' &&
     typeof context.vfs.read === 'function'
       ? context.vfs.read
-      : require('./node-fs.js').read
+      : fs.read
   const data = diagramObject.data
   const urlOrPath = data.url
   try {
@@ -105,12 +106,12 @@ function removePlantUmlTags(diagramText) {
  * @param {{[key: string]: string}} resource - diagram resource identity
  * @returns {string}
  */
-module.exports.preprocessPlantUML = (
+export function preprocessPlantUML(
   diagramText,
   context,
   diagramIncludePaths = '',
   resource = { dir: '' },
-) => {
+) {
   const logger = 'logger' in context ? context.logger : console
   const includeOnce = []
   const includeStack = []
@@ -198,7 +199,7 @@ function preprocessPlantUmlIncludes(
         const parse =
           typeof vfs !== 'undefined' && typeof vfs.parse === 'function'
             ? vfs.parse
-            : require('./node-fs.js').parse
+            : fs.parse
         text = preprocessPlantUmlIncludes(
           text,
           parse(result.filePath, resource),
@@ -237,7 +238,7 @@ function resolveIncludeFile(includeFile, resource, includePaths, vfs) {
   const exists =
     typeof vfs !== 'undefined' && typeof vfs.exists === 'function'
       ? vfs.exists
-      : require('./node-fs.js').exists
+      : fs.exists
   if (resource.module) {
     // antora resource id
     const dirPath = path.dirname(resource.relative)
@@ -303,7 +304,7 @@ function readStructurizrInclude(
   const read =
     typeof vfs !== 'undefined' && typeof vfs.read === 'function'
       ? vfs.read
-      : require('./node-fs.js').read
+      : fs.read
   let skip = false
   let text = ''
   let filePath = url
@@ -362,7 +363,7 @@ function readPlantUmlInclude(
   const read =
     typeof vfs !== 'undefined' && typeof vfs.read === 'function'
       ? vfs.read
-      : require('./node-fs.js').read
+      : fs.read
   let skip = false
   let text = ''
   let filePath = url
@@ -510,11 +511,11 @@ function checkIncludeOnce(_text, filePath, includeOnce) {
  * @param {{[key: string]: string}} resource - diagram resource identity
  * @returns {string}
  */
-module.exports.preprocessStructurizr = (
+export function preprocessStructurizr (
   diagramText,
   context,
   resource = { dir: '' },
-) => {
+) {
   const logger = 'logger' in context ? context.logger : console
   const includeStack = []
   return preprocessStructurizrIncludes(
@@ -569,7 +570,7 @@ function preprocessStructurizrIncludes(
         const parse =
           typeof vfs !== 'undefined' && typeof vfs.parse === 'function'
             ? vfs.parse
-            : require('./node-fs.js').parse
+            : fs.parse
         text = preprocessStructurizrIncludes(
           text,
           parse(result.filePath, resource),

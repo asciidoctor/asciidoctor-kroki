@@ -1,5 +1,5 @@
-const { parentPort } = require('node:worker_threads')
-const { createServer } = require('node:http')
+import { parentPort } from 'node:worker_threads'
+import { createServer } from 'node:http'
 
 const server = createServer((_req, res) => {
   res.writeHead(204)

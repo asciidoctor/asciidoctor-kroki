@@ -1,3 +1,5 @@
 /node_modules/
 .asciidoctor/kroki
 .idea/
+build/
+dist/

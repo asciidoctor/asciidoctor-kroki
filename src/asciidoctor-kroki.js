@@ -1,6 +1,13 @@
 /* global Opal */
 // @ts-check
-const { KrokiDiagram, KrokiClient } = require('./kroki-client.js')
+import { KrokiDiagram, KrokiClient } from './kroki-client.js'
+import fetch from './fetch.js'
+import { preprocessPlantUML, preprocessStructurizr, preprocessVegaLite} from './preprocess.js'
+import fs from './node-fs.js'
+import antoraAdapter from './antora-adapter.js'
+
+import browserHttp from './http/browser-http.js'
+import nodeHttp from './http/node-http.js'
 
 function UnsupportedFormatError(message) {
   this.name = 'UnsupportedFormatError'
@@ -64,7 +71,7 @@ const createImageSrc = (doc, krokiDiagram, target, vfs, krokiClient) => {
   const shouldFetch = doc.isAttribute('kroki-fetch-diagram')
   let imageUrl
   if (shouldFetch && doc.getSafe() < SAFE_MODE_SECURE) {
-    imageUrl = require('./fetch.js').save(
+    imageUrl = fetch.save(
       krokiDiagram,
       doc,
       target,
@@ -122,7 +129,7 @@ const processKroki = (
   }
   if (doc.getSafe() < SAFE_MODE_SECURE) {
     if (diagramType === 'vegalite') {
-      diagramText = require('./preprocess.js').preprocessVegaLite(
+      diagramText = preprocessVegaLite(
         diagramText,
         context,
         resource?.dir || '',
@@ -135,14 +142,14 @@ const processKroki = (
       const plantUmlIncludePaths = doc.getAttribute(
         'kroki-plantuml-include-paths',
       )
-      diagramText = require('./preprocess.js').preprocessPlantUML(
+      diagramText = preprocessPlantUML(
         diagramText,
         context,
         plantUmlIncludePaths,
         resource,
       )
     } else if (diagramType === 'structurizr') {
-      diagramText = require('./preprocess.js').preprocessStructurizr(
+      diagramText = preprocessStructurizr(
         diagramText,
         context,
         resource,
@@ -186,8 +193,8 @@ const processKroki = (
   )
   const krokiDiagram = new KrokiDiagram(diagramType, format, diagramText, opts)
   const httpClient = isBrowser()
-    ? require('./http/browser-http.js')
-    : require('./http/node-http.js')
+    ? browserHttp
+    : nodeHttp
   const krokiClient = new KrokiClient(doc, httpClient)
   let block
   if (format === 'txt' || format === 'atxt' || format === 'utxt') {
@@ -273,7 +280,7 @@ function diagramBlockMacro(name, context) {
         }
       } else {
         if (vfs === undefined || typeof vfs.read !== 'function') {
-          vfs = require('./node-fs.js')
+          vfs = fs
           target = parent.normalizeSystemPath(target)
         }
       }
@@ -307,63 +314,66 @@ function diagramBlockMacro(name, context) {
   }
 }
 
-module.exports.register = function register(registry, context = {}) {
-  // patch context in case of Antora
-  if (
-    typeof context.contentCatalog !== 'undefined' &&
-    typeof context.contentCatalog.addFile === 'function' &&
-    typeof context.file !== 'undefined'
-  ) {
-    context.vfs = require('./antora-adapter.js')(
-      context.file,
-      context.contentCatalog,
-      context.vfs,
-    )
-  }
-  context.logger = Opal.Asciidoctor.LoggerManager.getLogger()
-  const names = [
-    'actdiag',
-    'blockdiag',
-    'bpmn',
-    'bytefield',
-    'c4plantuml',
-    'd2',
-    'dbml',
-    'ditaa',
-    'erd',
-    'excalidraw',
-    'graphviz',
-    'mermaid',
-    'nomnoml',
-    'nwdiag',
-    'packetdiag',
-    'pikchr',
-    'plantuml',
-    'rackdiag',
-    'seqdiag',
-    'svgbob',
-    'symbolator',
-    'tikz',
-    'umlet',
-    'vega',
-    'vegalite',
-    'wavedrom',
-    'structurizr',
-    'diagramsnet',
-    'wireviz',
-  ]
-  if (typeof registry.register === 'function') {
-    registry.register(function () {
-      for (const name of names) {
-        this.block(name, diagramBlock(context))
-        this.blockMacro(diagramBlockMacro(name, context))
-      }
-    })
-  } else if (typeof registry.block === 'function') {
-    for (const name of names) {
-      registry.block(name, diagramBlock(context))
-      registry.blockMacro(diagramBlockMacro(name, context))
+
+export default {
+  register: (registry, context = {}) => {
+    // patch context in case of Antora
+    if (
+      typeof context.contentCatalog !== 'undefined' &&
+      typeof context.contentCatalog.addFile === 'function' &&
+      typeof context.file !== 'undefined'
+    ) {
+      context.vfs = antoraAdapter(
+        context.file,
+        context.contentCatalog,
+        context.vfs,
+      )
     }
+    context.logger = Opal.Asciidoctor.LoggerManager.getLogger()
+    const names = [
+      'actdiag',
+      'blockdiag',
+      'bpmn',
+      'bytefield',
+      'c4plantuml',
+      'd2',
+      'dbml',
+      'ditaa',
+      'erd',
+      'excalidraw',
+      'graphviz',
+      'mermaid',
+      'nomnoml',
+      'nwdiag',
+      'packetdiag',
+      'pikchr',
+      'plantuml',
+      'rackdiag',
+      'seqdiag',
+      'svgbob',
+      'symbolator',
+      'tikz',
+      'umlet',
+      'vega',
+      'vegalite',
+      'wavedrom',
+      'structurizr',
+      'diagramsnet',
+      'wireviz',
+    ]
+    if (typeof registry.register === 'function') {
+      registry.register(function () {
+        for (const name of names) {
+          this.block(name, diagramBlock(context))
+          this.blockMacro(diagramBlockMacro(name, context))
+        }
+      })
+    } else if (typeof registry.block === 'function') {
+      for (const name of names) {
+        registry.block(name, diagramBlock(context))
+        registry.blockMacro(diagramBlockMacro(name, context))
+      }
+    }
+    return registry
   }
-  return registry
 }

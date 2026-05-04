@@ -1,10 +1,10 @@
-const { version } = require('../package.json')
-const pako = require('pako')
+import packageJson from '../package.json' with { type: 'json' }
+import pako from 'pako'
 
 const MAX_URI_DEFAULT_VALUE = 4000
-const REFERER = `asciidoctor/kroki.js/${version}`
+const REFERER = `asciidoctor/kroki.js/${packageJson.version}`
 
-module.exports.KrokiDiagram = class KrokiDiagram {
+export class KrokiDiagram {
   constructor(type, format, text, opts) {
     this.text = text
     this.type = type
@@ -29,7 +29,7 @@ module.exports.KrokiDiagram = class KrokiDiagram {
   }
 }
 
-module.exports.KrokiClient = class KrokiClient {
+export class KrokiClient {
   constructor(doc, httpClient) {
     const maxUriLengthValue = parseInt(
       doc.getAttribute(

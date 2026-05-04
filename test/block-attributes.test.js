@@ -1,8 +1,10 @@
-const { describe, it } = require('node:test')
-const assert = require('node:assert')
+import { describe, it } from 'node:test'
+import assert from 'node:assert'
 
-const asciidoctorKroki = require('../src/asciidoctor-kroki.js')
-const asciidoctor = require('@asciidoctor/core')()
+import asciidoctorKroki from '../src/asciidoctor-kroki.js'
+import Asciidoctor from '@asciidoctor/core'
+
+const asciidoctor = Asciidoctor()
 
 describe('Block attributes', { timeout: 30000 }, () => {
   describe('When extension is registered', () => {

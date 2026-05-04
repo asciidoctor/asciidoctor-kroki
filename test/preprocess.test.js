@@ -2,16 +2,19 @@
 // The previous line must be the first non-comment line in the file to enable TypeScript checks:
 // https://www.typescriptlang.org/docs/handbook/intro-to-js-ts.html#ts-check
 
-const { describe, it } = require('node:test')
-const assert = require('node:assert')
-const fs = require('node:fs')
-const path = require('node:path')
-const url = require('node:url')
+import { describe, it } from 'node:test'
+import assert from 'node:assert'
+import fs from 'node:fs'
+import path, { dirname } from 'node:path'
+import url, { fileURLToPath } from 'node:url'
 
-const asciidoctorKroki = require('../src/asciidoctor-kroki.js')
-const asciidoctor = require('@asciidoctor/core')()
+import asciidoctorKroki from '../src/asciidoctor-kroki.js'
+import Asciidoctor from '@asciidoctor/core'
 
-const { preprocessVegaLite } = require('../src/preprocess.js')
+import { preprocessVegaLite, preprocessPlantUML, preprocessStructurizr } from '../src/preprocess.js'
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
+const asciidoctor = Asciidoctor()
 
 function assertThrows(fn, expected) {
   if (expected instanceof RegExp) {
@@ -189,7 +192,6 @@ Error: ENOENT: no such file or directory, open '${unexistingPath}'`,
   })
 })
 
-const { preprocessPlantUML } = require('../src/preprocess.js')
 
 describe('PlantUML preprocessing', { timeout: 30000 }, () => {
   const remoteBasePath =
@@ -735,8 +737,6 @@ skinparam BackgroundColor black
     )
   })
 })
-
-const { preprocessStructurizr } = require('../src/preprocess.js')
 
 describe('Structurizr preprocessing', { timeout: 30000 }, () => {
   const remoteBasePath =

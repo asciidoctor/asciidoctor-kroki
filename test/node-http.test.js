@@ -1,8 +1,11 @@
-const { describe, it } = require('node:test')
-const assert = require('node:assert')
-const httpClient = require('../src/http/node-http.js')
-const { Worker } = require('node:worker_threads')
-const ospath = require('node:path')
+import { describe, it } from 'node:test'
+import assert from 'node:assert'
+import httpClient from '../src/http/node-http.js'
+import { Worker } from 'node:worker_threads'
+import ospath, { dirname } from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
 
 /**
  * @returns {Promise<{}>}

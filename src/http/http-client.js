@@ -64,7 +64,7 @@ const httpGet = (XMLHttpRequest, uri, headers, encoding = 'utf8') => {
   return httpRequest(XMLHttpRequest, uri, 'GET', headers, encoding)
 }
 
-module.exports = {
+export default {
   get: httpGet,
   post: httpPost,
 }
