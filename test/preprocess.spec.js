@@ -1,25 +1,33 @@
-/* global describe it */
-
 // @ts-check
 // The previous line must be the first non-comment line in the file to enable TypeScript checks:
 // https://www.typescriptlang.org/docs/handbook/intro-to-js-ts.html#ts-check
 
+const { describe, it } = require('node:test')
+const assert = require('node:assert')
 const fs = require('node:fs')
-const chai = require('chai')
-const expect = chai.expect
-const dirtyChai = require('dirty-chai')
 const path = require('node:path')
 const url = require('node:url')
-
-chai.use(dirtyChai)
 
 const asciidoctorKroki = require('../src/asciidoctor-kroki.js')
 const asciidoctor = require('@asciidoctor/core')()
 
 const { preprocessVegaLite } = require('../src/preprocess.js')
 
-describe('Vega-Lite preprocessing', function () {
-  this.timeout(30000)
+function assertThrows(fn, expected) {
+  if (expected instanceof RegExp) {
+    assert.throws(fn, expected)
+  } else {
+    assert.throws(fn, (err) => {
+      assert.ok(
+        err.message.includes(expected),
+        `Expected error message to include:\n${expected}\n\nActual:\n${err.message}`,
+      )
+      return true
+    })
+  }
+}
+
+describe('Vega-Lite preprocessing', { timeout: 30000 }, () => {
   const cwd = process.cwd().replace(/\\/g, '/')
   const relativePath = 'test/fixtures/vegalite-data.csv'
   const diagramTextWithInlinedCsvFile = JSON.stringify({
@@ -37,21 +45,23 @@ describe('Vega-Lite preprocessing', function () {
    * @returns {void}
    */
   function expectToBeEqualIgnoreNewlines(result, expected) {
-    expect(result).to.equal(expected.replace(/\r\n/g, '\n'))
+    assert.strictEqual(result, expected.replace(/\r\n/g, '\n'))
   }
 
   it('should throw an error for invalid JSON', () => {
-    expect(() =>
-      preprocessVegaLite('invalid JSON'),
-    ).to.throw(`Preprocessing of Vega-Lite view specification failed, because of a parsing error:
+    assertThrows(
+      () => preprocessVegaLite('invalid JSON'),
+      `Preprocessing of Vega-Lite view specification failed, because of a parsing error:
 SyntaxError: JSON5: invalid character 'i' at 1:1
 The invalid view specification was:
-invalid JSON`)
+invalid JSON`,
+    )
   })
 
   it('should return original diagramText for valid JSON but without "data.url"', () => {
     const validJsonWithoutDataUrl = '{}'
-    expect(preprocessVegaLite(validJsonWithoutDataUrl)).to.equal(
+    assert.strictEqual(
+      preprocessVegaLite(validJsonWithoutDataUrl),
       validJsonWithoutDataUrl,
     )
   })
@@ -62,7 +72,8 @@ invalid JSON`)
     "url": "unexisting.csv"
   }
 }`
-    expect(() => preprocessVegaLite(diagramText)).to.throw(
+    assertThrows(
+      () => preprocessVegaLite(diagramText),
       /Error: ENOENT.*unexisting\.csv/,
     )
   })
@@ -77,10 +88,11 @@ invalid JSON`)
       }
     }`
     const unexistingPath = url.fileURLToPath(unexistingFileUrl)
-    expect(() =>
-      preprocessVegaLite(diagramText),
-    ).to.throw(`Preprocessing of Vega-Lite view specification failed, because reading the local data file '${unexistingFileUrl}' referenced in the diagram caused an error:
-Error: ENOENT: no such file or directory, open '${unexistingPath}'`)
+    assertThrows(
+      () => preprocessVegaLite(diagramText),
+      `Preprocessing of Vega-Lite view specification failed, because reading the local data file '${unexistingFileUrl}' referenced in the diagram caused an error:
+Error: ENOENT: no such file or directory, open '${unexistingPath}'`,
+    )
   })
 
   it('should log and return original diagramText for unexisting remote file referenced with "http" protocol, because it can perhaps be found by kroki server', () => {
@@ -95,9 +107,11 @@ Error: ENOENT: no such file or directory, open '${unexistingPath}'`)
       diagramText,
     )
     const logs = memoryLogger.getMessages()
-    expect(logs.length).to.equal(1)
-    expect(logs[0].message).to.includes(
-      "Skipping preprocessing of Vega-Lite view specification, because reading the remote data file 'https://raw.githubusercontent.com/asciidoctor/asciidoctor-kroki/master/unexisting.csv' referenced in the diagram caused an error:",
+    assert.strictEqual(logs.length, 1)
+    assert.ok(
+      logs[0].message.includes(
+        "Skipping preprocessing of Vega-Lite view specification, because reading the remote data file 'https://raw.githubusercontent.com/asciidoctor/asciidoctor-kroki/master/unexisting.csv' referenced in the diagram caused an error:",
+      ),
     )
   })
 
@@ -177,8 +191,7 @@ Error: ENOENT: no such file or directory, open '${unexistingPath}'`)
 
 const { preprocessPlantUML } = require('../src/preprocess.js')
 
-describe('PlantUML preprocessing', function () {
-  this.timeout(30000)
+describe('PlantUML preprocessing', { timeout: 30000 }, () => {
   const remoteBasePath =
     'https://raw.githubusercontent.com/asciidoctor/asciidoctor-kroki/master/'
   const localUnexistingFilePath = 'test/fixtures/plantuml/unexisting.iuml'
@@ -187,7 +200,8 @@ describe('PlantUML preprocessing', function () {
   it('should return original diagramText without "!include ..."', () => {
     const diagramTextWithoutInclude = `
       alice -> bob`
-    expect(preprocessPlantUML(diagramTextWithoutInclude, {})).to.be.equal(
+    assert.strictEqual(
+      preprocessPlantUML(diagramTextWithoutInclude, {}),
       diagramTextWithoutInclude,
     )
   })
@@ -197,14 +211,16 @@ describe('PlantUML preprocessing', function () {
     const diagramTextWithStdLibIncludeFile = `
       !include <std/include.iuml>
       alice -> bob`
-    expect(
+    assert.strictEqual(
       preprocessPlantUML(diagramTextWithStdLibIncludeFile, {
         logger: memoryLogger,
       }),
-    ).to.be.equal(diagramTextWithStdLibIncludeFile)
+      diagramTextWithStdLibIncludeFile,
+    )
     const logs = memoryLogger.getMessages()
-    expect(logs.length).to.equal(1)
-    expect(logs[0].message).to.equal(
+    assert.strictEqual(logs.length, 1)
+    assert.strictEqual(
+      logs[0].message,
       "Skipping preprocessing of PlantUML standard library include '<std/include.iuml>'",
     )
   })
@@ -214,15 +230,18 @@ describe('PlantUML preprocessing', function () {
     const diagramTextWithUnexistingLocalIncludeFile = `
       !include ${localUnexistingFilePath}
       alice -> bob`
-    expect(
+    assert.strictEqual(
       preprocessPlantUML(diagramTextWithUnexistingLocalIncludeFile, {
         logger: memoryLogger,
       }),
-    ).to.be.equal(diagramTextWithUnexistingLocalIncludeFile)
+      diagramTextWithUnexistingLocalIncludeFile,
+    )
     const logs = memoryLogger.getMessages()
-    expect(logs.length).to.equal(1)
-    expect(logs[0].message).to.includes(
-      `Skipping preprocessing of PlantUML include, because reading the referenced local file '${localUnexistingFilePath}' caused an error:`,
+    assert.strictEqual(logs.length, 1)
+    assert.ok(
+      logs[0].message.includes(
+        `Skipping preprocessing of PlantUML include, because reading the referenced local file '${localUnexistingFilePath}' caused an error:`,
+      ),
     )
   })
 
@@ -232,15 +251,18 @@ describe('PlantUML preprocessing', function () {
     const diagramTextWithUnexistingRemoteIncludeFile = `
       !include ${remoteUnexistingIncludeFilePath}
       alice -> bob`
-    expect(
+    assert.strictEqual(
       preprocessPlantUML(diagramTextWithUnexistingRemoteIncludeFile, {
         logger: memoryLogger,
       }),
-    ).to.be.equal(diagramTextWithUnexistingRemoteIncludeFile)
+      diagramTextWithUnexistingRemoteIncludeFile,
+    )
     const logs = memoryLogger.getMessages()
-    expect(logs.length).to.equal(1)
-    expect(logs[0].message).to.includes(
-      `Skipping preprocessing of PlantUML include, because reading the referenced remote file '${remoteUnexistingIncludeFilePath}' caused an error:`,
+    assert.strictEqual(logs.length, 1)
+    assert.ok(
+      logs[0].message.includes(
+        `Skipping preprocessing of PlantUML include, because reading the referenced remote file '${remoteUnexistingIncludeFilePath}' caused an error:`,
+      ),
     )
   })
 
@@ -252,9 +274,10 @@ describe('PlantUML preprocessing', function () {
     const diagramTextWithIncludedText = `
 ${includedText}
       alice -> bob`
-    expect(
+    assert.strictEqual(
       preprocessPlantUML(diagramTextWithExistingLocalIncludeFile, {}),
-    ).to.be.equal(diagramTextWithIncludedText)
+      diagramTextWithIncludedText,
+    )
   })
 
   it('should return diagramText with inlined local file referenced with "!include local-file-or-url", diagramText with Windows EOL line endings (\\r\\n)', () => {
@@ -262,9 +285,10 @@ ${includedText}
     const diagramTextWithExistingLocalIncludeFile = `!include ${localStyleSheetPath} \r\n\r\nBob->Alice: Hello\r\n`
     const includedText = fs.readFileSync(`${localStyleSheetPath}`, 'utf8')
     const diagramTextWithIncludedText = `${includedText}\n\r\nBob->Alice: Hello\r\n`
-    expect(
+    assert.strictEqual(
       preprocessPlantUML(diagramTextWithExistingLocalIncludeFile, {}),
-    ).to.be.equal(diagramTextWithIncludedText)
+      diagramTextWithIncludedText,
+    )
   })
 
   it('should return diagramText with inlined local file referenced with "!include local-file-or-url" and first "@startuml ... @enduml" block', () => {
@@ -277,9 +301,10 @@ ${includedText}
     const diagramTextWithIncludedText = `
 ${includedText}
       alice -> bob`
-    expect(
+    assert.strictEqual(
       preprocessPlantUML(diagramTextWithExistingLocalIncludeFile, {}),
-    ).to.be.equal(diagramTextWithIncludedText)
+      diagramTextWithIncludedText,
+    )
   })
 
   it('should return diagramText with inlined local file referenced with "!include local-file-name-with-spaces # trailing comment"', () => {
@@ -297,9 +322,10 @@ ${includedText}
     const diagramTextWithIncludedText = `
 ${includedText} # this includes general style
       alice -> bob`
-    expect(
+    assert.strictEqual(
       preprocessPlantUML(diagramTextWithExistingLocalIncludeFile, {}),
-    ).to.be.equal(diagramTextWithIncludedText)
+      diagramTextWithIncludedText,
+    )
   })
 
   it('should return diagramText with inlined local file(s) referenced multiple times with "!include local-file-or-url"', () => {
@@ -312,9 +338,10 @@ ${includedText} # this includes general style
 ${includedText}
       alice -> bob
 ${includedText}`
-    expect(
+    assert.strictEqual(
       preprocessPlantUML(diagramTextWithExistingLocalIncludeFile, {}),
-    ).to.be.equal(diagramTextWithIncludedText)
+      diagramTextWithIncludedText,
+    )
   })
 
   it('should return diagramText with inlined local file(s) referenced multiple times with "!include_many local-file-or-url"', () => {
@@ -327,9 +354,10 @@ ${includedText}`
 ${includedText}
       alice -> bob
 ${includedText}`
-    expect(
+    assert.strictEqual(
       preprocessPlantUML(diagramTextWithExistingLocalIncludeFile, {}),
-    ).to.be.equal(diagramTextWithIncludedText)
+      diagramTextWithIncludedText,
+    )
   })
 
   it('should throw an error for local file(s) referenced multiple times with "!include_once local-file-or-url"', () => {
@@ -338,9 +366,10 @@ ${includedText}`
       alice -> bob
       !include_once ${localExistingFilePath}`
     const errorMessage = `Preprocessing of PlantUML include failed, because including multiple times referenced file '${localExistingFilePath}' with '!include_once' guard`
-    expect(() =>
-      preprocessPlantUML(diagramTextWithExistingLocalIncludeOneFile, {}),
-    ).to.throw(errorMessage)
+    assertThrows(
+      () => preprocessPlantUML(diagramTextWithExistingLocalIncludeOneFile, {}),
+      errorMessage,
+    )
   })
 
   it('should throw an error for local file(s) referenced multiple times nested with "!include_once local-file-or-url"', () => {
@@ -351,9 +380,10 @@ ${includedText}`
       alice -> bob
       !include ${localExistingFileNameIncludedOncePath}`
     const errorMessage = `Preprocessing of PlantUML include failed, because including multiple times referenced file '${localExistingFilePath}' with '!include_once' guard`
-    expect(() =>
-      preprocessPlantUML(diagramTextWithExistingLocalIncludeOneFile, {}),
-    ).to.throw(errorMessage)
+    assertThrows(
+      () => preprocessPlantUML(diagramTextWithExistingLocalIncludeOneFile, {}),
+      errorMessage,
+    )
   })
 
   it('should return diagramText with inlined local file(s) referenced multiple times with "!include_once local-file-or-url ... !include local-file-or-url"', () => {
@@ -366,9 +396,10 @@ ${includedText}`
 ${includedText}
       alice -> bob
 ${includedText}`
-    expect(
+    assert.strictEqual(
       preprocessPlantUML(diagramTextWithExistingLocalIncludeFile, {}),
-    ).to.be.equal(diagramTextWithIncludedText)
+      diagramTextWithIncludedText,
+    )
   })
 
   it('should return diagramText while preserving inline and block comments"', () => {
@@ -387,9 +418,10 @@ ${includedText}
         !include ${localExistingFilePath}
         the whole block is preserved
       '/ alice -> bob /' this also should be preserved '/`
-    expect(
+    assert.strictEqual(
       preprocessPlantUML(diagramTextWithExistingLocalIncludeFile, {}),
-    ).to.be.equal(diagramTextWithIncludedText)
+      diagramTextWithIncludedText,
+    )
   })
 
   it('should return diagramText while preserving trailing block comment"', () => {
@@ -402,9 +434,10 @@ ${includedText}
 ${includedText} /'
       this is a trailing block comment
       '/`
-    expect(
+    assert.strictEqual(
       preprocessPlantUML(diagramTextWithExistingLocalIncludeFile, {}),
-    ).to.be.equal(diagramTextWithIncludedText)
+      diagramTextWithIncludedText,
+    )
   })
 
   it('should return diagramText with inlined local file referenced with "!include local-file-name-with-spaces"', () => {
@@ -422,9 +455,10 @@ ${includedText} /'
     const diagramTextWithIncludedText = `
 ${includedText}
       alice -> bob`
-    expect(
+    assert.strictEqual(
       preprocessPlantUML(diagramTextWithExistingLocalIncludeFile, {}),
-    ).to.be.equal(diagramTextWithIncludedText)
+      diagramTextWithIncludedText,
+    )
   })
 
   it('should return diagramText with inlined remote file referenced with "!include remote-url"', () => {
@@ -438,9 +472,10 @@ ${includedText}
     const diagramTextWithIncludedText = `
 ${includedText}
       alice -> bob`
-    expect(
+    assert.strictEqual(
       preprocessPlantUML(diagramTextWithExistingRemoteIncludeFile, {}),
-    ).to.be.equal(diagramTextWithIncludedText)
+      diagramTextWithIncludedText,
+    )
   })
 
   it('should return diagramText with inlined remote file referenced with "!includeurl remote-url"', () => {
@@ -454,9 +489,10 @@ ${includedText}
     const diagramTextWithIncludedText = `
 ${includedText}
       alice -> bob`
-    expect(
+    assert.strictEqual(
       preprocessPlantUML(diagramTextWithExistingRemoteIncludeFile, {}),
-    ).to.be.equal(diagramTextWithIncludedText)
+      diagramTextWithIncludedText,
+    )
   })
 
   it('should return diagramText with inlined multiple local files referenced with "!include local-file-or-url"', () => {
@@ -475,9 +511,10 @@ ${includedText}
 ${includedText1}
 ${includedText2}
       alice -> bob`
-    expect(
+    assert.strictEqual(
       preprocessPlantUML(diagramTextWithExistingLocalIncludeFiles, {}),
-    ).to.be.equal(diagramTextWithIncludedText)
+      diagramTextWithIncludedText,
+    )
   })
 
   it('should return diagramText with inlined recursive local files referenced with "!include local-file-or-url"', () => {
@@ -495,9 +532,10 @@ ${includedText}
 ${includedText1}
 ${includedText2}
       alice -> bob`
-    expect(
+    assert.strictEqual(
       preprocessPlantUML(diagramTextWithExistingRecursiveLocalIncludeFile, {}),
-    ).to.be.equal(diagramTextWithIncludedText)
+      diagramTextWithIncludedText,
+    )
   })
 
   it('should return diagramText with inlined recursive local files referenced with "!include local-file-name-with-spaces"', () => {
@@ -523,9 +561,10 @@ ${includedText}
 ${includedText1}
 ${includedText2}
       alice -> bob`
-    expect(
+    assert.strictEqual(
       preprocessPlantUML(diagramTextWithExistingRecursiveLocalIncludeFile, {}),
-    ).to.be.equal(diagramTextWithIncludedText)
+      diagramTextWithIncludedText,
+    )
   })
 
   it('should throw an error for file recursive included itself', () => {
@@ -535,7 +574,8 @@ ${includedText2}
       !include ${localExistingFileIncludesItselfPath}
       alice -> bob`
     const errorMessage = `Preprocessing of PlantUML include failed, because recursive reading already included referenced file '${localExistingFileIncludesItselfPath}'`
-    expect(() => preprocessPlantUML(diagramTextWithIncludeItself, {})).to.throw(
+    assertThrows(
+      () => preprocessPlantUML(diagramTextWithIncludeItself, {}),
       errorMessage,
     )
   })
@@ -547,9 +587,10 @@ ${includedText2}
       !include ${localExistingFileGrandParentPath}
       alice -> bob`
     const errorMessage = `Preprocessing of PlantUML include failed, because recursive reading already included referenced file '${localExistingFileGrandParentPath}'`
-    expect(() =>
-      preprocessPlantUML(diagramTextWithIncludeGrandParent, {}),
-    ).to.throw(errorMessage)
+    assertThrows(
+      () => preprocessPlantUML(diagramTextWithIncludeGrandParent, {}),
+      errorMessage,
+    )
   })
 
   it('should return diagramText with inlined local file referenced with "!includesub local-file!sub-name"', () => {
@@ -564,12 +605,13 @@ B -> B : stuff2.1
 D -> D : stuff4
 D -> D : stuff4.1
       alice -> bob`
-    expect(
+    assert.strictEqual(
       preprocessPlantUML(
         diagramTextWithExistingIncludeFileWithSubs,
         {},
       ).replace(/\r\n/g, '\n'),
-    ).to.be.equal(diagramTextWithIncludedText)
+      diagramTextWithIncludedText,
+    )
   })
 
   it('should return diagramText with inlined local file referenced with "!include local-file!id"', () => {
@@ -587,12 +629,13 @@ B -> B : stuff2
 C -> C : stuff3
 D -> D : stuff4
       alice -> bob`
-    expect(
+    assert.strictEqual(
       preprocessPlantUML(diagramTextWithExistingIncludeFileWithID, {}).replace(
         /\r\n/g,
         '\n',
       ),
-    ).to.be.equal(diagramTextWithIncludedText)
+      diagramTextWithIncludedText,
+    )
   })
 
   it('should return diagramText with inlined local file referenced with "!include local-file!index"', () => {
@@ -610,12 +653,13 @@ B -> B : stuff2
 C -> C : stuff3
 D -> D : stuff4
       alice -> bob`
-    expect(
+    assert.strictEqual(
       preprocessPlantUML(
         diagramTextWithExistingIncludeFileWithIndex,
         {},
       ).replace(/\r\n/g, '\n'),
-    ).to.be.equal(diagramTextWithIncludedText)
+      diagramTextWithIncludedText,
+    )
   })
 
   it('should resolve include path relative to the included file', () => {
@@ -627,12 +671,13 @@ skinparam Handwritten true
 skinparam DefaultFontName "Neucha"
 skinparam BackgroundColor black
       alice -> bob`
-    expect(
+    assert.strictEqual(
       preprocessPlantUML(diagramTextWithExistingIncludeFile, {}).replace(
         /\r\n/g,
         '\n',
       ),
-    ).to.be.equal(diagramTextWithIncludedText)
+      diagramTextWithIncludedText,
+    )
   })
 
   it('should include a PlantUML file from an absolute path', () => {
@@ -645,12 +690,13 @@ skinparam Handwritten true
 skinparam DefaultFontName "Neucha"
 skinparam BackgroundColor black
       alice -> bob`
-    expect(
+    assert.strictEqual(
       preprocessPlantUML(diagramTextWithExistingIncludeFile, {}).replace(
         /\r\n/g,
         '\n',
       ),
-    ).to.be.equal(diagramTextWithIncludedText)
+      diagramTextWithIncludedText,
+    )
   })
 
   it('should remove all PlantUml tags', () => {
@@ -664,10 +710,13 @@ skinparam BackgroundColor black
       @enduml`
 
     const result = preprocessPlantUML(diagramTextWithTags, {})
-    expect(result).to.not.contain('@startuml')
-    expect(result).to.not.contain('@enduml')
-    expect(result.trim()).to.be.eq(`alice -> bob
-      here -> there`)
+    assert.ok(!result.includes('@startuml'))
+    assert.ok(!result.includes('@enduml'))
+    assert.strictEqual(
+      result.trim(),
+      `alice -> bob
+      here -> there`,
+    )
   })
 
   it('should resolve PlantUML includes from the diagram directory', () => {
@@ -679,16 +728,17 @@ skinparam BackgroundColor black
       extension_registry: registry,
       to_file: false,
     })
-    expect(html).to.contain(
-      'https://kroki.io/plantuml/svg/eNorzs7MK0gsSsxVyM3Py0_OKMrPTVUoKSpN5eJyyk_StXPMyUxOtVLwSM3JyQcAc1EPvA==',
+    assert.ok(
+      html.includes(
+        'https://kroki.io/plantuml/svg/eNorzs7MK0gsSsxVyM3Py0_OKMrPTVUoKSpN5eJyyk_StXPMyUxOtVLwSM3JyQcAc1EPvA==',
+      ),
     )
   })
 })
 
 const { preprocessStructurizr } = require('../src/preprocess.js')
 
-describe('Structurizr preprocessing', function () {
-  this.timeout(30000)
+describe('Structurizr preprocessing', { timeout: 30000 }, () => {
   const remoteBasePath =
     'https://raw.githubusercontent.com/asciidoctor/asciidoctor-kroki/master/'
   const localUnexistingFilePath = 'test/fixtures/structurizr/unexisting.dsl'
@@ -713,7 +763,8 @@ describe('Structurizr preprocessing', function () {
           s = softwareSystem "Software System"
           u -> s "Uses"
       ${diagramTextTail}`
-    expect(preprocessStructurizr(diagramTextWithoutInclude, {})).to.be.equal(
+    assert.strictEqual(
+      preprocessStructurizr(diagramTextWithoutInclude, {}),
       diagramTextWithoutInclude,
     )
   })
@@ -726,15 +777,18 @@ describe('Structurizr preprocessing', function () {
           s = softwareSystem "Software System"
           u -> s "Uses"
       ${diagramTextTail}`
-    expect(
+    assert.strictEqual(
       preprocessStructurizr(diagramTextWithUnexistingLocalIncludeFile, {
         logger: memoryLogger,
       }),
-    ).to.be.equal(diagramTextWithUnexistingLocalIncludeFile)
+      diagramTextWithUnexistingLocalIncludeFile,
+    )
     const logs = memoryLogger.getMessages()
-    expect(logs.length).to.equal(1)
-    expect(logs[0].message).to.includes(
-      `Skipping preprocessing of Structurizr include, because reading the referenced local file '${localUnexistingFilePath}' caused an error:`,
+    assert.strictEqual(logs.length, 1)
+    assert.ok(
+      logs[0].message.includes(
+        `Skipping preprocessing of Structurizr include, because reading the referenced local file '${localUnexistingFilePath}' caused an error:`,
+      ),
     )
   })
 
@@ -747,15 +801,18 @@ describe('Structurizr preprocessing', function () {
           s = softwareSystem "Software System"
           u -> s "Uses"
       ${diagramTextTail}`
-    expect(
+    assert.strictEqual(
       preprocessStructurizr(diagramTextWithUnexistingRemoteIncludeFile, {
         logger: memoryLogger,
       }),
-    ).to.be.equal(diagramTextWithUnexistingRemoteIncludeFile)
+      diagramTextWithUnexistingRemoteIncludeFile,
+    )
     const logs = memoryLogger.getMessages()
-    expect(logs.length).to.equal(1)
-    expect(logs[0].message).to.includes(
-      `Skipping preprocessing of Structurizr include, because reading the referenced remote file '${remoteUnexistingIncludeFilePath}' caused an error:`,
+    assert.strictEqual(logs.length, 1)
+    assert.ok(
+      logs[0].message.includes(
+        `Skipping preprocessing of Structurizr include, because reading the referenced remote file '${remoteUnexistingIncludeFilePath}' caused an error:`,
+      ),
     )
   })
 
@@ -773,9 +830,10 @@ ${includedText}
           s = softwareSystem "Software System"
           u -> s "Uses"
       ${diagramTextTail}`
-    expect(
+    assert.strictEqual(
       preprocessStructurizr(diagramTextWithExistingLocalIncludeFile, {}),
-    ).to.be.equal(diagramTextWithIncludedText)
+      diagramTextWithIncludedText,
+    )
   })
 
   it('should return diagramText while preserving inline and block comments"', () => {
@@ -802,9 +860,10 @@ ${includedText}
           */ s = softwareSystem "Software System" /* this also should be preserved */
           u -> s "Uses"
       ${diagramTextTail}`
-    expect(
+    assert.strictEqual(
       preprocessStructurizr(diagramTextWithExistingLocalIncludeFile, {}),
-    ).to.be.equal(diagramTextWithIncludedText)
+      diagramTextWithIncludedText,
+    )
   })
 
   it('should return diagramText while preserving trailing block comment"', () => {
@@ -825,9 +884,10 @@ ${includedText} /*
           s = softwareSystem "Software System"
           u -> s "Uses"
       ${diagramTextTail}`
-    expect(
+    assert.strictEqual(
       preprocessStructurizr(diagramTextWithExistingLocalIncludeFile, {}),
-    ).to.be.equal(diagramTextWithIncludedText)
+      diagramTextWithIncludedText,
+    )
   })
 
   it('should return diagramText with inlined local file referenced with "!include local-file-name-with-spaces"', () => {
@@ -851,9 +911,10 @@ ${includedText}
           s = softwareSystem "Software System"
           u -> s "Uses"
       ${diagramTextTail}`
-    expect(
+    assert.strictEqual(
       preprocessStructurizr(diagramTextWithExistingLocalIncludeFile, {}),
-    ).to.be.equal(diagramTextWithIncludedText)
+      diagramTextWithIncludedText,
+    )
   })
 
   it('should return diagramText with inlined multiple local files referenced with "!include local-file-or-url"', () => {
@@ -873,9 +934,10 @@ ${includedText}
 ${includedText1}
           u -> s "Uses"
       ${diagramTextTail}`
-    expect(
+    assert.strictEqual(
       preprocessStructurizr(diagramTextWithExistingLocalIncludeFiles, {}),
-    ).to.be.equal(diagramTextWithIncludedText)
+      diagramTextWithIncludedText,
+    )
   })
 
   it('should return diagramText with inlined recursive local files referenced with "!include local-file-or-url"', () => {
@@ -897,12 +959,13 @@ ${includedText1}
 
           u -> s "Uses"
       ${diagramTextTail}`
-    expect(
+    assert.strictEqual(
       preprocessStructurizr(
         diagramTextWithExistingRecursiveLocalIncludeFile,
         {},
       ),
-    ).to.be.equal(diagramTextWithIncludedText)
+      diagramTextWithIncludedText,
+    )
   })
 
   it('should throw an error for file recursive included itself', () => {
@@ -915,8 +978,9 @@ ${includedText1}
           u -> s "Uses"
       ${diagramTextTail}`
     const errorMessage = `Preprocessing of Structurizr include failed, because recursive reading already included referenced file '${localExistingFileIncludesItselfPath}'`
-    expect(() =>
-      preprocessStructurizr(diagramTextWithIncludeItself, {}),
-    ).to.throw(errorMessage)
+    assertThrows(
+      () => preprocessStructurizr(diagramTextWithIncludeItself, {}),
+      errorMessage,
+    )
   })
 })

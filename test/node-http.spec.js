@@ -1,9 +1,8 @@
-/* global describe it */
+const { describe, it } = require('node:test')
+const assert = require('node:assert')
 const httpClient = require('../src/http/node-http.js')
 const { Worker } = require('node:worker_threads')
 const ospath = require('node:path')
-const chai = require('chai')
-const expect = chai.expect
 
 /**
  * @returns {Promise<{}>}
@@ -26,10 +25,10 @@ describe('Synchronous HTTP client (unxhr)', () => {
     const { worker, port } = await startServer('500-server.js')
     try {
       httpClient.get(`http://localhost:${port}`, {}, 'utf8')
-      expect.fail('it should throw an error when the server returns a 500')
+      assert.fail('it should throw an error when the server returns a 500')
     } catch (err) {
       // it should include the response from the server in the error message
-      expect(err.message).to.contains('500 Something went bad!')
+      assert.ok(err.message.includes('500 Something went bad!'))
     } finally {
       await worker.terminate()
     }
@@ -38,11 +37,11 @@ describe('Synchronous HTTP client (unxhr)', () => {
     const { worker, port } = await startServer('204-server.js')
     try {
       httpClient.get(`http://localhost:${port}`, {}, 'utf8')
-      expect.fail(
+      assert.fail(
         'it should throw an error when the server returns an empty response',
       )
     } catch (err) {
-      expect(err.message).to.contains('server returns an empty response')
+      assert.ok(err.message.includes('server returns an empty response'))
     } finally {
       await worker.terminate()
     }

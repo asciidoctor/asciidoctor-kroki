@@ -14,9 +14,9 @@
   ],
   "scripts": {
     "test": "npm run test:node && npm run test:browser && npm run test:antora",
-    "test:node": "mocha test/**.spec.js",
+    "test:node": "node --test test/*.spec.js",
     "test:browser": "node test/browser/run.js",
-    "test:antora": "mocha test/antora/**.spec.js",
+    "test:antora": "node --test test/antora/*.spec.js",
     "lint": "biome check src/ test/ tasks/",
     "lint-fix": "biome check --write src/ test/ tasks/",
     "clean": "shx rm -rf dist/*",
@@ -36,12 +36,8 @@
     "@biomejs/biome": "~2.4",
     "base64-js": "1.5.1",
     "browserify": "17.0.0",
-    "chai": "~4.3",
-    "chai-string": "1.5.0",
     "cheerio": "1.0.0-rc.12",
-    "dirty-chai": "2.0.1",
     "lodash": "4.17.21",
-    "mocha": "10.2.0",
     "puppeteer": "~24.10",
     "shx": "0.3.4",
     "sinon": "~16.1",
@@ -71,9 +67,9 @@
     "access": "public"
   },
   "engines": {
-    "node": ">=10"
+    "node": ">=24"
   },
   "volta": {
-    "node": "22.15.0"
+    "node": "24.0.0"
   }
 }
