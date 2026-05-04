@@ -1,15 +1,11 @@
-/* global describe it before */
+const { describe, it, before } = require('node:test')
+const assert = require('node:assert')
 const fs = require('node:fs')
 const cheerio = require('cheerio')
-const chai = require('chai')
-const expect = chai.expect
-chai.use(require('chai-string'))
-chai.use(require('dirty-chai'))
 
 const generateSite = require('@antora/site-generator-default')
 
-describe('Antora integration (local)', function () {
-  this.timeout(90000)
+describe('Antora integration (local)', { timeout: 90000 }, () => {
   before(async () => {
     fs.rmSync(`${__dirname}/public`, { recursive: true, force: true })
     await generateSite([`--playbook=${__dirname}/site.yml`])
@@ -19,10 +15,10 @@ describe('Antora integration (local)', function () {
       fs.readFileSync(`${__dirname}/public/antora-kroki/source-location.html`),
     )
     const imageElements = $('img')
-    expect(imageElements.length).to.equal(9)
+    assert.strictEqual(imageElements.length, 9)
     imageElements.each((_i, imageElement) => {
       const src = $(imageElement).attr('src')
-      expect(src).to.startWith('_images/ab-')
+      assert.ok(src.startsWith('_images/ab-'))
     })
   })
   it('should resolve included diagrams when using plantuml::partial$xxx.puml[] macro', async () => {
@@ -30,44 +26,43 @@ describe('Antora integration (local)', function () {
       fs.readFileSync(`${__dirname}/public/antora-kroki/source-location.html`),
     )
     const imageElement = $('img[alt*=ab-inc-partial-1]')
-    expect(imageElement.length).to.equal(1)
+    assert.strictEqual(imageElement.length, 1)
     const src = imageElement.attr('src')
     const diagramContents = fs
       .readFileSync(`${__dirname}/public/antora-kroki/${src}`)
       .toString()
-    expect(diagramContents).includes('alice')
-    expect(diagramContents).includes('bob')
+    assert.ok(diagramContents.includes('alice'))
+    assert.ok(diagramContents.includes('bob'))
   })
   it('should resolve included diagrams from subfolders when using plantuml::partial$subfolder/xxx.puml[] macro', async () => {
     const $ = cheerio.load(
       fs.readFileSync(`${__dirname}/public/antora-kroki/source-location.html`),
     )
     const imageElement = $('img[alt*=ab-inc-sub-partial-1]')
-    expect(imageElement.length).to.equal(1)
+    assert.strictEqual(imageElement.length, 1)
     const src = imageElement.attr('src')
     const diagramContents = fs
       .readFileSync(`${__dirname}/public/antora-kroki/${src}`)
       .toString()
-    expect(diagramContents).includes('alice')
-    expect(diagramContents).includes('bob')
+    assert.ok(diagramContents.includes('alice'))
+    assert.ok(diagramContents.includes('bob'))
   })
   it('should resolve included diagrams when using structurizr::partial$xxx.dsl[] macro', async () => {
     const $ = cheerio.load(
       fs.readFileSync(`${__dirname}/public/antora-kroki/source-location.html`),
     )
     const imageElement = $('img[alt*=ab-inc-partial-2]')
-    expect(imageElement.length).to.equal(1)
+    assert.strictEqual(imageElement.length, 1)
     const src = imageElement.attr('src')
     const diagramContents = fs
       .readFileSync(`${__dirname}/public/antora-kroki/${src}`)
       .toString()
-    expect(diagramContents).includes('User')
-    expect(diagramContents).includes('Software System')
+    assert.ok(diagramContents.includes('User'))
+    assert.ok(diagramContents.includes('Software System'))
   })
 })
 
-describe('Antora integration (remote)', function () {
-  this.timeout(90000)
+describe('Antora integration (remote)', { timeout: 90000 }, () => {
   before(async () => {
     fs.rmSync(`${__dirname}/public`, { recursive: true, force: true })
     await generateSite([`--playbook=${__dirname}/site-remote.yml`])
@@ -77,10 +72,10 @@ describe('Antora integration (remote)', function () {
       fs.readFileSync(`${__dirname}/public/antora-kroki/source-location.html`),
     )
     const imageElements = $('img')
-    expect(imageElements.length).to.equal(9)
+    assert.strictEqual(imageElements.length, 9)
     imageElements.each((_i, imageElement) => {
       const src = $(imageElement).attr('src')
-      expect(src).to.startWith('_images/ab-')
+      assert.ok(src.startsWith('_images/ab-'))
     })
   })
   it('should resolve included diagrams when using plantuml::partial$xxx.puml[] macro', async () => {
@@ -88,25 +83,25 @@ describe('Antora integration (remote)', function () {
       fs.readFileSync(`${__dirname}/public/antora-kroki/source-location.html`),
     )
     const imageElement = $('img[alt*=ab-inc-partial-1]')
-    expect(imageElement.length).to.equal(1)
+    assert.strictEqual(imageElement.length, 1)
     const src = imageElement.attr('src')
     const diagramContents = fs
       .readFileSync(`${__dirname}/public/antora-kroki/${src}`)
       .toString()
-    expect(diagramContents).includes('alice')
-    expect(diagramContents).includes('bob')
+    assert.ok(diagramContents.includes('alice'))
+    assert.ok(diagramContents.includes('bob'))
   })
   it('should resolve included diagrams when using structurizr::partial$xxx.dsl[] macro', async () => {
     const $ = cheerio.load(
       fs.readFileSync(`${__dirname}/public/antora-kroki/source-location.html`),
     )
     const imageElement = $('img[alt*=ab-inc-partial-2]')
-    expect(imageElement.length).to.equal(1)
+    assert.strictEqual(imageElement.length, 1)
     const src = imageElement.attr('src')
     const diagramContents = fs
       .readFileSync(`${__dirname}/public/antora-kroki/${src}`)
       .toString()
-    expect(diagramContents).includes('User')
-    expect(diagramContents).includes('Software System')
+    assert.ok(diagramContents.includes('User'))
+    assert.ok(diagramContents.includes('Software System'))
   })
 })

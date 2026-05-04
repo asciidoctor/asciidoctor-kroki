@@ -1,17 +1,13 @@
-/* global describe it before after */
+const { describe, it, before, after } = require('node:test')
+const assert = require('node:assert')
 const ospath = require('node:path')
 const os = require('node:os')
 const fs = require('node:fs')
 const fsPromises = require('node:fs/promises')
 const rusha = require('rusha')
 const pako = require('pako')
-const chai = require('chai')
 const sinon = require('sinon')
-const expect = chai.expect
-const dirtyChai = require('dirty-chai')
 const { GenericContainer } = require('testcontainers')
-
-chai.use(dirtyChai)
 
 const { readFixture, fixturePath, deleteDirWithFiles } = require('./utils.js')
 const http = require('../src/http/node-http.js')
@@ -23,40 +19,20 @@ let krokiServerUrl
 describe('Registration', () => {
   it('should register the extension', () => {
     const registry = asciidoctor.Extensions.create()
-    expect(registry['$block_macros?']()).to.be.false()
+    assert.strictEqual(registry['\$block_macros?'](), false)
     asciidoctorKroki.register(registry)
-    expect(registry['$block_macros?']()).to.be.true()
-    expect(registry['$registered_for_block_macro?']('plantuml')).to.be.an(
-      'object',
-    )
-    expect(registry['$registered_for_block_macro?']('vega')).to.be.an('object')
-    expect(registry['$registered_for_block_macro?']('vegalite')).to.be.an(
-      'object',
-    )
-    expect(registry['$registered_for_block_macro?']('packetdiag')).to.be.an(
-      'object',
-    )
-    expect(registry['$registered_for_block_macro?']('rackdiag')).to.be.an(
-      'object',
-    )
-    expect(registry['$registered_for_block_macro?']('wavedrom')).to.be.an(
-      'object',
-    )
-    expect(registry['$registered_for_block_macro?']('excalidraw')).to.be.an(
-      'object',
-    )
-    expect(registry['$registered_for_block_macro?']('pikchr')).to.be.an(
-      'object',
-    )
-    expect(registry['$registered_for_block_macro?']('structurizr')).to.be.an(
-      'object',
-    )
-    expect(registry['$registered_for_block_macro?']('diagramsnet')).to.be.an(
-      'object',
-    )
-    expect(registry['$registered_for_block_macro?']('wireviz')).to.be.an(
-      'object',
-    )
+    assert.strictEqual(registry['\$block_macros?'](), true)
+    assert.ok(registry['$registered_for_block_macro?']('plantuml'))
+    assert.ok(registry['$registered_for_block_macro?']('vega'))
+    assert.ok(registry['$registered_for_block_macro?']('vegalite'))
+    assert.ok(registry['$registered_for_block_macro?']('packetdiag'))
+    assert.ok(registry['$registered_for_block_macro?']('rackdiag'))
+    assert.ok(registry['$registered_for_block_macro?']('wavedrom'))
+    assert.ok(registry['$registered_for_block_macro?']('excalidraw'))
+    assert.ok(registry['$registered_for_block_macro?']('pikchr'))
+    assert.ok(registry['$registered_for_block_macro?']('structurizr'))
+    assert.ok(registry['$registered_for_block_macro?']('diagramsnet'))
+    assert.ok(registry['$registered_for_block_macro?']('wireviz'))
   })
 })
 
@@ -83,10 +59,9 @@ describe('Conversion', () => {
     }
   }
 
-  describe('When extension is registered', function () {
+  describe('When extension is registered', { timeout: 30000 }, () => {
     if (os.platform() !== 'win32') {
-      before(async function () {
-        this.timeout(60000)
+      before(async () => {
         fs.rmSync(ospath.join(__dirname, '..', '.asciidoctor', 'kroki', '*'), {
           recursive: true,
           force: true,
@@ -95,14 +70,11 @@ describe('Conversion', () => {
           .withExposedPorts(8000)
           .start()
         krokiServerUrl = `http://${container.getHost()}:${container.getMappedPort(8000)}`
-      })
+      }, { timeout: 60000 })
 
-      after(async function () {
-        this.timeout(60000)
+      after(async () => {
         await container.stop()
-      })
-
-      this.timeout(30000)
+      }, { timeout: 60000 })
       it('should convert a diagram to an image', () => {
         const input = `
 [plantuml,alice-bob,svg,role=sequence]
@@ -118,12 +90,12 @@ alice -> bob
             'kroki-server-url': krokiServerUrl,
           },
         })
-        expect(html).to.contain(
+        assert.ok(html.includes(
           `${krokiServerUrl}/plantuml/svg/eNpLzMlMTlXQtVNIyk8CABoDA90=`,
-        )
-        expect(html).to.contain(
+          ))
+        assert.ok(html.includes(
           '<div class="imageblock sequence kroki-format-svg kroki">',
-        )
+          ))
       })
       it('should only pass diagram options as query parameters', () => {
         const input = `
@@ -138,12 +110,12 @@ alice -> bob: hello
           extension_registry: registry,
           attributes: { 'kroki-server-url': krokiServerUrl },
         })
-        expect(html).to.contain(
+        assert.ok(html.includes(
           `${krokiServerUrl}/plantuml/svg/eNpLzMlMTlXQtVNIyk-yUshIzcnJBwA9iwZL?theme=bluegray`,
-        )
-        expect(html).to.contain(
+          ))
+        assert.ok(html.includes(
           '<div class="imageblock right text-center sequence kroki-format-svg kroki">',
-        )
+          ))
       })
       it('should convert a diagram with an absolute path to an image', () => {
         const file = fixturePath('alice.puml')
@@ -154,12 +126,12 @@ alice -> bob: hello
           extension_registry: registry,
           attributes: { 'kroki-server-url': krokiServerUrl },
         })
-        expect(html).to.contain(
+        assert.ok(html.includes(
           `${krokiServerUrl}/plantuml/svg/${encode(file)}`,
-        )
-        expect(html).to.contain(
+          ))
+        assert.ok(html.includes(
           '<div class="imageblock sequence kroki-format-svg kroki">',
-        )
+          ))
       })
       it('should convert a PlantUML diagram and resolve include relative to base directory', () => {
         const file = fixturePath('plantuml', 'alice-with-styles.puml')
@@ -183,12 +155,12 @@ alice -> bob: hello
             'kroki-server-url': krokiServerUrl,
           },
         })
-        expect(html).to.contain(
+        assert.ok(html.includes(
           `${krokiServerUrl}/plantuml/svg/${encodeText(diagramText)}`,
-        )
-        expect(html).to.contain(
+          ))
+        assert.ok(html.includes(
           '<div class="imageblock sequence kroki-format-svg kroki">',
-        )
+          ))
       })
       it('should convert a PlantUML diagram and resolve include relative to diagram directory', () => {
         const file = fixturePath('plantuml', 'hello.puml')
@@ -212,12 +184,12 @@ alice -> bob: hello
             'kroki-server-url': krokiServerUrl,
           },
         })
-        expect(html).to.contain(
+        assert.ok(html.includes(
           `${krokiServerUrl}/plantuml/svg/${encodeText(diagramText)}`,
-        )
-        expect(html).to.contain(
+          ))
+        assert.ok(html.includes(
           '<div class="imageblock sequence kroki-format-svg kroki">',
-        )
+          ))
       })
       it('should convert a PlantUML diagram and resolve includes from configured kroki-plantuml-include-paths attribute with single path', () => {
         const file = fixturePath(
@@ -257,12 +229,12 @@ alice -> bob: hello
           },
           base_dir: fixturePath(),
         })
-        expect(html).to.contain(
+        assert.ok(html.includes(
           `${krokiServerUrl}/plantuml/svg/${encodeText(diagramText)}`,
-        )
-        expect(html).to.contain(
+          ))
+        assert.ok(html.includes(
           '<div class="imageblock sequence kroki-format-svg kroki">',
-        )
+          ))
       })
       it('should convert a PlantUML diagram and resolve includes from configured kroki-plantuml-include-paths attribute with multiple paths', () => {
         const file = fixturePath(
@@ -302,10 +274,10 @@ alice -> bob: hello
           base_dir: fixturePath(),
         })
         const encoded = encodeText(diagramText)
-        expect(html).to.contain(`${krokiServerUrl}/plantuml/svg/${encoded}`)
-        expect(html).to.contain(
+        assert.ok(html.includes(`${krokiServerUrl}/plantuml/svg/${encoded}`))
+        assert.ok(html.includes(
           '<div class="imageblock sequence kroki-format-svg kroki">',
-        )
+          ))
       })
       it('should convert a diagram with a relative path to an image', () => {
         const input = `
@@ -328,9 +300,9 @@ plantuml::test/fixtures/alice.puml[png,role=sequence]
           .createHash()
           .update(`${krokiServerUrl}/plantuml/png/${encode(file)}`)
           .digest('hex')
-        expect(html).to.contain(
+        assert.ok(html.includes(
           `<img src=".asciidoctor/kroki/diag-${hash}.png" alt="Diagram">`,
-        )
+          ))
       })
       it('should include the plantuml-config at the top of the diagram', () => {
         const file = fixturePath('alice.puml')
@@ -347,11 +319,11 @@ plantuml::test/fixtures/alice.puml[png,role=sequence]
           },
         })
         const diagramText = getDiagramFromHTML(html)
-        expect(diagramText).to.contain('skinparam BackgroundColor black')
-        expect(diagramText).to.contain('alice -> bob')
-        expect(html).to.contain(
+        assert.ok(diagramText.includes('skinparam BackgroundColor black'))
+        assert.ok(diagramText.includes('alice -> bob'))
+        assert.ok(html.includes(
           '<div class="imageblock sequence kroki-format-svg kroki">',
-        )
+          ))
       })
       it('should convert a file containing the macro form using a relative path to a diagram', () => {
         const registry = asciidoctor.Extensions.create()
@@ -366,12 +338,12 @@ plantuml::test/fixtures/alice.puml[png,role=sequence]
             },
           })
           .convert()
-        expect(html).to.contain(
+        assert.ok(html.includes(
           `${krokiServerUrl}/plantuml/svg/${encode(macroFile)}`,
-        )
-        expect(html).to.contain(
+          ))
+        assert.ok(html.includes(
           '<div class="imageblock sequence kroki-format-svg kroki">',
-        )
+          ))
       })
       it('should download and embed an SVG image with kroki-fetch-diagram and kroki-data-uri', () => {
         const registry = asciidoctor.Extensions.create()
@@ -387,9 +359,9 @@ plantuml::test/fixtures/alice.puml[png,role=sequence]
             safe: 'unsafe',
           },
         )
-        expect(html).to.contain(
+        assert.ok(html.includes(
           '<img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d',
-        )
+          ))
       })
       it('should create diagrams in imagesdir if kroki-fetch-diagram is set', async () => {
         const registry = asciidoctor.Extensions.create()
@@ -408,7 +380,7 @@ plantuml::test/fixtures/alice.puml[png,role=sequence]
         )
         try {
           const files = await fsPromises.readdir(imageLocation)
-          expect(files).to.have.lengthOf(1)
+          assert.strictEqual(files.length, 1)
         } finally {
           deleteDirWithFiles(imageLocation)
         }
@@ -432,9 +404,9 @@ Hello -> World
             'kroki-server-url': krokiServerUrl,
           },
         })
-        expect(html).to.contain(
+        assert.ok(html.includes(
           `<img src="${krokiServerUrl}/plantuml/svg/eNrzSM3JyVfQtVMIzy_KSQEAIiQEqA==" alt="hello-world">`,
-        )
+          ))
       })
       it('should download and save an image to a local folder', () => {
         const input = `
@@ -452,9 +424,9 @@ Hello -> World
           extension_registry: registry,
           attributes: { 'kroki-fetch-diagram': true },
         })
-        expect(html).to.contain(
+        assert.ok(html.includes(
           '<img src=".asciidoctor/kroki/hello-world-7a123c0b2909750ca5526554cd8620774ccf6cd9.svg" alt="hello-world">',
-        )
+          ))
       })
       it('should download and save an image to a local folder using a generated unique name (md5sum)', () => {
         const input = `
@@ -475,7 +447,7 @@ Hello -> World
             'kroki-server-url': krokiServerUrl,
           },
         })
-        expect(html).to.contain('<img src=".asciidoctor/kroki/diag-')
+        assert.ok(html.includes('<img src=".asciidoctor/kroki/diag-'))
       })
       it('should download and save an image to the images output directory (imagesoutdir attribute and imagesdir)', () => {
         const input = `
@@ -510,9 +482,9 @@ Hello -> World
           ),
           'utf8',
         )
-        expect(html).to.contain(
+        assert.ok(html.includes(
           '<img src="../images/diag-7a123c0b2909750ca5526554cd8620774ccf6cd9.svg" alt="Diagram">',
-        )
+          ))
       })
       it('should download and save an image to the output directory (to_dir option)', () => {
         const input = `
@@ -543,9 +515,9 @@ Hello -> World
           ),
           'utf8',
         )
-        expect(html).to.contain(
+        assert.ok(html.includes(
           '<img src="diag-7a123c0b2909750ca5526554cd8620774ccf6cd9.svg" alt="Diagram">',
-        )
+          ))
       })
       it('should download and save an image relative to the output directory (to_dir option and imagedir attribute)', () => {
         const input = `
@@ -576,9 +548,9 @@ Hello -> World
           ),
           'utf8',
         )
-        expect(html).to.contain(
+        assert.ok(html.includes(
           '<img src="img/diag-7a123c0b2909750ca5526554cd8620774ccf6cd9.svg" alt="Diagram">',
-        )
+          ))
       })
       it('should apply substitutions in diagram block', () => {
         const input = `
@@ -604,9 +576,9 @@ blockdiag {
             'kroki-server-url': krokiServerUrl,
           },
         })
-        expect(html).to.contain(
+        assert.ok(html.includes(
           `<img src="${krokiServerUrl}/blockdiag/svg/eNpdzDEKQjEQhOHeU4zpPYFoYesRxGJ9bwghMSsbUYJ4d10UCZbDfPynolOek0Q8FsDeNCestoisNLmy-Qg7R3Blcm5hPcr0ITdaB6X15fv-_YdJixo2CNHI2lmK3sPRA__RwV5SzV80ZAegJjXSyfMFptc71w==" alt="block-diag">`,
-        )
+          ))
       })
       it('should apply attributes substitution in target', () => {
         const input = `
@@ -630,9 +602,9 @@ plantuml::{fixtures-dir}/alice.puml[svg,role=sequence]
           .createHash()
           .update(`${krokiServerUrl}/plantuml/svg/${encode(file)}`)
           .digest('hex')
-        expect(html).to.contain(
+        assert.ok(html.includes(
           `<img src=".asciidoctor/kroki/diag-${hash}.svg" alt="Diagram">`,
-        )
+          ))
       })
       it('should not download twice the same image with generated name', () => {
         const input = `
@@ -652,13 +624,10 @@ AsciiDoc -> HTML5: convert
             extension_registry: registry,
             attributes: { 'kroki-fetch-diagram': true },
           })
-          expect(html).to.contain(
+          assert.ok(html.includes(
             '<img src=".asciidoctor/kroki/diag-ea85be88a0e4e5fb02f59602af7fe207feb5b904.svg" alt="Diagram">',
-          )
-          expect(
-            http.get.callCount,
-            'http.get should be called only once!',
-          ).to.lessThanOrEqual(1)
+            ))
+          assert.ok(http.get.callCount <= 1, 'http.get should be called only once!')
         } finally {
           http.get.restore()
         }
@@ -680,7 +649,7 @@ Bob->Alice : hello
               'kroki-server-url': krokiServerUrl,
             },
           })
-          expect(html).to.contain(
+          assert.ok(html.includes(
             'pre>     ,---.          ,-----.\n' +
               '     |Bob|          |Alice|\n' +
               "     `-+-'          `--+--'\n" +
@@ -689,8 +658,8 @@ Bob->Alice : hello
               '     ,-+-.          ,--+--.\n' +
               '     |Bob|          |Alice|\n' +
               "     `---'          `-----'</pre>",
-          )
-          expect(http.get.calledOnce).to.be.true()
+          ))
+          assert.ok(http.get.calledOnce)
         } finally {
           http.get.restore()
         }
@@ -712,9 +681,9 @@ vegalite::test/fixtures/chart.vlite[svg,role=chart]
             'kroki-server-url': krokiServerUrl,
           },
         })
-        expect(html).to.contain(
+        assert.ok(html.includes(
           '<img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz',
-        )
+          ))
       })
       it('should convert a PacketDiag diagram to an image', () => {
         const input = `
@@ -752,10 +721,10 @@ packetdiag {
             'kroki-server-url': krokiServerUrl,
           },
         })
-        expect(html).to.contain(
+        assert.ok(html.includes(
           `${krokiServerUrl}/packetdiag/svg/eNptkU9Pg0AQxe9-ijnqYRN2QSgYD6bGPzFpCW1jTGPMyk5hQ9mtsMjB-N0dIGk8cH2_mXkzb04yr9ApLQv4uQDI7bHXypVwC764IcFYhR8l6qJ0pEWkkegxfp3AxnZNjpDaxg2VPGQ-T-AeW6eNdNqaM_IFC31qwK8ODbWsuvoTm4GEAYtp1F1eGdsfURU1GvePxyGLYxoqnYT14dDiZOXRBh71Zdhi841qEsMEdtkj7BvrpENaV0Te-4Qi8li-zKJFAunmaRaRc7bZziHu0Tlvq1lEITw8zyPBuKBVXrVRth8lsWA8oGyWJeZV29WjGAQUMJnvmmKII7XauCkPHtLlMTlcrk9DxC1IoyCVSmlTXI0VsWBC0EQ1ZLanh56_59MWv39OCoi9`,
-        )
-        expect(html).to.contain('<div class="imageblock kroki">')
+          ))
+        assert.ok(html.includes('<div class="imageblock kroki">'))
       })
       it('should convert a RackDiag diagram to an image', () => {
         const input = `
@@ -781,10 +750,10 @@ rackdiag {
             'kroki-server-url': krokiServerUrl,
           },
         })
-        expect(html).to.contain(
+        assert.ok(html.includes(
           `${krokiServerUrl}/rackdiag/svg/eNorSkzOTslMTFeo5lJQMDQLtQZRVgqhAcEK0UahsSCusZWCi5NCcGpRWWoRiG9ipRCemoQkYIouYIYuYG6l4JOfmKLglJiTmJcMEbMAihkrBJdnliRnWHPVAgDhXSWB`,
-        )
-        expect(html).to.contain('<div class="imageblock kroki">')
+          ))
+        assert.ok(html.includes('<div class="imageblock kroki">'))
       })
       it('should convert a Vega diagram to an image', () => {
         const input = `
@@ -895,10 +864,10 @@ rackdiag {
             'kroki-server-url': krokiServerUrl,
           },
         })
-        expect(html).to.contain(
+        assert.ok(html.includes(
           `${krokiServerUrl}/vega/svg/eNqVVcmSmzAQvfsrKCVHgrE9VGZc5UP23PIBKR8ENKAZgSgQjikX_x5JLELYcpzLMDTv9fq6fVk5DnpfRxnkGO0dlHFe1vv1-gQp9lLCsyb0CFv3AGVdnwLvtWYFciX1D4l5JohPvq_eMyBpxoVhOxhKHMekSIUlcFfSEGMuI_0W_zvORf0V1gLnIONzHFJQrpX5hGkD9QRXFBRhDimrWon_hFwH4Zw1hQr63LkW4GcDGARW4BcD-LSzAr8awJeNFfjNAD7bgd_NHO2hfxjAzYsV-NMM_bEbcEf1lG_Hfio1SQtM6zuDYYxyUi5GI75cpuBIiMKcFJyg4NIpqiDie5FHDewElcyqKYUSlGvxbHJk1HCT2HDBmxMvHbIXFGEKd-o5K4Auh7elsoe4iLU1ZjkmsqrLqNtRoQ5KCNBYWqaG605UuEiVu34_JrveBt_zAw0XA5KueNVAX4h7O-t2kfVD-Q3z19kVJIIh2nXGwwYv-4nP826KWVcElKhQyDhnuYzYJ6ebO5Uxh1NIuAFuR7AOluPq7cbsxhlJTegeJJWIrjswNEBXC0XEYqXUSWDCxoUK5yZhPCsvyyLuT1oRxyN4k6wEJZbUpLQmvL2OtZxaT9vaeOM6-t2En1H10hgVJ4RS5XBko5oD0FC-3PaTqfX9p5sK4rmD1fy51PY4VQ7n2VQfnhqm4nSZ0aMeaLYuxDVQUoAJHcRrQq_rebfb7dD_dNaqpf7Qzi6qN4lKi8X3ggflcu1u0I34xpKkBrlzH7amN9Vp5dDGvu7HrxJHhLfGge9vNYeaT2fcORwOzvRbMZelu6CNXzbd7MPRphl5G1bdX_2bNmU=`,
-        )
-        expect(html).to.contain('<div class="imageblock kroki">')
+          ))
+        assert.ok(html.includes('<div class="imageblock kroki">'))
       })
       it('should convert a Vega-Lite diagram to an image', () => {
         const input = `
@@ -1043,10 +1012,10 @@ rackdiag {
             'kroki-server-url': krokiServerUrl,
           },
         })
-        expect(html).to.contain(
+        assert.ok(html.includes(
           `${krokiServerUrl}/vegalite/svg/eNrtVktz2yAQvvtXMEyOqt9pnNz6To-d6c3jA5ZWEg0CF7Ba26P_3gVb2JJSN8mhTWdyMIb92CffCnY9QuiFiXMoGL0hNLd2ZW4GgxIy1s-4zdfLPleD_QYvfSW4hUE57X8zStLI6SdgYs1XlqMAbdwqzbdKWibEhsRKxsyCxF9C4pxpa4jNmSUmVz9IwtMUNEhL7GYFhqgURWgMLN9ymRETMwGmf3DDrItxh3NclUysweB67teE7KjP4A2NCF3ibDyroib0toYuL9vQuxqaTtrQ-xq6HrWhDzU060Afg6-OwU81NLpuQ7fB4FUb-hwMjiuPLHD0m2i-L3Koxe6gSQum75xuzHUsgNYWKchYJVjfUE0v3TSWKEg5iMTpL4Oql7uzcmKpCi6ZaIJGaReJXAvRkLOf3LQcOFM8vnPilAkDURNLVMG4_A1ouRVw8HOCVGFeHRWo4Vt4bHLf10yiE2Z5Ca0MHSnvSaWhiA7_GFashNJ_P65WJbegFeJWr-E04oZpARnI5L7j258C_XI-6d7p_8H0C0v_PUtFhw2aycxtmM-GERm9xmE8xWEyxmE6HC6eJam7afgLy-8oWIZX26OZnSpd-E8qTWh0lvTihfT_C-ltrgHfHaJzpCGf-QR5fjVcnOuK8XDfEM-tF56c3bFZSq45PsDo0y-CryGIhzQFjj4YikpKlMfkOrmGWlIuE1hhEPhqPLbNgUYNMLioetUvacF4MA==`,
-        )
-        expect(html).to.contain('<div class="imageblock kroki">')
+          ))
+        assert.ok(html.includes('<div class="imageblock kroki">'))
       })
       it('should inline a referenced data file for a Vega-Lite diagram and convert to an image', () => {
         const input = `
@@ -1109,10 +1078,10 @@ rackdiag {
           },
           mark: 'line',
         })
-        expect(html).to.contain(
+        assert.ok(html.includes(
           `${krokiServerUrl}/vegalite/svg/${encodeText(text)}`,
-        )
-        expect(html).to.contain('<div class="imageblock kroki">')
+          ))
+        assert.ok(html.includes('<div class="imageblock kroki">'))
       })
       it('should convert a WaveDrom diagram to an image', () => {
         const input = `
@@ -1135,10 +1104,10 @@ rackdiag {
             'kroki-server-url': krokiServerUrl,
           },
         })
-        expect(html).to.contain(
+        assert.ok(html.includes(
           `${krokiServerUrl}/wavedrom/svg/eNqrVijOTM9LzLFSiOZSUKhWyEvMTbVSUErOyVbSUYCB8sQykGCBHgjUALGSQq0OsnKXxJJEhHqo8go9YxPTihpbvQqgVApQBdAOpYzUxBQgVykpP6USRJckZuaAaJC8UiyasUGphaWpxSVQk6HGGugZ6ukZ1BjqGcBcgarJMTk7L788JzUlPRWoEarJEOJ0A0OQ07liawGPW0Gr`,
-        )
-        expect(html).to.contain('<div class="imageblock kroki">')
+          ))
+        assert.ok(html.includes('<div class="imageblock kroki">'))
       })
       it('should convert a BPMN diagram to an image', () => {
         const input = `
@@ -1296,10 +1265,10 @@ rackdiag {
             'kroki-server-url': krokiServerUrl,
           },
         })
-        expect(html).to.contain(
+        assert.ok(html.includes(
           `${krokiServerUrl}/bpmn/svg/eNrNWltz2zYWfu-v0Kgz-wYJVwJw7WR43c00cRw73ek-ZSgSkjmRSJWkYqe_fg91MyRbDtikSfVgSyDP4fedKw6k85f3i_ngk6mboiovhmSEhwNTZlVelLOL4W_vE6SGL1_8dJ6baVEWLdzUDECibC6Gt227PBuP7-7uRtViNqrq2bhZmmwcXL25HFNMMBaUj9-8jeLXw58G9mut4GyyXJR54aonevWkEpDIs9M6osjSEJ7UUDhqeBrDfXMof8fW4hRjMv79zeub7NYsUlSUTZuWmTlSYe6XtWk6679Oy9kqnZmndBGt9fj3q7S9PRJvPy_Nc4KHII6F03pm2st0YZplmoH8Mb2mOGvWgq-rLG3XEdLD64Pn7x3h7f2AsFuheHTf5EMItqyaz9NJVa8fOSjyi2FT5CjDRnIxnSLmEYN4Op0glakc0ZRMM0YnhFMO0h3w82Vat0VWLNOy3csrmfCQRB6iIiaI-1wgHfkS-ZHmQmsWYS8ZDkqwxsUwXDVttTD1cLCsqwz8c22mGy0hU5hpphFWkiIuJGQIYx6K_ZgrHoXcx3sUYwsG0Bof8IKFre49Qifdg6IJ51VjQGaazhvTLcT3Jlu16WRu9osneLyHeLkYXlal2YE0960pu_iL52ZhyrYZby_M09LcmAf7TYgnc5xLZKQH9vMAmIbwQtKbyCk2yiiWbpXu5ffCQsY8iXGEiIo54lJFKAgF_CGCeDzWjApuCa8VTOfV3WWVG7D9i5v3_vX7D1fXb8P45uZ8bF96Rij0Lz-8u_4QQjT2knn7q-vtHbeYa05FCM6iSgI3rVDgUYoi6stIqjjBOHDVF19GfVmuzUsYBxv6YF6PIZ4kPgoCFiKfBxxLFRDi6xP6zsedo3YRu3X69iNUrLqNP5ltFh04YRdilxWEuGn-9TPBv7y7HkDrMHYUVKt2VkEzWcOUgdTEJwTRhMaIRwojPwkYgkVMw4QGPInOx3uRLaYHFNuVNm0-woMWy7npMundCvKraD9D-xpucFp-79IjqeoQ7oYw3xaxgxy5ydJysEM-WD_M1mhxKaAxLnZcunyUOhZIhBQjCAHwepiESMehiGnieZECLnuRExaJY-XLwMdIRJ4HjlMBUjhmKAypFCRgSnj-Y4t0BtinbzZfNcUn8--0NXfp58Fs8z8qapNt2EZwtZ6BuGWdt78e0G9WWVcdpqv5y7UjT7J2w_sl1ipQFPuJQFEoQiglBGynBEcxVoEkSSBEGByzfqyFMelTFmjkawpBH4Yx5B1hiMWUQ6RJBiuPbXdsMMeYck30L8fbW7jQleN8lUFaldOqXmwbXTlYVJNibgaDdLnsEYpu5vySU6BEByShHAXQEDt2UEMSksB6QmLfJzr0wudDscwfaoVVyHbEXzVbuiY_ScUNxCEV8On2ye45EVblQVK4FtGTwN1K2xM-ONDiFtJf8qRbaXJMjMb8sYKJwCTQPPamcmELAVyt6syst05HrWOz89xvqpwsP34OkEtdOgR00CMsPLvy-OzjXML04HHu5cOCYufQs3BcCsBDv35sh64bHLnECeyzoFyi8JGNnCLhkbt2fnwWj0tu7Yz0P9M4Wck1cGEU2Oy_4e1m7j3rRp6oSGd1unhIK-5RrAiFjXUGYcUNjChcZyhNuYTBIGeK4d2-3VJztd5qdwvbPXyPgelhvMqz1Eih4fIUHJ56sOPPMUWCTRkTNJWMHJRt6_k3t-nyiee7DVx9xrMPs1XRNdj_VHXxZ1W26fxi2NYrczw5rE8FzoJqVebN4NYUs1uARAXuTjfuiry9vRhqxrpP9xdDTkdiOIAGKwWsjI9UWTRfpxMzH8y7vzft527WWuPm2YTrKZh1KjPwWWdlLTBMbhmbpkSA1yZH-E5jFHoEXlGCSsUoZoSKPWACA7P9InyDXo64tl9rKkTiUadHMg8rphXnj4iNj5nZI8Gxc3v53WnW6zUZfku_453f5Sm_fwX9ozb3aGhaE3EBzWzMmw8AmWyodA72_lKwGiwwzRlFU5VDkpFsinTGU5RNuhg22VQo4hyslFoYuTdiQhLOOKZYa49sAHMyUrQLaaq7rKAb8Fo-Af7vCcijWfBoOnT2h7L9QfDOIVAYt0FEOP7h1YPYDlF8h9HDO4ySfl-7dx3TGjl3afwmrT-a-r9FU6xPrJwzmdtO4DsfCCsp8A9PigMfEEx3ICnZgaTfL_h7DK09RtyvTRpPyX9Q0jDPThp21H83gLUYabubbqPt-2XTwTR9NF47u4Mqi-nmA5BT606yIeT9-PQhFkYwsOp6iqTEkxrCRmwQw56nW6Ye05DyxNs2Fe-75pXbpNLnbOHvKY-UnyyPrhaI89lThcVp5O4zoJ-K5OLsLv28rIqyXe94H3queuzwx_db_UGdpt9x7MPebeTuM6C7sRf6BJsT91vFVv0TeiNXEnPGFLzRzJpuYPtIiRDaY0QL6JabrgkbRaUE1szTUKck2RAR4i_neV83ux109TkWc3MzUf3cbGX5NwxytyOcPgc-buxpT_bsVEn4KvZuh3x9jgTd2Es7ZUcu_K0erp6r8X0t4HZk1ueAzbHIyd3IQrGbBSwJTztJUO8rJPCPHzRgoOh2qkopT5L11sg6KNoNRlu036JeHixfWd8ZH2taE94HRU_OW65J1X2N1ATV3P6Zw6s2nReZtXDT1sVH8_62rlazW2v9tzI39bwoj38O4ddFOh8OmuJPs91qjp8g98DCiWHPaeR7MqQODA8ubA-ku1XrF18v_g8GkVkz`,
-        )
-        expect(html).to.contain('<div class="imageblock kroki">')
+          ))
+        assert.ok(html.includes('<div class="imageblock kroki">'))
       })
       it('should convert a Bytefield diagram to an image', () => {
         const input = `
@@ -1321,10 +1290,10 @@ rackdiag {
             'kroki-server-url': krokiServerUrl,
           },
         })
-        expect(html).to.contain(
+        assert.ok(html.includes(
           `${krokiServerUrl}/bytefield/svg/eNrTSClKLNdNzs8pzc3TzUhNTEktKtbk0gCLJuVXKCg5pqQUpRYXKylUWxUXJOYpmNSiSAdnVqXC5YxQ5AwwhdMTCxSUAhIrc_ITU5QQaktK8nM1AW7MLSU`,
-        )
-        expect(html).to.contain('<div class="imageblock kroki">')
+          ))
+        assert.ok(html.includes('<div class="imageblock kroki">'))
       })
       it('should convert a Pikchr diagram to an image', () => {
         const input = `
@@ -1376,10 +1345,10 @@ line up $r*0.45 right $r*0.45 then right
             'kroki-server-url': krokiServerUrl,
           },
         })
-        expect(html).to.contain(
+        assert.ok(html.includes(
           `${krokiServerUrl}/pikchr/svg/eNptUk1T2zAQvetX7Jgww0cxisEUZ6aHdoYbNzjkwEW2lVhF0TLyJqL_vispSV3g4NFo3-rt2_c88_ADZFkZJ6xx2qs-3b_XFzOfKsHkSlULcQJPpDyBcj1o_lqL3esoTkSL71BoqzfaUQEt2h5WhtJ76DE4qOUprDxuwKqRuOG9HIPokSAOrCLaoUXPjKp7FUu5SI2lhks4k-XNN3kulPcYJiTxNSEspdjgToM364Hgpmx4kygn6q5PgWsVHytj7YG82ZMHuPqKfNlE2qPOIOLez4OGjTIO_NZqoEERrFGPMJJXaTANHrfrIVOMySVmWRlnxuFgELa_dUdXvY5lMugKMKSs6aJZwJTz-fX8DoL6A62moLXj7ZLZy2avMC7c_KdWflSbxT7-_PXwuEhyeXx-kC2a-X8vBx6R8plzvpx4rhz6BO6UhSJz8RkjzUwc2B58KRYvxRSqJGNp3TccP22Zm_KPkcdsHRkLesdzg6Eh2s-xzDynApD1bN--6krQJz-SE1FaqY97XMiyPjKl6_0Uu89yDthtPQVv64knfwGrmf6K`,
-        )
-        expect(html).to.contain('<div class="imageblock kroki">')
+          ))
+        assert.ok(html.includes('<div class="imageblock kroki">'))
       })
       it('should convert a Diagrams.net diagram to an image', () => {
         const input = `
@@ -1412,10 +1381,10 @@ line up $r*0.45 right $r*0.45 then right
             'kroki-server-url': krokiServerUrl,
           },
         })
-        expect(html).to.contain(
+        assert.ok(html.includes(
           `${krokiServerUrl}/diagramsnet/svg/eNq1VE1zmzAQvedXaHRKZmqQAGM7mGTy0SYTJ6k7duo2NxXWoIlAjKzY2L--Czj1dKY9tNOe2NVqP957K8bndaHIGsxK6jKm3GGUQJnoVJZZTJ_mH3pDen52NC7qpVRAcr2yMX2vILFGl5QUeHEpIY2pxzyvx0Y97s_Z4DTwT_2-wwfhMyUigxKT-g4jxwtZpnqzIo9zwpnDIoIHYRCROgxOyEVVKVjAt4m0bt8fOH5Ijie384f7d0TJFyA3kLzoE5IasXGkdj3meM6QXOVGF-By5jnM6TOGbcMBeRvR5SM85n0yE0th5L4uYrQC8d3nl_OL69Ho8nE6n5aLcDKxO3pgo-tAid1WENMU1jIBenZEyDiVIjOiIBKRP4t8nX-9ShbZ690sePr08lR_pqQUBeZMEXyPtzmYVdQ3RlT5g05BkbRGujkLKEm3MR14fUoy09TjnTGTOyzAUY_sVaawagNWa2Vl1TmJLktE2drCGOS1NZdadVUqbP7DmCVCHbyFTG0e06E36PxbkFneVOLhCFUVTRA7r3KBcjVmhwAxGK3tm9NCugKlWh7wvvvrSNvUtFvw-0ug7j6OvgSeqK_Xu9372zoIrpE6shbqFQfHYey2QYAzoRorC1VUgZEFWDCtO33zok0uLcwqkUC8QcKj3BYq5tFS1tDRyqPDRLwV3EIjBz2M1skFuFrWbAkG_QBnR6V4iN9Nxx9vzvI9dz7aAiXI9kk_I3U7qH-APfhf2I22wjYL3uND9jdMeB0THvsXTIzdw0o1scMTaV-au39q-A9yu5_Q2XelwGNC`,
-        )
-        expect(html).to.contain('<div class="imageblock kroki">')
+          ))
+        assert.ok(html.includes('<div class="imageblock kroki">'))
       })
       it('should convert a Vega-Lite diagram and resolve data.url relative to the diagram file', async () => {
         const registry = asciidoctor.Extensions.create()
@@ -1444,9 +1413,9 @@ line up $r*0.45 right $r*0.45 then right
             x: { field: 'precipitation', type: 'quantitative' },
           },
         })
-        expect(html).to.contain(
+        assert.ok(html.includes(
           `${krokiServerUrl}/vegalite/svg/${encodeText(diagramText)}`,
-        )
+          ))
       })
       it('should convert a WireViz diagram to an image', () => {
         const input = `
@@ -1486,10 +1455,10 @@ connections:
           extension_registry: registry,
           attributes: { 'kroki-server-url': krokiServerUrl },
         })
-        expect(html).to.contain(
+        assert.ok(html.includes(
           `${krokiServerUrl}/wireviz/svg/eNqNkMGKwjAQhu99inmAdNF0e8nVgIish7agIGVp41gLaSJtgu7bbzL1UDx5yJD5yJ__n1HWGFTOjpNIAE7rWAHc3x0FyLT0LfWTb2d0xaHRSOzeG920qCcBZ7mRDIoTgyocWRUMtodAZBluRVUy2MRS7OrowZceP1bjE_Z74Pn3R1b08WxVJ4lqWo0U_fiK3jW-C-rVF89hGDgxjaZzN4LUK6vt-KvsJQ65OxB79CMq640TkM1Bbj3qiwA3egxG8556a8gtpSdpXBicc8ZZVr_IMZL1koSBI8kYr9-U-UIz_QMAMGVl`,
-        )
-        expect(html).to.contain('<div class="imageblock kroki">')
+          ))
+        assert.ok(html.includes('<div class="imageblock kroki">'))
       })
 
       describe('Diagram options', () => {
@@ -1516,7 +1485,7 @@ plantuml::test/fixtures/alice.puml[svg,opts=inline,theme=bluegray]
             ),
             'utf8',
           )
-          expect(html).to.equal(`<div class="imageblock kroki">
+          assert.strictEqual(html, `<div class="imageblock kroki">
 <div class="content">
 ${svg}
 </div>
@@ -1534,6 +1503,7 @@ plantuml::test/fixtures/alice.puml[svg,opts=inline,theme=bluegray]
             attributes: {
               'kroki-fetch-diagram': '',
               imagesdir: '.asciidoctor/kroki',
+              'kroki-server-url': krokiServerUrl,
             },
           })
           const svg = fs.readFileSync(
@@ -1545,7 +1515,7 @@ plantuml::test/fixtures/alice.puml[svg,opts=inline,theme=bluegray]
             ),
             'utf8',
           )
-          expect(html).to.equal(`<div class="imageblock kroki">
+          assert.strictEqual(html, `<div class="imageblock kroki">
 <div class="content">
 ${svg}
 </div>
@@ -1642,10 +1612,10 @@ paragraph
                   'kroki-server-url': krokiBaseUrl,
                 },
               })
-              expect(html).to.contain(
+              assert.ok(html.includes(
                 `<img src="${krokiBaseUrl}/plantuml/${format}/eNqLdoxVcFKIdo7lKkgsSkwvSizIAAA36QY3" alt="Diagram">`,
-              )
-              expect(memoryLogger.getMessages().length).to.equal(0)
+                ))
+              assert.strictEqual(memoryLogger.getMessages().length, 0)
             } finally {
               asciidoctor.LoggerManager.setLogger(defaultLogger)
             }
@@ -1690,9 +1660,7 @@ plantuml::test/fixtures/alice.puml[svg,role=sequence${blockAttr}]
               ospath.join(__dirname, 'fixtures', 'expected', 'alice.svg'),
               'utf8',
             )
-            expect(
-              html,
-            ).to.equal(`<div class="imageblock sequence kroki-format-svg kroki">
+            assert.strictEqual(html, `<div class="imageblock sequence kroki-format-svg kroki">
 <div class="content">
 ${svg}
 </div>
@@ -1719,7 +1687,7 @@ bytefield::test/fixtures/simple.bytefield[svg,role=bytefield${blockAttr}]
               ospath.join(__dirname, 'fixtures', 'expected', 'bytefield.svg'),
               'utf8',
             )
-            expect(html).to.contain(svg)
+            assert.ok(html.includes(svg))
           })
         }
 
@@ -1763,9 +1731,9 @@ vegalite::test/fixtures/chart.vlite[svg,role=chart${blockAttr}]
                 'kroki-server-url': krokiServerUrl,
               },
             })
-            expect(html).to.contain(
+            assert.ok(html.includes(
               '<object type="image/svg+xml" data="data:image/svg+xml;base64,PHN2Zy',
-            )
+              ))
           })
           it(`should include an interactive (via ${location}) SVG image with kroki-fetch-diagram`, () => {
             const input = `
@@ -1789,9 +1757,9 @@ plantuml::test/fixtures/alice.puml[svg,role=sequence${blockAttr}]
               .createHash()
               .update(`${krokiServerUrl}/plantuml/svg/${encode(file)}`)
               .digest('hex')
-            expect(html).to.contain(
+            assert.ok(html.includes(
               `<object type="image/svg+xml" data=".asciidoctor/kroki/diag-${hash}.svg"><span class="alt">Diagram</span></object>`,
-            )
+              ))
           })
         }
       })

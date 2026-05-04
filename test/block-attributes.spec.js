@@ -1,15 +1,10 @@
-/* global describe it */
-const chai = require('chai')
-const expect = chai.expect
-const dirtyChai = require('dirty-chai')
-
-chai.use(dirtyChai)
+const { describe, it } = require('node:test')
+const assert = require('node:assert')
 
 const asciidoctorKroki = require('../src/asciidoctor-kroki.js')
 const asciidoctor = require('@asciidoctor/core')()
 
-describe('Block attributes', function () {
-  this.timeout(30000)
+describe('Block attributes', { timeout: 30000 }, () => {
   describe('When extension is registered', () => {
     it('should convert a diagram with an explicit width and height', () => {
       const input = `
@@ -21,7 +16,7 @@ alice -> bob
       const registry = asciidoctor.Extensions.create()
       asciidoctorKroki.register(registry)
       const html = asciidoctor.convert(input, { extension_registry: registry })
-      expect(html).to.equal(`<div class="imageblock kroki">
+      assert.strictEqual(html, `<div class="imageblock kroki">
 <div class="content">
 <img src="https://kroki.io/plantuml/svg/eNpLzMlMTlXQtVNIyk8CABoDA90=" alt="alice-bob" width="100%" height="100%">
 </div>
@@ -38,7 +33,7 @@ alice -> bob
       const registry = asciidoctor.Extensions.create()
       asciidoctorKroki.register(registry)
       const html = asciidoctor.convert(input, { extension_registry: registry })
-      expect(html).to.equal(`<div class="imageblock kroki">
+      assert.strictEqual(html, `<div class="imageblock kroki">
 <div class="content">
 <img src="https://kroki.io/plantuml/svg/eNpLzMlMTlXQtVNIyk8CABoDA90=" alt="alice and bob">
 </div>
@@ -56,7 +51,7 @@ alice -> bob
       const registry = asciidoctor.Extensions.create()
       asciidoctorKroki.register(registry)
       const html = asciidoctor.convert(input, { extension_registry: registry })
-      expect(html).to.equal(`<div class="imageblock kroki">
+      assert.strictEqual(html, `<div class="imageblock kroki">
 <div class="content">
 <img src="https://kroki.io/plantuml/svg/eNpLzMlMTlXQtVNIyk8CABoDA90=" alt="alice and bob">
 </div>
@@ -73,7 +68,7 @@ alice -> bob
       const registry = asciidoctor.Extensions.create()
       asciidoctorKroki.register(registry)
       const html = asciidoctor.convert(input, { extension_registry: registry })
-      expect(html).to.equal(`<div class="imageblock left kroki">
+      assert.strictEqual(html, `<div class="imageblock left kroki">
 <div class="content">
 <img src="https://kroki.io/plantuml/svg/eNpLzMlMTlXQtVNIyk8CABoDA90=" alt="alice-bob">
 </div>
@@ -96,7 +91,7 @@ dan -> andre
       const registry = asciidoctor.Extensions.create()
       asciidoctorKroki.register(registry)
       const html = asciidoctor.convert(input, { extension_registry: registry })
-      expect(html).to.equal(`<div class="imageblock kroki">
+      assert.strictEqual(html, `<div class="imageblock kroki">
 <div class="content">
 <img src="https://kroki.io/plantuml/svg/eNpLzMlMTlXQtVNIyk8CABoDA90=" alt="alice and bob">
 </div>
