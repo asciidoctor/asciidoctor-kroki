@@ -8,20 +8,20 @@ const expect = chai.expect
 /**
  * @returns {Promise<{}>}
  */
-async function startServer (name) {
+async function startServer(name) {
   return new Promise((resolve, reject) => {
     const worker = new Worker(ospath.join(__dirname, name))
     worker.on('message', (msg) => {
       resolve({
         worker,
-        port: msg.port
+        port: msg.port,
       })
     })
     worker.on('error', reject)
   })
 }
 
-describe('Synchronous HTTP client (unxhr)', function () {
+describe('Synchronous HTTP client (unxhr)', () => {
   it('should return throw error when the server returns a 500', async () => {
     const { worker, port } = await startServer('500-server.js')
     try {
@@ -38,7 +38,9 @@ describe('Synchronous HTTP client (unxhr)', function () {
     const { worker, port } = await startServer('204-server.js')
     try {
       httpClient.get(`http://localhost:${port}`, {}, 'utf8')
-      expect.fail('it should throw an error when the server returns an empty response')
+      expect.fail(
+        'it should throw an error when the server returns an empty response',
+      )
     } catch (err) {
       expect(err.message).to.contains('server returns an empty response')
     } finally {

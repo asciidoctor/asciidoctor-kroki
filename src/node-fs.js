@@ -1,7 +1,7 @@
-const fs = require('fs')
-const path = require('path')
+const fs = require('node:fs')
+const path = require('node:path')
 const mkdirp = require('mkdirp')
-const url = require('url')
+const url = require('node:url')
 
 const http = require('./http/node-http.js')
 
@@ -26,7 +26,7 @@ module.exports = {
   parse: (resourceId) => {
     return {
       dir: path.dirname(resourceId),
-      path: resourceId
+      path: resourceId,
     }
-  }
+  },
 }

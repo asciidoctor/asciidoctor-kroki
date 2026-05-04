@@ -1,4 +1,4 @@
-const ospath = require('path').posix
+const ospath = require('node:path').posix
 
 module.exports = (file, contentCatalog, vfs) => {
   let baseReadFn
@@ -22,7 +22,15 @@ module.exports = (file, contentCatalog, vfs) => {
   return {
     add: (image) => {
       const { component, version, module } = file.src
-      if (!contentCatalog.getById({ component, version, module, family: 'image', relative: image.basename })) {
+      if (
+        !contentCatalog.getById({
+          component,
+          version,
+          module,
+          family: 'image',
+          relative: image.basename,
+        })
+      ) {
         contentCatalog.addFile({
           contents: image.contents,
           src: {
@@ -33,15 +41,17 @@ module.exports = (file, contentCatalog, vfs) => {
             mediaType: image.mediaType,
             path: ospath.join(image.relative, image.basename),
             basename: image.basename,
-            relative: image.basename
-          }
+            relative: image.basename,
+          },
         })
       }
     },
     read: (resourceId, format, hash) => {
       const ctx = hash || file.src
       const target = contentCatalog.resolveResource(resourceId, ctx, ctx.family)
-      return target ? target.contents.toString() : baseReadFn(resourceId, format)
+      return target
+        ? target.contents.toString()
+        : baseReadFn(resourceId, format)
     },
     exists: (resourceId) => {
       const target = contentCatalog.resolveResource(resourceId, file.src)
@@ -51,6 +61,6 @@ module.exports = (file, contentCatalog, vfs) => {
       const ctx = hash || file.src
       const target = contentCatalog.resolveResource(resourceId, ctx, ctx.family)
       return target ? target.src : baseParseFn(resourceId)
-    }
+    },
   }
 }
