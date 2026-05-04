@@ -1,9 +1,10 @@
-import { describe, it } from 'node:test'
 import assert from 'node:assert'
-import httpClient from '../src/http/node-http.js'
-import { Worker } from 'node:worker_threads'
 import ospath, { dirname } from 'node:path'
+import { describe, it } from 'node:test'
 import { fileURLToPath } from 'node:url'
+import { Worker } from 'node:worker_threads'
+import httpClient from '../src/http/node-http.js'
+import { assertContains } from './utils.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
@@ -31,7 +32,7 @@ describe('Synchronous HTTP client (unxhr)', () => {
       assert.fail('it should throw an error when the server returns a 500')
     } catch (err) {
       // it should include the response from the server in the error message
-      assert.ok(err.message.includes('500 Something went bad!'))
+      assertContains(err.message, '500 Something went bad!')
     } finally {
       await worker.terminate()
     }
@@ -44,7 +45,7 @@ describe('Synchronous HTTP client (unxhr)', () => {
         'it should throw an error when the server returns an empty response',
       )
     } catch (err) {
-      assert.ok(err.message.includes('server returns an empty response'))
+      assertContains(err.message, 'server returns an empty response')
     } finally {
       await worker.terminate()
     }

@@ -1,30 +1,30 @@
-import { describe, it } from 'node:test'
 import assert from 'node:assert'
-
+import { describe, it } from 'node:test'
+import { convert, Extensions } from '@asciidoctor/core'
 import asciidoctorKroki from '../src/asciidoctor-kroki.js'
-import Asciidoctor from '@asciidoctor/core'
-
-const asciidoctor = Asciidoctor()
 
 describe('Block attributes', { timeout: 30000 }, () => {
   describe('When extension is registered', () => {
-    it('should convert a diagram with an explicit width and height', () => {
+    it('should convert a diagram with an explicit width and height', async () => {
       const input = `
 [plantuml,alice-bob,svg,width=100%,height=100%]
 ....
 alice -> bob
 ....
 `
-      const registry = asciidoctor.Extensions.create()
+      const registry = Extensions.create()
       asciidoctorKroki.register(registry)
-      const html = asciidoctor.convert(input, { extension_registry: registry })
-      assert.strictEqual(html, `<div class="imageblock kroki">
+      const html = await convert(input, { extension_registry: registry })
+      assert.strictEqual(
+        html,
+        `<div class="imageblock kroki">
 <div class="content">
 <img src="https://kroki.io/plantuml/svg/eNpLzMlMTlXQtVNIyk8CABoDA90=" alt="alice-bob" width="100%" height="100%">
 </div>
-</div>`)
+</div>`,
+      )
     })
-    it('should convert a diagram with a title', () => {
+    it('should convert a diagram with a title', async () => {
       const input = `
 .alice and bob
 [plantuml,alice-bob,svg]
@@ -32,17 +32,20 @@ alice -> bob
 alice -> bob
 ....
 `
-      const registry = asciidoctor.Extensions.create()
+      const registry = Extensions.create()
       asciidoctorKroki.register(registry)
-      const html = asciidoctor.convert(input, { extension_registry: registry })
-      assert.strictEqual(html, `<div class="imageblock kroki">
+      const html = await convert(input, { extension_registry: registry })
+      assert.strictEqual(
+        html,
+        `<div class="imageblock kroki">
 <div class="content">
 <img src="https://kroki.io/plantuml/svg/eNpLzMlMTlXQtVNIyk8CABoDA90=" alt="alice and bob">
 </div>
 <div class="title">Figure 1. alice and bob</div>
-</div>`)
+</div>`,
+      )
     })
-    it('should convert a diagram with a caption', () => {
+    it('should convert a diagram with a caption', async () => {
       const input = `
 .alice and bob
 [plantuml,alice-bob,svg,caption="Figure A. "]
@@ -50,33 +53,39 @@ alice -> bob
 alice -> bob
 ....
 `
-      const registry = asciidoctor.Extensions.create()
+      const registry = Extensions.create()
       asciidoctorKroki.register(registry)
-      const html = asciidoctor.convert(input, { extension_registry: registry })
-      assert.strictEqual(html, `<div class="imageblock kroki">
+      const html = await convert(input, { extension_registry: registry })
+      assert.strictEqual(
+        html,
+        `<div class="imageblock kroki">
 <div class="content">
 <img src="https://kroki.io/plantuml/svg/eNpLzMlMTlXQtVNIyk8CABoDA90=" alt="alice and bob">
 </div>
 <div class="title">Figure A. alice and bob</div>
-</div>`)
+</div>`,
+      )
     })
-    it('should convert a diagram with the float attribute', () => {
+    it('should convert a diagram with the float attribute', async () => {
       const input = `
 [plantuml,alice-bob,svg,float=left]
 ....
 alice -> bob
 ....
 `
-      const registry = asciidoctor.Extensions.create()
+      const registry = Extensions.create()
       asciidoctorKroki.register(registry)
-      const html = asciidoctor.convert(input, { extension_registry: registry })
-      assert.strictEqual(html, `<div class="imageblock left kroki">
+      const html = await convert(input, { extension_registry: registry })
+      assert.strictEqual(
+        html,
+        `<div class="imageblock left kroki">
 <div class="content">
 <img src="https://kroki.io/plantuml/svg/eNpLzMlMTlXQtVNIyk8CABoDA90=" alt="alice-bob">
 </div>
-</div>`)
+</div>`,
+      )
     })
-    it('should automatically increment caption if diagrams has title and caption is enabled', () => {
+    it('should automatically increment caption if diagrams has title and caption is enabled', async () => {
       const input = `
 .alice and bob
 [plantuml,alice-bob,svg]
@@ -90,10 +99,12 @@ alice -> bob
 dan -> andre
 ....
 `
-      const registry = asciidoctor.Extensions.create()
+      const registry = Extensions.create()
       asciidoctorKroki.register(registry)
-      const html = asciidoctor.convert(input, { extension_registry: registry })
-      assert.strictEqual(html, `<div class="imageblock kroki">
+      const html = await convert(input, { extension_registry: registry })
+      assert.strictEqual(
+        html,
+        `<div class="imageblock kroki">
 <div class="content">
 <img src="https://kroki.io/plantuml/svg/eNpLzMlMTlXQtVNIyk8CABoDA90=" alt="alice and bob">
 </div>
@@ -104,7 +115,8 @@ dan -> andre
 <img src="https://kroki.io/plantuml/svg/eNpLScxT0LVTSMxLKUoFABg_A-k=" alt="dan and andre">
 </div>
 <div class="title">Figure 2. dan and andre</div>
-</div>`)
+</div>`,
+      )
     })
   })
 })

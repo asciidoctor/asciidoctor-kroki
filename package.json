@@ -17,40 +17,35 @@
     "build"
   ],
   "scripts": {
-    "test": "npm run test:node && npm run test:browser && npm run test:antora",
+    "test": "npm run test:node && npm run test:browser",
     "test:node": "node --test test/*.test.js",
     "test:browser": "vitest run --config vitest.browser.config.js",
-    "test:antora": "node --test test/antora/*.test.js",
     "lint": "biome check src/ test/ tasks/",
     "lint-fix": "biome check --write src/ test/ tasks/",
-    "clean": "shx rm -rf build/*",
-    "build": "npm run clean && npm run build:browser",
-    "build:browser": "shx mkdir -p build/browser && browserify src/asciidoctor-kroki.js --exclude ./node-fs.js --exclude ./fetch.js --exclude ./antora-adapter.js --standalone AsciidoctorKroki -o dist/browser/asciidoctor-kroki.js"
+    "clean": "node -e \"require('fs').rmSync('build', {recursive: true, force: true})\"",
+    "build": "npm run clean && rollup -c",
+    "build:browser": "rollup -c --filter browser",
+    "build:node": "rollup -c --filter node"
   },
   "dependencies": {
     "json5": "2.2.3",
-    "mkdirp": "2.1.3",
     "pako": "2.1.0",
-    "rusha": "0.8.14",
     "unxhr": "1.2.0"
   },
   "devDependencies": {
-    "@antora/site-generator-default": "~3.1",
-    "@asciidoctor/core": ">=2.2 <4.0",
+    "@asciidoctor/core": ">=4.0.0-alpha <5.0.0",
     "@biomejs/biome": "~2.4",
-    "@vitest/browser": "^4.1.5",
-    "@vitest/browser-playwright": "^4.1.5",
-    "base64-js": "1.5.1",
-    "browserify": "17.0.0",
-    "cheerio": "1.0.0-rc.12",
-    "lodash": "4.17.21",
-    "puppeteer": "~24.10",
-    "shx": "0.3.4",
+    "@rollup/plugin-commonjs": "~29.0",
+    "@rollup/plugin-json": "~6.1",
+    "@rollup/plugin-node-resolve": "~16.0",
+    "@vitest/browser": "~4.1",
+    "@vitest/browser-playwright": "~4.1",
+    "rollup": "~4.60",
     "sinon": "~16.1",
-    "testcontainers": "11.4.0"
+    "testcontainers": "~11.14"
   },
   "peerDependencies": {
-    "@asciidoctor/core": ">=2.2 <4.0"
+    "@asciidoctor/core": ">=4.0.0-alpha <5.0.0"
   },
   "repository": {
     "type": "git",
@@ -63,12 +58,12 @@
     "javascript",
     "extension"
   ],
-  "author": "Guillaume Grossetie (https://github.com/mogztter)",
+  "author": "Guillaume Grossetie (https://github.com/ggrossetie)",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/Mogztter/asciidoctor-kroki/issues"
+    "url": "https://github.com/asciidoctor/asciidoctor-kroki/issues"
   },
-  "homepage": "https://github.com/Mogztter/asciidoctor-kroki#readme",
+  "homepage": "https://github.com/asciidoctor/asciidoctor-kroki#readme",
   "publishConfig": {
     "access": "public"
   },
@@ -76,6 +71,6 @@
     "node": ">=24"
   },
   "volta": {
-    "node": "24.0.0"
+    "node": "24.15.0"
   }
 }
