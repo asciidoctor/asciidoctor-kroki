@@ -18,11 +18,11 @@ export function deleteDirWithFiles(path) {
 }
 
 export function fixturePath(...paths) {
-  return ospath.join(__dirname, 'fixtures', ...paths)
+  return ospath.join(__dirname, '..', 'fixtures', ...paths)
 }
 
 export function readFixture(...paths) {
-  return fs.readFileSync(ospath.join(__dirname, 'fixtures', ...paths), 'utf-8')
+  return fs.readFileSync(ospath.join(__dirname, '..', 'fixtures', ...paths), 'utf-8')
 }
 
 export function assertContains(actual, expected) {

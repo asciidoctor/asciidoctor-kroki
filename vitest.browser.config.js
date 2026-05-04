@@ -16,7 +16,7 @@ export default defineConfig({
     setupFiles: ['shims/setup.js'],
     root: 'test',
     include: ['**/*.test.js'],
-    exclude: ['**/antora.test.js', 'extension.test.js', 'kroki-client.test.js', 'node-http.test.js', 'preprocess.test.js'],
+    exclude: ['node/**'],
   },
   resolve: {
     alias: [
