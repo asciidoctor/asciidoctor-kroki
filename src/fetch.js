@@ -1,5 +1,5 @@
-import rusha from 'rusha'
-import {posix as path} from 'node:path'
+import { createHash } from 'node:crypto'
+import { posix as path } from 'node:path'
 import fs from './node-fs.js'
 
 const getImagesOutputDirectory = (doc) => {
@@ -25,7 +25,7 @@ const getOutputDirectory = (doc) => {
 }
 
 export default {
-  save: function (krokiDiagram, doc, target, vfs, krokiClient) {
+  save: (krokiDiagram, doc, target, vfs, krokiClient) => {
     const exists =
       typeof vfs !== 'undefined' && typeof vfs.exists === 'function'
         ? vfs.exists
@@ -44,7 +44,7 @@ export default {
       doc.isAttribute('data-uri') || doc.isAttribute('kroki-data-uri')
     const diagramUrl = krokiDiagram.getDiagramUri(krokiClient.getServerUrl())
     const format = krokiDiagram.format
-    const diagramName = `${target || 'diag'}-${rusha.createHash().update(diagramUrl).digest('hex')}.${format}`
+    const diagramName = `${target || 'diag'}-${createHash('sha1').update(diagramUrl).digest('hex')}.${format}`
     const filePath = path.format({
       dir: imagesOutputDirectory,
       base: diagramName,
@@ -83,5 +83,5 @@ export default {
       contents: Buffer.from(contents, encoding),
     })
     return diagramName
-  }
+  },
 }

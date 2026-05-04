@@ -1,13 +1,12 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import mkdirp from 'mkdirp'
 import url from 'node:url'
 
 import http from './http/node-http.js'
 
 export default {
   add: (image) => {
-    mkdirp.sync(image.relative)
+    fs.mkdirSync(image.relative, { recursive: true })
     const filePath = path.format({ dir: image.relative, base: image.basename })
     fs.writeFileSync(filePath, image.contents, 'binary')
   },

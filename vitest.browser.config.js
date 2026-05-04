@@ -13,22 +13,20 @@ export default defineConfig({
       provider: playwright(),
       instances: [{ browser: 'chromium' }],
     },
+    setupFiles: ['shims/setup.js'],
     root: 'test',
     include: ['**/*.test.js'],
+    exclude: ['**/antora.test.js', 'extension.test.js', 'kroki-client.test.js', 'node-http.test.js', 'preprocess.test.js'],
   },
   resolve: {
     alias: [
-      // Node.js built-in shims
       { find: 'node:test', replacement: shim('node-test') },
-      { find: 'node:assert/strict', replacement: shim('node-assert') },
       { find: 'node:assert', replacement: shim('node-assert') },
       { find: 'node:url', replacement: shim('node-url') },
       { find: 'node:path', replacement: shim('node-path') },
-      { find: 'node:module', replacement: shim('node-module') },
+      { find: 'node:crypto', replacement: shim('node-crypto') },
       { find: 'node:fs/promises', replacement: shim('node-fs-promises') },
       { find: 'node:fs', replacement: shim('node-fs') },
-      { find: 'node:os', replacement: shim('node-os') },
-      { find: 'node:http', replacement: shim('node-http') },
     ],
   },
 })

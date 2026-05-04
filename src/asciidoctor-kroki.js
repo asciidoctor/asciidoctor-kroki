@@ -1,13 +1,15 @@
-/* global Opal */
 // @ts-check
-import { KrokiDiagram, KrokiClient } from './kroki-client.js'
-import fetch from './fetch.js'
-import { preprocessPlantUML, preprocessStructurizr, preprocessVegaLite} from './preprocess.js'
-import fs from './node-fs.js'
-import antoraAdapter from './antora-adapter.js'
 
+import fetch from './fetch.js'
 import browserHttp from './http/browser-http.js'
 import nodeHttp from './http/node-http.js'
+import { KrokiClient, KrokiDiagram } from './kroki-client.js'
+import fs from './node-fs.js'
+import {
+  preprocessPlantUML,
+  preprocessStructurizr,
+  preprocessVegaLite,
+} from './preprocess.js'
 
 function UnsupportedFormatError(message) {
   this.name = 'UnsupportedFormatError'
@@ -71,13 +73,7 @@ const createImageSrc = (doc, krokiDiagram, target, vfs, krokiClient) => {
   const shouldFetch = doc.isAttribute('kroki-fetch-diagram')
   let imageUrl
   if (shouldFetch && doc.getSafe() < SAFE_MODE_SECURE) {
-    imageUrl = fetch.save(
-      krokiDiagram,
-      doc,
-      target,
-      vfs,
-      krokiClient,
-    )
+    imageUrl = fetch.save(krokiDiagram, doc, target, vfs, krokiClient)
   } else {
     imageUrl = krokiDiagram.getDiagramUri(krokiClient.getServerUrl())
   }
@@ -108,7 +104,11 @@ function getOption(attrs, document) {
   }
 }
 
-const processKroki = (
+function isNumeric(value) {
+  return /^[1-9]\d*$/.test(value)
+}
+
+const processKroki = async (
   processor,
   parent,
   attrs,
@@ -122,10 +122,7 @@ const processKroki = (
   // Be careful not to specify "specialcharacters" or your diagram code won't be valid anymore!
   const subs = attrs.subs
   if (subs) {
-    diagramText = parent.applySubstitutions(
-      diagramText,
-      parent.$resolve_subs(subs),
-    )
+    diagramText = await parent.applySubs(diagramText, parent.resolveSubs(subs))
   }
   if (doc.getSafe() < SAFE_MODE_SECURE) {
     if (diagramType === 'vegalite') {
@@ -149,11 +146,7 @@ const processKroki = (
         resource,
       )
     } else if (diagramType === 'structurizr') {
-      diagramText = preprocessStructurizr(
-        diagramText,
-        context,
-        resource,
-      )
+      diagramText = preprocessStructurizr(diagramText, context, resource)
     }
   }
   const blockId = attrs.id
@@ -188,13 +181,13 @@ const processKroki = (
   const opts = Object.fromEntries(
     Object.entries(attrs).filter(
       ([key, _]) =>
-        !key.endsWith('-option') && !BUILTIN_ATTRIBUTES.includes(key),
+        !key.endsWith('-option') &&
+        !BUILTIN_ATTRIBUTES.includes(key) &&
+        !isNumeric(key),
     ),
   )
   const krokiDiagram = new KrokiDiagram(diagramType, format, diagramText, opts)
-  const httpClient = isBrowser()
-    ? browserHttp
-    : nodeHttp
+  const httpClient = isBrowser() ? browserHttp : nodeHttp
   const krokiClient = new KrokiClient(doc, httpClient)
   let block
   if (format === 'txt' || format === 'atxt' || format === 'utxt') {
@@ -220,9 +213,9 @@ const processKroki = (
     block = processor.createImageBlock(parent, blockAttrs)
   }
   if (title) {
-    block['$title='](title)
+    block.title = title
   }
-  block.$assign_caption(caption, 'figure')
+  block.assignCaption(caption, 'figure')
   return block
 }
 
@@ -230,12 +223,14 @@ function diagramBlock(context) {
   return function () {
     this.onContext(['listing', 'literal'])
     this.positionalAttributes(['target', 'format'])
-    this.process((parent, reader, attrs) => {
+    this.process(async (parent, reader, attrs) => {
       const diagramType = this.name.toString()
       const role = attrs.role
-      const diagramText = reader.$read()
+      const diagramText = await reader.read()
+      const logger = parent.getDocument().getLogger()
       try {
-        return processKroki(
+        context.logger = logger
+        return await processKroki(
           this,
           parent,
           attrs,
@@ -245,7 +240,7 @@ function diagramBlock(context) {
         )
       } catch (err) {
         const errorMessage = wrapError(err, `Skipping ${diagramType} block.`)
-        parent.getDocument().getLogger().warn(errorMessage)
+        logger.warn(errorMessage)
         attrs.role = role ? `${role} kroki-error` : 'kroki-error'
         return this.createBlock(
           parent,
@@ -262,9 +257,9 @@ function diagramBlockMacro(name, context) {
   return function () {
     this.named(name)
     this.positionalAttributes(['format'])
-    this.process((parent, target, attrs) => {
+    this.process(async (parent, target, attrs) => {
       let vfs = context.vfs
-      target = parent.applySubstitutions(target, ['attributes'])
+      target = await parent.applySubs(target, ['attributes'])
       if (isBrowser()) {
         if (
           !['file://', 'https://', 'http://'].some((prefix) =>
@@ -284,13 +279,14 @@ function diagramBlockMacro(name, context) {
           target = parent.normalizeSystemPath(target)
         }
       }
+      context.logger = parent.getDocument().getLogger()
       const role = attrs.role
       const diagramType = name
       try {
         const diagramText = vfs.read(target)
         const resource = (typeof vfs.parse === 'function' &&
           vfs.parse(target)) || { dir: '' }
-        return processKroki(
+        return await processKroki(
           this,
           parent,
           attrs,
@@ -314,22 +310,8 @@ function diagramBlockMacro(name, context) {
   }
 }
 
-
 export default {
   register: (registry, context = {}) => {
-    // patch context in case of Antora
-    if (
-      typeof context.contentCatalog !== 'undefined' &&
-      typeof context.contentCatalog.addFile === 'function' &&
-      typeof context.file !== 'undefined'
-    ) {
-      context.vfs = antoraAdapter(
-        context.file,
-        context.contentCatalog,
-        context.vfs,
-      )
-    }
-    context.logger = Opal.Asciidoctor.LoggerManager.getLogger()
     const names = [
       'actdiag',
       'blockdiag',
@@ -361,19 +343,10 @@ export default {
       'diagramsnet',
       'wireviz',
     ]
-    if (typeof registry.register === 'function') {
-      registry.register(function () {
-        for (const name of names) {
-          this.block(name, diagramBlock(context))
-          this.blockMacro(diagramBlockMacro(name, context))
-        }
-      })
-    } else if (typeof registry.block === 'function') {
-      for (const name of names) {
-        registry.block(name, diagramBlock(context))
-        registry.blockMacro(diagramBlockMacro(name, context))
-      }
+    for (const name of names) {
+      registry.block(name, diagramBlock(context))
+      registry.blockMacro(diagramBlockMacro(name, context))
     }
     return registry
-  }
+  },
 }

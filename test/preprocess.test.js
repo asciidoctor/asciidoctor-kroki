@@ -2,19 +2,21 @@
 // The previous line must be the first non-comment line in the file to enable TypeScript checks:
 // https://www.typescriptlang.org/docs/handbook/intro-to-js-ts.html#ts-check
 
-import { describe, it } from 'node:test'
 import assert from 'node:assert'
 import fs from 'node:fs'
 import path, { dirname } from 'node:path'
+import { describe, it } from 'node:test'
 import url, { fileURLToPath } from 'node:url'
-
+import { convertFile, Extensions, MemoryLogger } from '@asciidoctor/core'
 import asciidoctorKroki from '../src/asciidoctor-kroki.js'
-import Asciidoctor from '@asciidoctor/core'
-
-import { preprocessVegaLite, preprocessPlantUML, preprocessStructurizr } from '../src/preprocess.js'
+import {
+  preprocessPlantUML,
+  preprocessStructurizr,
+  preprocessVegaLite,
+} from '../src/preprocess.js'
+import { assertNotContains } from './utils.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
-const asciidoctor = Asciidoctor()
 
 function assertThrows(fn, expected) {
   if (expected instanceof RegExp) {
@@ -99,7 +101,7 @@ Error: ENOENT: no such file or directory, open '${unexistingPath}'`,
   })
 
   it('should log and return original diagramText for unexisting remote file referenced with "http" protocol, because it can perhaps be found by kroki server', () => {
-    const memoryLogger = asciidoctor.MemoryLogger.create()
+    const memoryLogger = MemoryLogger.create()
     const diagramText = `{
   "data": {
     "url": "https://raw.githubusercontent.com/asciidoctor/asciidoctor-kroki/master/unexisting.csv"
@@ -192,7 +194,6 @@ Error: ENOENT: no such file or directory, open '${unexistingPath}'`,
   })
 })
 
-
 describe('PlantUML preprocessing', { timeout: 30000 }, () => {
   const remoteBasePath =
     'https://raw.githubusercontent.com/asciidoctor/asciidoctor-kroki/master/'
@@ -209,7 +210,7 @@ describe('PlantUML preprocessing', { timeout: 30000 }, () => {
   })
 
   it('should log and return original diagramText for standard library file referenced with "!include <std-lib-file>", because it can perhaps be found by kroki server', () => {
-    const memoryLogger = asciidoctor.MemoryLogger.create()
+    const memoryLogger = MemoryLogger.create()
     const diagramTextWithStdLibIncludeFile = `
       !include <std/include.iuml>
       alice -> bob`
@@ -228,7 +229,7 @@ describe('PlantUML preprocessing', { timeout: 30000 }, () => {
   })
 
   it('should log and return original diagramText for unexisting local file referenced with "!include local-file-or-url", because it can perhaps be found by kroki server', () => {
-    const memoryLogger = asciidoctor.MemoryLogger.create()
+    const memoryLogger = MemoryLogger.create()
     const diagramTextWithUnexistingLocalIncludeFile = `
       !include ${localUnexistingFilePath}
       alice -> bob`
@@ -248,7 +249,7 @@ describe('PlantUML preprocessing', { timeout: 30000 }, () => {
   })
 
   it('should log and return original diagramText for unexisting remote file referenced with "!include remote-url", because it can perhaps be found by kroki server', () => {
-    const memoryLogger = asciidoctor.MemoryLogger.create()
+    const memoryLogger = MemoryLogger.create()
     const remoteUnexistingIncludeFilePath = `${remoteBasePath}${localUnexistingFilePath}`
     const diagramTextWithUnexistingRemoteIncludeFile = `
       !include ${remoteUnexistingIncludeFilePath}
@@ -712,8 +713,8 @@ skinparam BackgroundColor black
       @enduml`
 
     const result = preprocessPlantUML(diagramTextWithTags, {})
-    assert.ok(!result.includes('@startuml'))
-    assert.ok(!result.includes('@enduml'))
+    assertNotContains(result, '@startuml')
+    assertNotContains(result, '@enduml')
     assert.strictEqual(
       result.trim(),
       `alice -> bob
@@ -721,11 +722,11 @@ skinparam BackgroundColor black
     )
   })
 
-  it('should resolve PlantUML includes from the diagram directory', () => {
-    const registry = asciidoctor.Extensions.create()
+  it('should resolve PlantUML includes from the diagram directory', async () => {
+    const registry = Extensions.create()
     asciidoctorKroki.register(registry)
     const file = path.join(__dirname, 'fixtures', 'docs', 'hello.adoc')
-    const html = asciidoctor.convertFile(file, {
+    const html = await convertFile(file, {
       safe: 'safe',
       extension_registry: registry,
       to_file: false,
@@ -770,7 +771,7 @@ describe('Structurizr preprocessing', { timeout: 30000 }, () => {
   })
 
   it('should log and return original diagramText for unexisting local file referenced with "!include local-file-or-url", because it can perhaps be found by kroki server', () => {
-    const memoryLogger = asciidoctor.MemoryLogger.create()
+    const memoryLogger = MemoryLogger.create()
     const diagramTextWithUnexistingLocalIncludeFile = `
       ${diagramTextHead}
           !include ${localUnexistingFilePath}
@@ -793,7 +794,7 @@ describe('Structurizr preprocessing', { timeout: 30000 }, () => {
   })
 
   it('should log and return original diagramText for unexisting remote file referenced with "!include remote-url", because it can perhaps be found by kroki server', () => {
-    const memoryLogger = asciidoctor.MemoryLogger.create()
+    const memoryLogger = MemoryLogger.create()
     const remoteUnexistingIncludeFilePath = `${remoteBasePath}${localUnexistingFilePath}`
     const diagramTextWithUnexistingRemoteIncludeFile = `
       ${diagramTextHead}

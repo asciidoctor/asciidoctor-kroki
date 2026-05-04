@@ -1,5 +1,0 @@
-[plantuml,ab-example-all-1,svg]
-----
-alice -> bob
-bob -> alice
-----
