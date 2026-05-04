@@ -1,4 +1,11 @@
-const httpRequest = (XMLHttpRequest, uri, method, headers, encoding = 'utf8', body) => {
+const httpRequest = (
+  XMLHttpRequest,
+  uri,
+  method,
+  headers,
+  encoding = 'utf8',
+  body,
+) => {
   let data = ''
   let status = -1
   try {
@@ -44,7 +51,9 @@ const httpRequest = (XMLHttpRequest, uri, method, headers, encoding = 'utf8', bo
     throw new Error(`${method} ${uri} - server returns an empty response`)
   }
 
-  throw new Error(`${method} ${uri} - server returns ${status} status code; response: ${data}`)
+  throw new Error(
+    `${method} ${uri} - server returns ${status} status code; response: ${data}`,
+  )
 }
 
 const httpPost = (XMLHttpRequest, uri, body, headers, encoding = 'utf8') => {
@@ -57,5 +66,5 @@ const httpGet = (XMLHttpRequest, uri, headers, encoding = 'utf8') => {
 
 module.exports = {
   get: httpGet,
-  post: httpPost
+  post: httpPost,
 }

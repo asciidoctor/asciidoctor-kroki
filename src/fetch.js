@@ -1,5 +1,5 @@
 const rusha = require('rusha')
-const path = require('path').posix
+const path = require('node:path').posix
 
 const getImagesOutputDirectory = (doc) => {
   const imagesOutputDir = doc.getAttribute('imagesoutdir')
@@ -13,7 +13,9 @@ const getImagesOutputDirectory = (doc) => {
 
 const getOutputDirectory = (doc) => {
   // the nested document logic will become obsolete once https://github.com/asciidoctor/asciidoctor/commit/7edc9da023522be67b17e2a085d72e056703a438 is released
-  const outDir = doc.getAttribute('outdir') || (doc.isNested() ? doc.getParentDocument() : doc).getOptions().to_dir
+  const outDir =
+    doc.getAttribute('outdir') ||
+    (doc.isNested() ? doc.getParentDocument() : doc).getOptions().to_dir
   const baseDir = doc.getBaseDir()
   if (outDir) {
     return outDir
@@ -21,17 +23,30 @@ const getOutputDirectory = (doc) => {
   return baseDir
 }
 
-module.exports.save = function (krokiDiagram, doc, target, vfs, krokiClient) {
-  const exists = typeof vfs !== 'undefined' && typeof vfs.exists === 'function' ? vfs.exists : require('./node-fs.js').exists
-  const read = typeof vfs !== 'undefined' && typeof vfs.read === 'function' ? vfs.read : require('./node-fs.js').read
-  const add = typeof vfs !== 'undefined' && typeof vfs.add === 'function' ? vfs.add : require('./node-fs.js').add
+module.exports.save = (krokiDiagram, doc, target, vfs, krokiClient) => {
+  const exists =
+    typeof vfs !== 'undefined' && typeof vfs.exists === 'function'
+      ? vfs.exists
+      : require('./node-fs.js').exists
+  const read =
+    typeof vfs !== 'undefined' && typeof vfs.read === 'function'
+      ? vfs.read
+      : require('./node-fs.js').read
+  const add =
+    typeof vfs !== 'undefined' && typeof vfs.add === 'function'
+      ? vfs.add
+      : require('./node-fs.js').add
 
   const imagesOutputDirectory = getImagesOutputDirectory(doc)
-  const dataUri = doc.isAttribute('data-uri') || doc.isAttribute('kroki-data-uri')
+  const dataUri =
+    doc.isAttribute('data-uri') || doc.isAttribute('kroki-data-uri')
   const diagramUrl = krokiDiagram.getDiagramUri(krokiClient.getServerUrl())
   const format = krokiDiagram.format
   const diagramName = `${target || 'diag'}-${rusha.createHash().update(diagramUrl).digest('hex')}.${format}`
-  const filePath = path.format({ dir: imagesOutputDirectory, base: diagramName })
+  const filePath = path.format({
+    dir: imagesOutputDirectory,
+    base: diagramName,
+  })
   let encoding
   let mediaType
   if (format === 'txt' || format === 'atxt' || format === 'utxt') {
@@ -52,13 +67,18 @@ module.exports.save = function (krokiDiagram, doc, target, vfs, krokiClient) {
     contents = krokiClient.getImage(krokiDiagram, encoding)
   }
   if (dataUri) {
-    return 'data:' + mediaType + ';base64,' + Buffer.from(contents, encoding).toString('base64')
+    return (
+      'data:' +
+      mediaType +
+      ';base64,' +
+      Buffer.from(contents, encoding).toString('base64')
+    )
   }
   add({
     relative: imagesOutputDirectory,
     basename: diagramName,
     mediaType,
-    contents: Buffer.from(contents, encoding)
+    contents: Buffer.from(contents, encoding),
   })
   return diagramName
 }

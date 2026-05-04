@@ -1,7 +1,7 @@
 // @ts-check
 // The previous line must be the first non-comment line in the file to enable TypeScript checks:
 // https://www.typescriptlang.org/docs/handbook/intro-to-js-ts.html#ts-check
-const { delimiter, posix: path } = require('path')
+const { delimiter, posix: path } = require('node:path')
 
 /**
  * @param {string} diagramText
@@ -9,8 +9,15 @@ const { delimiter, posix: path } = require('path')
  * @param {string} diagramDir
  * @returns {string}
  */
-module.exports.preprocessVegaLite = function (diagramText, context = {}, diagramDir = '') {
-  const logger = 'logger' in context && typeof context.logger !== 'undefined' ? context.logger : console
+module.exports.preprocessVegaLite = (
+  diagramText,
+  context = {},
+  diagramDir = '',
+) => {
+  const logger =
+    'logger' in context && typeof context.logger !== 'undefined'
+      ? context.logger
+      : console
   let diagramObject
   try {
     const JSON5 = require('json5')
@@ -24,18 +31,29 @@ ${diagramText}
     throw addCauseToError(new Error(message), e)
   }
 
-  if (!diagramObject || !diagramObject.data || !diagramObject.data.url) {
+  if (!diagramObject?.data?.url) {
     return diagramText
   }
-  const read = 'vfs' in context && typeof context.vfs !== 'undefined' && typeof context.vfs.read === 'function' ? context.vfs.read : require('./node-fs.js').read
+  const read =
+    'vfs' in context &&
+    typeof context.vfs !== 'undefined' &&
+    typeof context.vfs.read === 'function'
+      ? context.vfs.read
+      : require('./node-fs.js').read
   const data = diagramObject.data
   const urlOrPath = data.url
   try {
-    data.values = read(isLocalAndRelative(urlOrPath) ? path.join(diagramDir, urlOrPath) : urlOrPath)
+    data.values = read(
+      isLocalAndRelative(urlOrPath)
+        ? path.join(diagramDir, urlOrPath)
+        : urlOrPath,
+    )
   } catch (e) {
     if (isRemoteUrl(urlOrPath)) {
       // Includes a remote file that cannot be found but might be resolved by the Kroki server (https://github.com/yuzutech/kroki/issues/60)
-      logger.info(`Skipping preprocessing of Vega-Lite view specification, because reading the remote data file '${urlOrPath}' referenced in the diagram caused an error:\n${e}`)
+      logger.info(
+        `Skipping preprocessing of Vega-Lite view specification, because reading the remote data file '${urlOrPath}' referenced in the diagram caused an error:\n${e}`,
+      )
       return diagramText
     }
     const message = `Preprocessing of Vega-Lite view specification failed, because reading the local data file '${urlOrPath}' referenced in the diagram caused an error:\n${e}`
@@ -73,7 +91,7 @@ const plantUmlFirstBlockRx = /@startuml(?:\r?\n)([\s\S]*?)(?:\r?\n)@enduml/m
  * @param diagramText
  * @returns {string} diagramText without any plantuml tags
  */
-function removePlantUmlTags (diagramText) {
+function removePlantUmlTags(diagramText) {
   if (diagramText) {
     diagramText = diagramText.replace(/^\s*@(startuml|enduml).*\n?/gm, '')
   }
@@ -87,12 +105,27 @@ function removePlantUmlTags (diagramText) {
  * @param {{[key: string]: string}} resource - diagram resource identity
  * @returns {string}
  */
-module.exports.preprocessPlantUML = function (diagramText, context, diagramIncludePaths = '', resource = { dir: '' }) {
+module.exports.preprocessPlantUML = (
+  diagramText,
+  context,
+  diagramIncludePaths = '',
+  resource = { dir: '' },
+) => {
   const logger = 'logger' in context ? context.logger : console
   const includeOnce = []
   const includeStack = []
-  const includePaths = diagramIncludePaths ? diagramIncludePaths.split(delimiter) : []
-  diagramText = preprocessPlantUmlIncludes(diagramText, resource, includeOnce, includeStack, includePaths, context.vfs, logger)
+  const includePaths = diagramIncludePaths
+    ? diagramIncludePaths.split(delimiter)
+    : []
+  diagramText = preprocessPlantUmlIncludes(
+    diagramText,
+    resource,
+    includeOnce,
+    includeStack,
+    includePaths,
+    context.vfs,
+    logger,
+  )
   return removePlantUmlTags(diagramText)
 }
 
@@ -106,62 +139,86 @@ module.exports.preprocessPlantUML = function (diagramText, context, diagramInclu
  * @param {any} logger
  * @returns {string}
  */
-function preprocessPlantUmlIncludes (diagramText, resource, includeOnce, includeStack, includePaths, vfs, logger) {
+function preprocessPlantUmlIncludes(
+  diagramText,
+  resource,
+  includeOnce,
+  includeStack,
+  includePaths,
+  vfs,
+  logger,
+) {
   // See: http://plantuml.com/en/preprocessing
   // Please note that we cannot use lookbehind for compatibility reasons with Safari: https://caniuse.com/mdn-javascript_builtins_regexp_lookbehind_assertion objects are stateful when they have the global flag set (e.g. /foo/g).
   // const regExInclude = /^\s*!(include(?:_many|_once|url|sub)?)\s+((?:(?<=\\)[ ]|[^ ])+)(.*)/
   const regExInclude = /^\s*!(include(?:_many|_once|url|sub)?)\s+([\s\S]*)/
   const diagramLines = diagramText.split('\n')
   let insideCommentBlock = false
-  const diagramProcessed = diagramLines.map(line => {
+  const diagramProcessed = diagramLines.map((line) => {
     let result = line
     // replace the !include directive unless inside a comment block
     if (!insideCommentBlock) {
-      result = line.replace(
-        regExInclude,
-        (match, ...args) => {
-          const include = args[0].toLowerCase()
-          const target = parseTarget(args[1])
-          const urlSub = target.url.split('!')
-          const trailingContent = target.comment
-          const url = urlSub[0].replace(/\\ /g, ' ').replace(/\s+$/g, '')
-          const sub = urlSub[1]
-          const result = readPlantUmlInclude(url, resource, includePaths, includeStack, vfs, logger)
-          if (result.skip) {
-            return line
-          }
-          if (include === 'include_once') {
-            checkIncludeOnce(result.text, result.filePath, includeOnce)
-          }
-          let text = result.text
-          if (sub !== undefined && sub !== null && sub !== '') {
-            if (include === 'includesub') {
-              text = getPlantUmlTextFromSub(text, sub)
-            } else {
-              const index = parseInt(sub, 10)
-              if (isNaN(index)) {
-                text = getPlantUmlTextFromId(text, sub)
-              } else {
-                text = getPlantUmlTextFromIndex(text, index)
-              }
-            }
+      result = line.replace(regExInclude, (_match, ...args) => {
+        const include = args[0].toLowerCase()
+        const target = parseTarget(args[1])
+        const urlSub = target.url.split('!')
+        const trailingContent = target.comment
+        const url = urlSub[0].replace(/\\ /g, ' ').replace(/\s+$/g, '')
+        const sub = urlSub[1]
+        const result = readPlantUmlInclude(
+          url,
+          resource,
+          includePaths,
+          includeStack,
+          vfs,
+          logger,
+        )
+        if (result.skip) {
+          return line
+        }
+        if (include === 'include_once') {
+          checkIncludeOnce(result.text, result.filePath, includeOnce)
+        }
+        let text = result.text
+        if (sub !== undefined && sub !== null && sub !== '') {
+          if (include === 'includesub') {
+            text = getPlantUmlTextFromSub(text, sub)
           } else {
-            text = getPlantUmlTextOrFirstBlock(text)
+            const index = parseInt(sub, 10)
+            if (Number.isNaN(index)) {
+              text = getPlantUmlTextFromId(text, sub)
+            } else {
+              text = getPlantUmlTextFromIndex(text, index)
+            }
           }
-          includeStack.push(result.filePath)
-          const parse = typeof vfs !== 'undefined' && typeof vfs.parse === 'function' ? vfs.parse : require('./node-fs.js').parse
-          text = preprocessPlantUmlIncludes(text, parse(result.filePath, resource), includeOnce, includeStack, includePaths, vfs, logger)
-          includeStack.pop()
-          if (trailingContent !== '') {
-            return text + ' ' + trailingContent
-          }
-          return text
-        })
+        } else {
+          text = getPlantUmlTextOrFirstBlock(text)
+        }
+        includeStack.push(result.filePath)
+        const parse =
+          typeof vfs !== 'undefined' && typeof vfs.parse === 'function'
+            ? vfs.parse
+            : require('./node-fs.js').parse
+        text = preprocessPlantUmlIncludes(
+          text,
+          parse(result.filePath, resource),
+          includeOnce,
+          includeStack,
+          includePaths,
+          vfs,
+          logger,
+        )
+        includeStack.pop()
+        if (trailingContent !== '') {
+          return `${text} ${trailingContent}`
+        }
+        return text
+      })
     }
-    if (line.includes('/\'')) {
+    if (line.includes("/'")) {
       insideCommentBlock = true
     }
-    if (insideCommentBlock && line.includes('\'/')) {
+    if (insideCommentBlock && line.includes("'/")) {
       insideCommentBlock = false
     }
     return result
@@ -176,8 +233,11 @@ function preprocessPlantUmlIncludes (diagramText, resource, includeOnce, include
  * @param {any} vfs
  * @returns {string} the found file or include file path
  */
-function resolveIncludeFile (includeFile, resource, includePaths, vfs) {
-  const exists = typeof vfs !== 'undefined' && typeof vfs.exists === 'function' ? vfs.exists : require('./node-fs.js').exists
+function resolveIncludeFile(includeFile, resource, includePaths, vfs) {
+  const exists =
+    typeof vfs !== 'undefined' && typeof vfs.exists === 'function'
+      ? vfs.exists
+      : require('./node-fs.js').exists
   if (resource.module) {
     // antora resource id
     const dirPath = path.dirname(resource.relative)
@@ -194,7 +254,7 @@ function resolveIncludeFile (includeFile, resource, includePaths, vfs) {
   return filePath
 }
 
-function parseStructurizrTarget (value, tokens) {
+function parseStructurizrTarget(value, tokens) {
   for (const token of tokens) {
     const i = value.indexOf(token)
     if (i > 0 && value.charAt(i - 1) !== '\\') {
@@ -204,25 +264,46 @@ function parseStructurizrTarget (value, tokens) {
   return { url: value, comment: '' }
 }
 
-function parseTarget (value) {
+function parseTarget(value) {
   for (let i = 0; i < value.length; i++) {
     const char = value.charAt(i)
     if (i > 2) {
       // # inline comment
-      if (char === '#' && value.charAt(i - 1) === ' ' && value.charAt(i - 2) !== '\\') {
+      if (
+        char === '#' &&
+        value.charAt(i - 1) === ' ' &&
+        value.charAt(i - 2) !== '\\'
+      ) {
         return { url: value.substr(0, i - 1).trim(), comment: value.substr(i) }
       }
       // /' multi-lines comment '/
-      if (char === '\'' && value.charAt(i - 1) === '/' && value.charAt(i - 2) !== '\\') {
-        return { url: value.substr(0, i - 1).trim(), comment: value.substr(i - 1) }
+      if (
+        char === "'" &&
+        value.charAt(i - 1) === '/' &&
+        value.charAt(i - 2) !== '\\'
+      ) {
+        return {
+          url: value.substr(0, i - 1).trim(),
+          comment: value.substr(i - 1),
+        }
       }
     }
   }
   return { url: value, comment: '' }
 }
 
-function readStructurizrInclude (url, resource, includePaths, includeStack, vfs, logger) {
-  const read = typeof vfs !== 'undefined' && typeof vfs.read === 'function' ? vfs.read : require('./node-fs.js').read
+function readStructurizrInclude(
+  url,
+  resource,
+  includePaths,
+  includeStack,
+  vfs,
+  logger,
+) {
+  const read =
+    typeof vfs !== 'undefined' && typeof vfs.read === 'function'
+      ? vfs.read
+      : require('./node-fs.js').read
   let skip = false
   let text = ''
   let filePath = url
@@ -235,7 +316,9 @@ function readStructurizrInclude (url, resource, includePaths, includeStack, vfs,
         text = read(url)
       } catch (e) {
         // Includes a remote file that cannot be found but might be resolved by the Kroki server (https://github.com/yuzutech/kroki/issues/60)
-        logger.info(`Skipping preprocessing of Structurizr include, because reading the referenced remote file '${url}' caused an error:\n${e}`)
+        logger.info(
+          `Skipping preprocessing of Structurizr include, because reading the referenced remote file '${url}' caused an error:\n${e}`,
+        )
         skip = true
       }
     } else {
@@ -248,7 +331,9 @@ function readStructurizrInclude (url, resource, includePaths, includeStack, vfs,
           text = read(filePath, 'utf8', resource)
         } catch (e) {
           // Includes a local file that cannot be found but might be resolved by the Kroki server
-          logger.info(`Skipping preprocessing of Structurizr include, because reading the referenced local file '${filePath}' caused an error:\n${e}`)
+          logger.info(
+            `Skipping preprocessing of Structurizr include, because reading the referenced local file '${filePath}' caused an error:\n${e}`,
+          )
           skip = true
         }
       }
@@ -266,14 +351,26 @@ function readStructurizrInclude (url, resource, includePaths, includeStack, vfs,
  * @param {any} logger
  * @returns {any}
  */
-function readPlantUmlInclude (url, resource, includePaths, includeStack, vfs, logger) {
-  const read = typeof vfs !== 'undefined' && typeof vfs.read === 'function' ? vfs.read : require('./node-fs.js').read
+function readPlantUmlInclude(
+  url,
+  resource,
+  includePaths,
+  includeStack,
+  vfs,
+  logger,
+) {
+  const read =
+    typeof vfs !== 'undefined' && typeof vfs.read === 'function'
+      ? vfs.read
+      : require('./node-fs.js').read
   let skip = false
   let text = ''
   let filePath = url
   if (url.startsWith('<')) {
     // Includes a standard library that cannot be resolved locally but might be resolved the by Kroki server
-    logger.info(`Skipping preprocessing of PlantUML standard library include '${url}'`)
+    logger.info(
+      `Skipping preprocessing of PlantUML standard library include '${url}'`,
+    )
     skip = true
   } else if (includeStack.includes(url)) {
     const message = `Preprocessing of PlantUML include failed, because recursive reading already included referenced file '${url}'`
@@ -284,7 +381,9 @@ function readPlantUmlInclude (url, resource, includePaths, includeStack, vfs, lo
         text = read(url)
       } catch (e) {
         // Includes a remote file that cannot be found but might be resolved by the Kroki server (https://github.com/yuzutech/kroki/issues/60)
-        logger.info(`Skipping preprocessing of PlantUML include, because reading the referenced remote file '${url}' caused an error:\n${e}`)
+        logger.info(
+          `Skipping preprocessing of PlantUML include, because reading the referenced remote file '${url}' caused an error:\n${e}`,
+        )
         skip = true
       }
     } else {
@@ -297,7 +396,9 @@ function readPlantUmlInclude (url, resource, includePaths, includeStack, vfs, lo
           text = read(filePath, 'utf8', resource)
         } catch (e) {
           // Includes a local file that cannot be found but might be resolved by the Kroki server
-          logger.info(`Skipping preprocessing of PlantUML include, because reading the referenced local file '${filePath}' caused an error:\n${e}`)
+          logger.info(
+            `Skipping preprocessing of PlantUML include, because reading the referenced local file '${filePath}' caused an error:\n${e}`,
+          )
           skip = true
         }
       }
@@ -311,8 +412,11 @@ function readPlantUmlInclude (url, resource, includePaths, includeStack, vfs, lo
  * @param {string} sub
  * @returns {string}
  */
-function getPlantUmlTextFromSub (text, sub) {
-  const regEx = new RegExp(`!startsub\\s+${sub}(?:\\r\\n|\\n)([\\s\\S]*?)(?:\\r\\n|\\n)!endsub`, 'gm')
+function getPlantUmlTextFromSub(text, sub) {
+  const regEx = new RegExp(
+    `!startsub\\s+${sub}(?:\\r\\n|\\n)([\\s\\S]*?)(?:\\r\\n|\\n)!endsub`,
+    'gm',
+  )
   return getPlantUmlTextRegEx(text, regEx)
 }
 
@@ -321,8 +425,11 @@ function getPlantUmlTextFromSub (text, sub) {
  * @param {string} id
  * @returns {string}
  */
-function getPlantUmlTextFromId (text, id) {
-  const regEx = new RegExp(`@startuml\\(id=${id}\\)(?:\\r\\n|\\n)([\\s\\S]*?)(?:\\r\\n|\\n)@enduml`, 'gm')
+function getPlantUmlTextFromId(text, id) {
+  const regEx = new RegExp(
+    `@startuml\\(id=${id}\\)(?:\\r\\n|\\n)([\\s\\S]*?)(?:\\r\\n|\\n)@enduml`,
+    'gm',
+  )
   return getPlantUmlTextRegEx(text, regEx)
 }
 
@@ -331,14 +438,14 @@ function getPlantUmlTextFromId (text, id) {
  * @param {RegExp} regEx
  * @returns {string}
  */
-function getPlantUmlTextRegEx (text, regEx) {
+function getPlantUmlTextRegEx(text, regEx) {
   let matchedStrings = ''
   let match = regEx.exec(text)
   if (match != null) {
     matchedStrings += match[1]
     match = regEx.exec(text)
     while (match != null) {
-      matchedStrings += '\n' + match[1]
+      matchedStrings += `\n${match[1]}`
       match = regEx.exec(text)
     }
   }
@@ -350,7 +457,7 @@ function getPlantUmlTextRegEx (text, regEx) {
  * @param {number} index
  * @returns {string}
  */
-function getPlantUmlTextFromIndex (text, index) {
+function getPlantUmlTextFromIndex(text, index) {
   // Please note that RegExp objects are stateful when they have the global flag set (e.g. /foo/g).
   // They store a lastIndex from the previous match.
   // Using exec() multiple times will return the next occurrence.
@@ -375,7 +482,7 @@ function getPlantUmlTextFromIndex (text, index) {
  * @param {string} text
  * @returns {string}
  */
-function getPlantUmlTextOrFirstBlock (text) {
+function getPlantUmlTextOrFirstBlock(text) {
   const match = text.match(plantUmlFirstBlockRx)
   if (match) {
     return match[1]
@@ -388,7 +495,7 @@ function getPlantUmlTextOrFirstBlock (text) {
  * @param {string} filePath
  * @param {string[]} includeOnce
  */
-function checkIncludeOnce (text, filePath, includeOnce) {
+function checkIncludeOnce(_text, filePath, includeOnce) {
   if (includeOnce.includes(filePath)) {
     const message = `Preprocessing of PlantUML include failed, because including multiple times referenced file '${filePath}' with '!include_once' guard`
     throw new Error(message)
@@ -403,10 +510,20 @@ function checkIncludeOnce (text, filePath, includeOnce) {
  * @param {{[key: string]: string}} resource - diagram resource identity
  * @returns {string}
  */
-module.exports.preprocessStructurizr = function (diagramText, context, resource = { dir: '' }) {
+module.exports.preprocessStructurizr = (
+  diagramText,
+  context,
+  resource = { dir: '' },
+) => {
   const logger = 'logger' in context ? context.logger : console
   const includeStack = []
-  return preprocessStructurizrIncludes(diagramText, resource, includeStack, context.vfs, logger)
+  return preprocessStructurizrIncludes(
+    diagramText,
+    resource,
+    includeStack,
+    context.vfs,
+    logger,
+  )
 }
 
 /**
@@ -417,38 +534,63 @@ module.exports.preprocessStructurizr = function (diagramText, context, resource 
  * @param {any} logger
  * @returns {string}
  */
-function preprocessStructurizrIncludes (diagramText, resource, includeStack, vfs, logger) {
+function preprocessStructurizrIncludes(
+  diagramText,
+  resource,
+  includeStack,
+  vfs,
+  logger,
+) {
   // See: https://docs.structurizr.com/dsl/includes
   const regExInclude = /^\s*!include\s+([\s\S]*)/
   const diagramLines = diagramText.split('\n')
   let insideCommentBlock = false
-  const diagramProcessed = diagramLines.map(line => {
+  const diagramProcessed = diagramLines.map((line) => {
     let result = line
     // replace the !include directive unless inside a comment block
     if (!insideCommentBlock) {
-      result = line.replace(
-        regExInclude,
-        (match, ...args) => {
-          const target = parseStructurizrTarget(args[0], [' #', ' //', '/*'])
-          const trailingContent = target.comment
-          const url = target.url.replace(/\\ /g, ' ').replace(/\s+$/g, '')
-          const result = readStructurizrInclude(url, resource, [], includeStack, vfs, logger)
-          if (result.skip) {
-            return line
-          }
-          let text = result.text
-          includeStack.push(result.filePath)
-          const parse = typeof vfs !== 'undefined' && typeof vfs.parse === 'function' ? vfs.parse : require('./node-fs.js').parse
-          text = preprocessStructurizrIncludes(text, parse(result.filePath, resource), includeStack, vfs, logger)
-          includeStack.pop()
-          if (trailingContent !== '') {
-            return text + ' ' + trailingContent
-          }
-          return text
-        })
+      result = line.replace(regExInclude, (_match, ...args) => {
+        const target = parseStructurizrTarget(args[0], [' #', ' //', '/*'])
+        const trailingContent = target.comment
+        const url = target.url.replace(/\\ /g, ' ').replace(/\s+$/g, '')
+        const result = readStructurizrInclude(
+          url,
+          resource,
+          [],
+          includeStack,
+          vfs,
+          logger,
+        )
+        if (result.skip) {
+          return line
+        }
+        let text = result.text
+        includeStack.push(result.filePath)
+        const parse =
+          typeof vfs !== 'undefined' && typeof vfs.parse === 'function'
+            ? vfs.parse
+            : require('./node-fs.js').parse
+        text = preprocessStructurizrIncludes(
+          text,
+          parse(result.filePath, resource),
+          includeStack,
+          vfs,
+          logger,
+        )
+        includeStack.pop()
+        if (trailingContent !== '') {
+          return `${text} ${trailingContent}`
+        }
+        return text
+      })
     }
     let position = 0
-    while ((position = insideCommentBlock ? line.indexOf('*/', position) : line.indexOf('/*', position)) !== -1) {
+    while (
+      // biome-ignore lint/suspicious/noAssignInExpressions: assignment in while condition is intentional
+      (position = insideCommentBlock
+        ? line.indexOf('*/', position)
+        : line.indexOf('/*', position)) !== -1
+    ) {
       insideCommentBlock = !insideCommentBlock
       position += 2
     }
@@ -462,9 +604,9 @@ function preprocessStructurizrIncludes (diagramText, resource, includeStack, vfs
  * @param {any} causedBy
  * @returns {Error}
  */
-function addCauseToError (error, causedBy) {
+function addCauseToError(error, causedBy) {
   if (causedBy.stack) {
-    error.stack += '\nCaused by: ' + causedBy.stack
+    error.stack += `\nCaused by: ${causedBy.stack}`
   }
   return error
 }
@@ -473,7 +615,7 @@ function addCauseToError (error, causedBy) {
  * @param {string} string
  * @returns {boolean}
  */
-function isRemoteUrl (string) {
+function isRemoteUrl(string) {
   try {
     const url = new URL(string)
     return url.protocol !== 'file:'
@@ -486,7 +628,7 @@ function isRemoteUrl (string) {
  * @param {string} string
  * @returns {boolean}
  */
-function isLocalAndRelative (string) {
+function isLocalAndRelative(string) {
   if (string.startsWith('/')) {
     return false
   }

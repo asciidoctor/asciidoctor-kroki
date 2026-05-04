@@ -17,8 +17,8 @@
     "test:node": "mocha test/**.spec.js",
     "test:browser": "node test/browser/run.js",
     "test:antora": "mocha test/antora/**.spec.js",
-    "lint": "standard src/**.js test/**.js tasks/**.js",
-    "lint-fix": "npm run lint -- --fix",
+    "lint": "biome check src/ test/ tasks/",
+    "lint-fix": "biome check --write src/ test/ tasks/",
     "clean": "shx rm -rf dist/*",
     "dist": "npm run clean && npm run dist:browser",
     "dist:browser": "shx mkdir -p dist/browser && browserify src/asciidoctor-kroki.js --exclude ./node-fs.js --exclude ./fetch.js --exclude ./antora-adapter.js --standalone AsciidoctorKroki -o dist/browser/asciidoctor-kroki.js"
@@ -33,6 +33,7 @@
   "devDependencies": {
     "@antora/site-generator-default": "~3.1",
     "@asciidoctor/core": ">=2.2 <4.0",
+    "@biomejs/biome": "~2.4",
     "base64-js": "1.5.1",
     "browserify": "17.0.0",
     "chai": "~4.3",
@@ -44,7 +45,6 @@
     "puppeteer": "~24.10",
     "shx": "0.3.4",
     "sinon": "~16.1",
-    "standard": "17.1.0",
     "testcontainers": "11.4.0"
   },
   "peerDependencies": {

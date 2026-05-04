@@ -2,23 +2,23 @@
 // @ts-check
 const { KrokiDiagram, KrokiClient } = require('./kroki-client.js')
 
-function UnsupportedFormatError (message) {
+function UnsupportedFormatError(message) {
   this.name = 'UnsupportedFormatError'
   this.message = message
-  this.stack = (new Error()).stack
+  this.stack = new Error().stack
 }
 
 // eslint-disable-next-line new-parens
-UnsupportedFormatError.prototype = new Error
+UnsupportedFormatError.prototype = new Error()
 
-function InvalidConfigurationError (message) {
+function InvalidConfigurationError(message) {
   this.name = 'InvalidConfigurationError'
   this.message = message
-  this.stack = (new Error()).stack
+  this.stack = new Error().stack
 }
 
 // eslint-disable-next-line new-parens
-InvalidConfigurationError.prototype = new Error
+InvalidConfigurationError.prototype = new Error()
 
 const isBrowser = () => {
   return typeof window === 'object' && typeof window.XMLHttpRequest === 'object'
@@ -41,7 +41,7 @@ const BUILTIN_ATTRIBUTES = [
   'caption',
   'cloaked-context',
   '$positional',
-  'subs'
+  'subs',
 ]
 
 const wrapError = (err, message) => {
@@ -51,8 +51,8 @@ const wrapError = (err, message) => {
     err: {
       package: 'asciidoctor-kroki',
       message,
-      stack: errWrapper.stack
-    }
+      stack: errWrapper.stack,
+    },
   }
   result.$inspect = function () {
     return JSON.stringify(this.err)
@@ -64,7 +64,13 @@ const createImageSrc = (doc, krokiDiagram, target, vfs, krokiClient) => {
   const shouldFetch = doc.isAttribute('kroki-fetch-diagram')
   let imageUrl
   if (shouldFetch && doc.getSafe() < SAFE_MODE_SECURE) {
-    imageUrl = require('./fetch.js').save(krokiDiagram, doc, target, vfs, krokiClient)
+    imageUrl = require('./fetch.js').save(
+      krokiDiagram,
+      doc,
+      target,
+      vfs,
+      krokiClient,
+    )
   } else {
     imageUrl = krokiDiagram.getDiagramUri(krokiClient.getServerUrl())
   }
@@ -81,7 +87,7 @@ const createImageSrc = (doc, krokiDiagram, target, vfs, krokiClient) => {
  * @param document - Asciidoctor document
  * @returns {string|undefined} - the option name or undefined
  */
-function getOption (attrs, document) {
+function getOption(attrs, document) {
   const availableOptions = ['inline', 'interactive', 'none']
   for (const option of availableOptions) {
     if (attrs[`${option}-option`] === '') {
@@ -95,30 +101,57 @@ function getOption (attrs, document) {
   }
 }
 
-const processKroki = (processor, parent, attrs, diagramType, diagramText, context, resource) => {
+const processKroki = (
+  processor,
+  parent,
+  attrs,
+  diagramType,
+  diagramText,
+  context,
+  resource,
+) => {
   const doc = parent.getDocument()
   // If "subs" attribute is specified, substitute accordingly.
   // Be careful not to specify "specialcharacters" or your diagram code won't be valid anymore!
   const subs = attrs.subs
   if (subs) {
-    diagramText = parent.applySubstitutions(diagramText, parent.$resolve_subs(subs))
+    diagramText = parent.applySubstitutions(
+      diagramText,
+      parent.$resolve_subs(subs),
+    )
   }
   if (doc.getSafe() < SAFE_MODE_SECURE) {
     if (diagramType === 'vegalite') {
-      diagramText = require('./preprocess.js').preprocessVegaLite(diagramText, context, (resource && resource.dir) || '')
+      diagramText = require('./preprocess.js').preprocessVegaLite(
+        diagramText,
+        context,
+        resource?.dir || '',
+      )
     } else if (diagramType === 'plantuml' || diagramType === 'c4plantuml') {
       const plantUmlIncludeFile = doc.getAttribute('kroki-plantuml-include')
       if (plantUmlIncludeFile) {
         diagramText = `!include ${plantUmlIncludeFile}\n${diagramText}`
       }
-      const plantUmlIncludePaths = doc.getAttribute('kroki-plantuml-include-paths')
-      diagramText = require('./preprocess.js').preprocessPlantUML(diagramText, context, plantUmlIncludePaths, resource)
+      const plantUmlIncludePaths = doc.getAttribute(
+        'kroki-plantuml-include-paths',
+      )
+      diagramText = require('./preprocess.js').preprocessPlantUML(
+        diagramText,
+        context,
+        plantUmlIncludePaths,
+        resource,
+      )
     } else if (diagramType === 'structurizr') {
-      diagramText = require('./preprocess.js').preprocessStructurizr(diagramText, context, resource)
+      diagramText = require('./preprocess.js').preprocessStructurizr(
+        diagramText,
+        context,
+        resource,
+      )
     }
   }
   const blockId = attrs.id
-  const format = attrs.format || doc.getAttribute('kroki-default-format') || 'svg'
+  const format =
+    attrs.format || doc.getAttribute('kroki-default-format') || 'svg'
   const caption = attrs.caption
   const title = attrs.title
   let role = attrs.role
@@ -145,9 +178,16 @@ const processKroki = (processor, parent, attrs, diagramType, diagramText, contex
   if (blockId) {
     blockAttrs.id = blockId
   }
-  const opts = Object.fromEntries(Object.entries(attrs).filter(([key, _]) => !key.endsWith('-option') && !BUILTIN_ATTRIBUTES.includes(key)))
+  const opts = Object.fromEntries(
+    Object.entries(attrs).filter(
+      ([key, _]) =>
+        !key.endsWith('-option') && !BUILTIN_ATTRIBUTES.includes(key),
+    ),
+  )
   const krokiDiagram = new KrokiDiagram(diagramType, format, diagramText, opts)
-  const httpClient = isBrowser() ? require('./http/browser-http.js') : require('./http/node-http.js')
+  const httpClient = isBrowser()
+    ? require('./http/browser-http.js')
+    : require('./http/node-http.js')
   const krokiClient = new KrokiClient(doc, httpClient)
   let block
   if (format === 'txt' || format === 'atxt' || format === 'utxt') {
@@ -162,7 +202,13 @@ const processKroki = (processor, parent, attrs, diagramType, diagramText, contex
     } else {
       alt = 'Diagram'
     }
-    blockAttrs.target = createImageSrc(doc, krokiDiagram, attrs.target, context.vfs, krokiClient)
+    blockAttrs.target = createImageSrc(
+      doc,
+      krokiDiagram,
+      attrs.target,
+      context.vfs,
+      krokiClient,
+    )
     blockAttrs.alt = alt
     block = processor.createImageBlock(parent, blockAttrs)
   }
@@ -173,42 +219,57 @@ const processKroki = (processor, parent, attrs, diagramType, diagramText, contex
   return block
 }
 
-function diagramBlock (context) {
+function diagramBlock(context) {
   return function () {
-    const self = this
-    self.onContext(['listing', 'literal'])
-    self.positionalAttributes(['target', 'format'])
-    self.process((parent, reader, attrs) => {
+    this.onContext(['listing', 'literal'])
+    this.positionalAttributes(['target', 'format'])
+    this.process((parent, reader, attrs) => {
       const diagramType = this.name.toString()
       const role = attrs.role
       const diagramText = reader.$read()
       try {
-        return processKroki(this, parent, attrs, diagramType, diagramText, context)
+        return processKroki(
+          this,
+          parent,
+          attrs,
+          diagramType,
+          diagramText,
+          context,
+        )
       } catch (err) {
         const errorMessage = wrapError(err, `Skipping ${diagramType} block.`)
         parent.getDocument().getLogger().warn(errorMessage)
         attrs.role = role ? `${role} kroki-error` : 'kroki-error'
-        return this.createBlock(parent, attrs['cloaked-context'], diagramText, attrs)
+        return this.createBlock(
+          parent,
+          attrs['cloaked-context'],
+          diagramText,
+          attrs,
+        )
       }
     })
   }
 }
 
-function diagramBlockMacro (name, context) {
+function diagramBlockMacro(name, context) {
   return function () {
-    const self = this
-    self.named(name)
-    self.positionalAttributes(['format'])
-    self.process((parent, target, attrs) => {
+    this.named(name)
+    this.positionalAttributes(['format'])
+    this.process((parent, target, attrs) => {
       let vfs = context.vfs
       target = parent.applySubstitutions(target, ['attributes'])
       if (isBrowser()) {
-        if (!['file://', 'https://', 'http://'].some(prefix => target.startsWith(prefix))) {
+        if (
+          !['file://', 'https://', 'http://'].some((prefix) =>
+            target.startsWith(prefix),
+          )
+        ) {
           // if not an absolute URL, prefix with baseDir in the browser environment
           const doc = parent.getDocument()
           const baseDir = doc.getBaseDir()
           const startDir = typeof baseDir !== 'undefined' ? baseDir : '.'
-          target = startDir !== '.' ? doc.normalizeWebPath(target, startDir) : target
+          target =
+            startDir !== '.' ? doc.normalizeWebPath(target, startDir) : target
         }
       } else {
         if (vfs === undefined || typeof vfs.read !== 'function') {
@@ -220,22 +281,44 @@ function diagramBlockMacro (name, context) {
       const diagramType = name
       try {
         const diagramText = vfs.read(target)
-        const resource = (typeof vfs.parse === 'function' && vfs.parse(target)) || { dir: '' }
-        return processKroki(this, parent, attrs, diagramType, diagramText, context, resource)
+        const resource = (typeof vfs.parse === 'function' &&
+          vfs.parse(target)) || { dir: '' }
+        return processKroki(
+          this,
+          parent,
+          attrs,
+          diagramType,
+          diagramText,
+          context,
+          resource,
+        )
       } catch (err) {
         const errorMessage = wrapError(err, `Skipping ${diagramType} block.`)
         parent.getDocument().getLogger().warn(errorMessage)
         attrs.role = role ? `${role} kroki-error` : 'kroki-error'
-        return this.createBlock(parent, 'paragraph', `${err.message} - ${diagramType}::${target}[]`, attrs)
+        return this.createBlock(
+          parent,
+          'paragraph',
+          `${err.message} - ${diagramType}::${target}[]`,
+          attrs,
+        )
       }
     })
   }
 }
 
-module.exports.register = function register (registry, context = {}) {
+module.exports.register = function register(registry, context = {}) {
   // patch context in case of Antora
-  if (typeof context.contentCatalog !== 'undefined' && typeof context.contentCatalog.addFile === 'function' && typeof context.file !== 'undefined') {
-    context.vfs = require('./antora-adapter.js')(context.file, context.contentCatalog, context.vfs)
+  if (
+    typeof context.contentCatalog !== 'undefined' &&
+    typeof context.contentCatalog.addFile === 'function' &&
+    typeof context.file !== 'undefined'
+  ) {
+    context.vfs = require('./antora-adapter.js')(
+      context.file,
+      context.contentCatalog,
+      context.vfs,
+    )
   }
   context.logger = Opal.Asciidoctor.LoggerManager.getLogger()
   const names = [
@@ -267,7 +350,7 @@ module.exports.register = function register (registry, context = {}) {
     'wavedrom',
     'structurizr',
     'diagramsnet',
-    'wireviz'
+    'wireviz',
   ]
   if (typeof registry.register === 'function') {
     registry.register(function () {

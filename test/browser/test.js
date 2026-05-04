@@ -35,7 +35,7 @@ const httpGet = (uri, encoding = 'utf8') => {
   return data
 }
 
-(async () => {
+;(async () => {
   let reporter
   if (typeof mochaOpts === 'function') {
     reporter = await mochaOpts().reporter
@@ -45,7 +45,7 @@ const httpGet = (uri, encoding = 'utf8') => {
   mocha.setup({
     ui: 'bdd',
     checkLeaks: false,
-    reporter
+    reporter,
   })
 
   const expect = chai.expect
@@ -55,9 +55,10 @@ const httpGet = (uri, encoding = 'utf8') => {
   parts.pop()
   parts.pop()
   const baseDir = parts.join('/')
-  function encodeText (text) {
+  function encodeText(text) {
     const buffer = pako.deflate(text, { level: 9 })
-    return base64js.fromByteArray(buffer)
+    return base64js
+      .fromByteArray(buffer)
       .replace(/\+/g, '-')
       .replace(/\//g, '_')
   }
@@ -73,9 +74,15 @@ alice -> bob
 `
         const registry = asciidoctor.Extensions.create()
         AsciidoctorKroki.register(registry)
-        const html = asciidoctor.convert(input, { extension_registry: registry })
-        expect(html).to.contain('https://kroki.io/plantuml/png/eNpLzMlMTlXQtVNIyk8CABoDA90=')
-        expect(html).to.contain('<div class="imageblock sequence kroki-format-png kroki">')
+        const html = asciidoctor.convert(input, {
+          extension_registry: registry,
+        })
+        expect(html).to.contain(
+          'https://kroki.io/plantuml/png/eNpLzMlMTlXQtVNIyk8CABoDA90=',
+        )
+        expect(html).to.contain(
+          '<div class="imageblock sequence kroki-format-png kroki">',
+        )
       })
       it('should convert a diagram with an absolute path to an image', () => {
         const input = `plantuml::${baseDir}/test/fixtures/alice.puml[svg,role=sequence]`
@@ -93,13 +100,17 @@ alice -> bob
             },
             parse: (path) => ({
               dir: path.substring(0, path.lastIndexOf('/') - 1),
-              path
-            })
-          }
+              path,
+            }),
+          },
         })
         const text = httpGet(`${baseDir}/test/fixtures/alice.puml`, 'utf8')
-        const html = asciidoctor.convert(input, { extension_registry: registry })
-        expect(html).to.contain(`<img src="https://kroki.io/plantuml/svg/${encodeText(text)}" alt="Diagram">`)
+        const html = asciidoctor.convert(input, {
+          extension_registry: registry,
+        })
+        expect(html).to.contain(
+          `<img src="https://kroki.io/plantuml/svg/${encodeText(text)}" alt="Diagram">`,
+        )
       }).timeout(5000)
       it('should convert a diagram with a relative path to an image', () => {
         const input = 'plantuml::../fixtures/alice.puml[svg,role=sequence]'
@@ -117,22 +128,28 @@ alice -> bob
             },
             parse: (path) => ({
               dir: path.substring(0, path.lastIndexOf('/') - 1),
-              path
-            })
-          }
+              path,
+            }),
+          },
         })
         const text = httpGet(`${baseDir}/test/fixtures/alice.puml`, 'utf8')
-        const html = asciidoctor.convert(input, { extension_registry: registry })
-        expect(html).to.contain(`<img src="https://kroki.io/plantuml/svg/${encodeText(text)}" alt="Diagram">`)
+        const html = asciidoctor.convert(input, {
+          extension_registry: registry,
+        })
+        expect(html).to.contain(
+          `<img src="https://kroki.io/plantuml/svg/${encodeText(text)}" alt="Diagram">`,
+        )
       }).timeout(5000)
     })
   })
 
-  mocha.run(function (failures) {
+  mocha.run((failures) => {
     if (failures > 0) {
       console.error('%d failures', failures)
     }
   })
-})().catch(err => {
-  console.error('Unable to start the browser tests suite', { message: err.message })
+})().catch((err) => {
+  console.error('Unable to start the browser tests suite', {
+    message: err.message,
+  })
 })
