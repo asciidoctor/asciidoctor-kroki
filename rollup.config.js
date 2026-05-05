@@ -17,6 +17,7 @@ const PATH_STUBS = new Map([
 
 // Stub code indexed by bare module specifier
 const ID_STUBS = new Map([
+  ['node:crypto', 'export const createHash = () => ({ update: () => ({ digest: () => "" }) }); export default {}'],
   ['node:fs', 'export default {}'],
   ['node:os', 'export default {}'],
   ['node:url', 'export const fileURLToPath = (u) => u; export const pathToFileURL = (p) => p; export default {}'],
@@ -54,39 +55,41 @@ function browserStubs() {
   }
 }
 
-export default defineConfig([
-  // Browser ESM — single self-contained bundle, Node-specific modules stubbed out
-  {
-    input: 'src/asciidoctor-kroki.js',
-    output: {
-      file: 'build/browser/index.js',
-      format: 'esm',
-    },
-    plugins: [
-      browserStubs(),
-      json(),
-      resolve({ browser: true, preferBuiltins: false }),
-      commonjs(),
-    ],
-  },
+const target = process.env.BUILD_TARGET
 
-  // Node CJS — runtime deps kept external (they live in node_modules)
-  {
-    input: 'src/asciidoctor-kroki.js',
-    output: {
-      file: 'build/node/index.cjs',
-      format: 'cjs',
-      exports: 'auto',
-    },
-    external: [
-      /^node:/,
-      'json5',
-      'pako',
-    ],
-    plugins: [
-      json(),
-      resolve(),
-      commonjs(),
-    ],
+const browserConfig = {
+  input: 'src/asciidoctor-kroki.js',
+  output: {
+    file: 'build/browser/index.js',
+    format: 'esm',
   },
-])
+  plugins: [
+    browserStubs(),
+    json(),
+    resolve({ browser: true, preferBuiltins: false }),
+    commonjs(),
+  ],
+}
+
+const nodeConfig = {
+  input: 'src/asciidoctor-kroki.js',
+  output: {
+    file: 'build/node/index.cjs',
+    format: 'cjs',
+    exports: 'auto',
+  },
+  external: [
+    /^node:/,
+    'json5',
+    'pako',
+  ],
+  plugins: [
+    json(),
+    resolve(),
+    commonjs(),
+  ],
+}
+
+const configs = { browser: browserConfig, node: nodeConfig }
+
+export default defineConfig(target ? configs[target] : [browserConfig, nodeConfig])
