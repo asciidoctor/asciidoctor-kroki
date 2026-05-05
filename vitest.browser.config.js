@@ -17,7 +17,10 @@ export default defineConfig({
     setupFiles: ['shims/setup.js'],
     root: 'test',
     include: ['**/*.test.js'],
-    exclude: ['node/**'],
+    exclude: [
+      'node/**',
+      ...(process.platform === 'win32' ? ['browser/browser.integration.test.js'] : []),
+    ],
   },
   resolve: {
     alias: [
