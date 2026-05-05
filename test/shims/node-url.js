@@ -1,3 +1,6 @@
+const nodeUrl = { fileURLToPath, pathToFileURL }
+export default nodeUrl
+
 export function fileURLToPath(url) {
   const href = typeof url === 'string' ? url : url.href
   if (href.startsWith('file://')) {

@@ -1,10 +1,10 @@
 import {
-  test as vitestTest,
-  describe,
-  beforeAll,
   afterAll,
-  beforeEach,
   afterEach,
+  beforeAll,
+  beforeEach,
+  describe as vitestDescribe,
+  test as vitestTest,
 } from 'vitest'
 
 // Patterns indicating the test failed due to browser-incompatible behavior.
@@ -42,6 +42,26 @@ export const test = Object.assign(function test(name, fn, options) {
   return vitestTest(name, wrapForBrowser(fn), options)
 }, vitestTest)
 
-export { describe, beforeEach, afterEach }
+export const it = test
+
+export function describe(name, optionsOrFn, maybeFn) {
+  const [options, fn] =
+    typeof optionsOrFn === 'function'
+      ? [undefined, optionsOrFn]
+      : [optionsOrFn, maybeFn]
+  return vitestDescribe(name, options ?? {}, () => {
+    try {
+      fn()
+    } catch (err) {
+      if (isBrowserIncompatible(err)) {
+        vitestTest.skip(`${name} (skipped: browser-incompatible setup)`)
+        return
+      }
+      throw err
+    }
+  })
+}
+
+export { afterEach, beforeEach }
 export const before = beforeAll
 export const after = afterAll
