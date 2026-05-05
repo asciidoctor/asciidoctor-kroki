@@ -23,9 +23,13 @@ const nodefs = {
     return fs.readFileSync(path, encoding)
   },
   parse: (resourceId) => {
+    // Normalize backslashes to forward slashes so that preprocess.js,
+    // which uses path.posix throughout, can join and resolve paths correctly
+    // on Windows (posix treats backslashes as literal characters, not separators).
+    const normalized = resourceId.replace(/\\/g, '/')
     return {
-      dir: path.dirname(resourceId),
-      path: resourceId,
+      dir: path.posix.dirname(normalized),
+      path: normalized,
     }
   },
 }
