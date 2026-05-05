@@ -35,13 +35,9 @@ const httpRequest = async (uri, method, headers, encoding = 'utf8', body) => {
   )
 }
 
-const httpPost = (uri, body, headers, encoding = 'utf8') =>
-  httpRequest(uri, 'POST', headers, encoding, body)
-
-const httpGet = (uri, headers, encoding = 'utf8') =>
-  httpRequest(uri, 'GET', headers, encoding)
-
 export default {
-  get: httpGet,
-  post: httpPost,
+  get: (uri, headers, encoding = 'utf8') =>
+    httpRequest(uri, 'GET', headers, encoding),
+  post: (uri, body, headers, encoding = 'utf8') =>
+    httpRequest(uri, 'POST', headers, encoding, body),
 }
