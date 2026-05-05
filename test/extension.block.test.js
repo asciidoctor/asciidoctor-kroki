@@ -7,7 +7,7 @@ import { assertContains } from './node/utils.js'
 const krokiServerUrl = 'https://my-kroki-server.example.com'
 
 describe('Conversion', () => {
-  test('generates a kroki.io URL and applies format and role CSS classes', async () => {
+  test('encodes the diagram in the Kroki URL and reflects format and role in CSS classes', async () => {
     const input = `
 [plantuml,alice-bob,png,role=sequence]
 ....
@@ -28,7 +28,7 @@ alice -> bob
       `Expected class not found in:\n${html}`,
     )
   })
-  test('uses the kroki-server-url attribute to override the default server URL', async () => {
+  test('uses kroki-server-url as base URL instead of kroki.io', async () => {
     const input = `
 [plantuml,alice-bob,svg,role=sequence]
 ....

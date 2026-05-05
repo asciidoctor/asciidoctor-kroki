@@ -7,7 +7,7 @@ import asciidoctorKroki from '../../src/asciidoctor-kroki.js'
 const krokiUrl = inject('krokiUrl')
 
 describe('Integration with local Kroki server', () => {
-  test('converts a plantuml diagram and gets a valid SVG from the local server', async () => {
+  test('fetches valid SVG from the Kroki server for a PlantUML diagram', async () => {
     const input = `
 [plantuml,alice-bob,svg,role=sequence]
 ....
@@ -38,7 +38,7 @@ alice -> bob
     )
   })
 
-  test('converts a graphviz diagram and gets a valid SVG from the local server', async () => {
+  test('fetches valid SVG from the Kroki server for a Graphviz diagram', async () => {
     const input = `
 [graphviz,flow,svg]
 ....

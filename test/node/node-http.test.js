@@ -24,7 +24,7 @@ async function startServer(name) {
 }
 
 describe('Async HTTP client (fetch)', () => {
-  test('throws an error when the server returns a 500', async () => {
+  test('rejects with an error message containing the status code on HTTP 500', async () => {
     const { worker, port } = await startServer('500-server.js')
     try {
       await assert.rejects(
@@ -38,7 +38,7 @@ describe('Async HTTP client (fetch)', () => {
       await worker.terminate()
     }
   })
-  test('throws an error when the server returns an empty response', async () => {
+  test('rejects with "server returns an empty response" on HTTP 204', async () => {
     const { worker, port } = await startServer('204-server.js')
     try {
       await assert.rejects(
