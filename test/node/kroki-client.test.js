@@ -144,7 +144,7 @@ describe('Kroki HTTP client', { timeout: 30000 }, () => {
           opts: {},
           getDiagramUri: () => 'diagram-uri', // length: 11
         }
-        const image = krokiClient.getImage(krokiDiagram)
+        const image = await krokiClient.getImage(krokiDiagram)
         assert.strictEqual(image, 'POST https://kroki.io/type/format - text')
       })
       it('should get an image with GET request if the URI length is lower or equals than the value configured', async () => {
@@ -161,7 +161,7 @@ describe('Kroki HTTP client', { timeout: 30000 }, () => {
           opts: {},
           getDiagramUri: () => 'diagram-uri', // length: 11
         }
-        const image = krokiClient.getImage(krokiDiagram)
+        const image = await krokiClient.getImage(krokiDiagram)
         assert.strictEqual(image, 'GET diagram-uri')
       })
     }

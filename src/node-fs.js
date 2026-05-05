@@ -13,9 +13,9 @@ export default {
   exists: (path) => {
     return fs.existsSync(path)
   },
-  read: (path, encoding = 'utf8') => {
+  read: async (path, encoding = 'utf8') => {
     if (path.startsWith('http://') || path.startsWith('https://')) {
-      return http.get(path, encoding)
+      return http.get(path, {}, encoding)
     }
     if (path.startsWith('file://')) {
       return fs.readFileSync(url.fileURLToPath(path), encoding)

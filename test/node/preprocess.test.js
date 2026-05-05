@@ -18,11 +18,11 @@ import { assertNotContains } from './utils.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
-function assertThrows(fn, expected) {
+async function assertRejects(fn, expected) {
   if (expected instanceof RegExp) {
-    assert.throws(fn, expected)
+    await assert.rejects(fn, expected)
   } else {
-    assert.throws(fn, (err) => {
+    await assert.rejects(fn, (err) => {
       assert.ok(
         err.message.includes(expected),
         `Expected error message to include:\n${expected}\n\nActual:\n${err.message}`,
@@ -53,8 +53,8 @@ describe('Vega-Lite preprocessing', { timeout: 30000 }, () => {
     assert.strictEqual(result, expected.replace(/\r\n/g, '\n'))
   }
 
-  it('should throw an error for invalid JSON', () => {
-    assertThrows(
+  it('should throw an error for invalid JSON', async () => {
+    await assertRejects(
       () => preprocessVegaLite('invalid JSON'),
       `Preprocessing of Vega-Lite view specification failed, because of a parsing error:
 SyntaxError: JSON5: invalid character 'i' at 1:1
@@ -63,27 +63,27 @@ invalid JSON`,
     )
   })
 
-  it('should return original diagramText for valid JSON but without "data.url"', () => {
+  it('should return original diagramText for valid JSON but without "data.url"', async () => {
     const validJsonWithoutDataUrl = '{}'
     assert.strictEqual(
-      preprocessVegaLite(validJsonWithoutDataUrl),
+      await preprocessVegaLite(validJsonWithoutDataUrl),
       validJsonWithoutDataUrl,
     )
   })
 
-  it('should throw an error for unexisting local file referenced with relative path', () => {
+  it('should throw an error for unexisting local file referenced with relative path', async () => {
     const diagramText = `{
   "data": {
     "url": "unexisting.csv"
   }
 }`
-    assertThrows(
+    await assertRejects(
       () => preprocessVegaLite(diagramText),
       /Error: ENOENT.*unexisting\.csv/,
     )
   })
 
-  it('should throw an error for unexisting file referenced with "file" protocol', () => {
+  it('should throw an error for unexisting file referenced with "file" protocol', async () => {
     const unexistingFileUrl = url.pathToFileURL(
       path.join(cwd, 'unexisting.csv'),
     )
@@ -93,14 +93,14 @@ invalid JSON`,
       }
     }`
     const unexistingPath = url.fileURLToPath(unexistingFileUrl)
-    assertThrows(
+    await assertRejects(
       () => preprocessVegaLite(diagramText),
       `Preprocessing of Vega-Lite view specification failed, because reading the local data file '${unexistingFileUrl}' referenced in the diagram caused an error:
 Error: ENOENT: no such file or directory, open '${unexistingPath}'`,
     )
   })
 
-  it('should log and return original diagramText for unexisting remote file referenced with "http" protocol, because it can perhaps be found by kroki server', () => {
+  it('should log and return original diagramText for unexisting remote file referenced with "http" protocol, because it can perhaps be found by kroki server', async () => {
     const memoryLogger = MemoryLogger.create()
     const diagramText = `{
   "data": {
@@ -108,7 +108,7 @@ Error: ENOENT: no such file or directory, open '${unexistingPath}'`,
   }
 }`
     expectToBeEqualIgnoreNewlines(
-      preprocessVegaLite(diagramText, { logger: memoryLogger }),
+      await preprocessVegaLite(diagramText, { logger: memoryLogger }),
       diagramText,
     )
     const logs = memoryLogger.getMessages()
@@ -120,55 +120,55 @@ Error: ENOENT: no such file or directory, open '${unexistingPath}'`,
     )
   })
 
-  it('should return diagramText with inlined local file referenced with relative path', () => {
+  it('should return diagramText with inlined local file referenced with relative path', async () => {
     const diagramText = `{
   "data": {
     "url": "${relativePath}"
   }
 }`
     expectToBeEqualIgnoreNewlines(
-      preprocessVegaLite(diagramText),
+      await preprocessVegaLite(diagramText),
       diagramTextWithInlinedCsvFile,
     )
   })
 
-  it('should return diagramText with inlined local file referenced with relative path and base dir', () => {
+  it('should return diagramText with inlined local file referenced with relative path and base dir', async () => {
     const diagramText = `{
   "data": {
     "url": "vegalite-data.csv"
   }
 }`
     expectToBeEqualIgnoreNewlines(
-      preprocessVegaLite(diagramText, {}, 'test/fixtures/'),
+      await preprocessVegaLite(diagramText, {}, 'test/fixtures/'),
       diagramTextWithInlinedCsvFile,
     )
   })
 
-  it('should return diagramText with inlined local file referenced with absolute path', () => {
+  it('should return diagramText with inlined local file referenced with absolute path', async () => {
     const diagramText = `{
   "data": {
     "url": "${cwd}/${relativePath}"
   }
 }`
     expectToBeEqualIgnoreNewlines(
-      preprocessVegaLite(diagramText),
+      await preprocessVegaLite(diagramText),
       diagramTextWithInlinedCsvFile,
     )
   })
 
-  it('should return diagramText with inlined local file referenced with absolute path and base dir (which should not be used)', () => {
+  it('should return diagramText with inlined local file referenced with absolute path and base dir (which should not be used)', async () => {
     const diagramText = `{
   "data": {
     "url": "${cwd}/${relativePath}"
   }
 }`
     expectToBeEqualIgnoreNewlines(
-      preprocessVegaLite(diagramText, {}, 'test/fixtures/'),
+      await preprocessVegaLite(diagramText, {}, 'test/fixtures/'),
       diagramTextWithInlinedCsvFile,
     )
   })
 
-  it('should return diagramText with inlined local file referenced with "file" protocol and absolute path', () => {
+  it('should return diagramText with inlined local file referenced with "file" protocol and absolute path', async () => {
     const fileUrl = `${url.pathToFileURL(cwd)}/${relativePath}`
     const diagramText = `{
   "data": {
@@ -176,19 +176,19 @@ Error: ENOENT: no such file or directory, open '${unexistingPath}'`,
   }
 }`
     expectToBeEqualIgnoreNewlines(
-      preprocessVegaLite(diagramText),
+      await preprocessVegaLite(diagramText),
       diagramTextWithInlinedCsvFile,
     )
   })
 
-  it('should return diagramText with inlined remote file referenced with "http" protocol', () => {
+  it('should return diagramText with inlined remote file referenced with "http" protocol', async () => {
     const diagramText = `{
   "data": {
     "url": "https://raw.githubusercontent.com/asciidoctor/asciidoctor-kroki/master/${relativePath}"
   }
 }`
     expectToBeEqualIgnoreNewlines(
-      preprocessVegaLite(diagramText),
+      await preprocessVegaLite(diagramText),
       diagramTextWithInlinedCsvFile,
     )
   })
@@ -200,22 +200,22 @@ describe('PlantUML preprocessing', { timeout: 30000 }, () => {
   const localUnexistingFilePath = 'test/fixtures/plantuml/unexisting.iuml'
   const localExistingFilePath = 'test/fixtures/plantuml/styles/general.iuml'
 
-  it('should return original diagramText without "!include ..."', () => {
+  it('should return original diagramText without "!include ..."', async () => {
     const diagramTextWithoutInclude = `
       alice -> bob`
     assert.strictEqual(
-      preprocessPlantUML(diagramTextWithoutInclude, {}),
+      await preprocessPlantUML(diagramTextWithoutInclude, {}),
       diagramTextWithoutInclude,
     )
   })
 
-  it('should log and return original diagramText for standard library file referenced with "!include <std-lib-file>", because it can perhaps be found by kroki server', () => {
+  it('should log and return original diagramText for standard library file referenced with "!include <std-lib-file>", because it can perhaps be found by kroki server', async () => {
     const memoryLogger = MemoryLogger.create()
     const diagramTextWithStdLibIncludeFile = `
       !include <std/include.iuml>
       alice -> bob`
     assert.strictEqual(
-      preprocessPlantUML(diagramTextWithStdLibIncludeFile, {
+      await preprocessPlantUML(diagramTextWithStdLibIncludeFile, {
         logger: memoryLogger,
       }),
       diagramTextWithStdLibIncludeFile,
@@ -228,13 +228,13 @@ describe('PlantUML preprocessing', { timeout: 30000 }, () => {
     )
   })
 
-  it('should log and return original diagramText for unexisting local file referenced with "!include local-file-or-url", because it can perhaps be found by kroki server', () => {
+  it('should log and return original diagramText for unexisting local file referenced with "!include local-file-or-url", because it can perhaps be found by kroki server', async () => {
     const memoryLogger = MemoryLogger.create()
     const diagramTextWithUnexistingLocalIncludeFile = `
       !include ${localUnexistingFilePath}
       alice -> bob`
     assert.strictEqual(
-      preprocessPlantUML(diagramTextWithUnexistingLocalIncludeFile, {
+      await preprocessPlantUML(diagramTextWithUnexistingLocalIncludeFile, {
         logger: memoryLogger,
       }),
       diagramTextWithUnexistingLocalIncludeFile,
@@ -248,14 +248,14 @@ describe('PlantUML preprocessing', { timeout: 30000 }, () => {
     )
   })
 
-  it('should log and return original diagramText for unexisting remote file referenced with "!include remote-url", because it can perhaps be found by kroki server', () => {
+  it('should log and return original diagramText for unexisting remote file referenced with "!include remote-url", because it can perhaps be found by kroki server', async () => {
     const memoryLogger = MemoryLogger.create()
     const remoteUnexistingIncludeFilePath = `${remoteBasePath}${localUnexistingFilePath}`
     const diagramTextWithUnexistingRemoteIncludeFile = `
       !include ${remoteUnexistingIncludeFilePath}
       alice -> bob`
     assert.strictEqual(
-      preprocessPlantUML(diagramTextWithUnexistingRemoteIncludeFile, {
+      await preprocessPlantUML(diagramTextWithUnexistingRemoteIncludeFile, {
         logger: memoryLogger,
       }),
       diagramTextWithUnexistingRemoteIncludeFile,
@@ -269,7 +269,7 @@ describe('PlantUML preprocessing', { timeout: 30000 }, () => {
     )
   })
 
-  it('should return diagramText with inlined local file referenced with "!include local-file-or-url"', () => {
+  it('should return diagramText with inlined local file referenced with "!include local-file-or-url"', async () => {
     const diagramTextWithExistingLocalIncludeFile = `
       !include ${localExistingFilePath}
       alice -> bob`
@@ -278,23 +278,23 @@ describe('PlantUML preprocessing', { timeout: 30000 }, () => {
 ${includedText}
       alice -> bob`
     assert.strictEqual(
-      preprocessPlantUML(diagramTextWithExistingLocalIncludeFile, {}),
+      await preprocessPlantUML(diagramTextWithExistingLocalIncludeFile, {}),
       diagramTextWithIncludedText,
     )
   })
 
-  it('should return diagramText with inlined local file referenced with "!include local-file-or-url", diagramText with Windows EOL line endings (\\r\\n)', () => {
+  it('should return diagramText with inlined local file referenced with "!include local-file-or-url", diagramText with Windows EOL line endings (\\r\\n)', async () => {
     const localStyleSheetPath = 'test/fixtures/docs/diagrams/style.puml'
     const diagramTextWithExistingLocalIncludeFile = `!include ${localStyleSheetPath} \r\n\r\nBob->Alice: Hello\r\n`
     const includedText = fs.readFileSync(`${localStyleSheetPath}`, 'utf8')
     const diagramTextWithIncludedText = `${includedText}\n\r\nBob->Alice: Hello\r\n`
     assert.strictEqual(
-      preprocessPlantUML(diagramTextWithExistingLocalIncludeFile, {}),
+      await preprocessPlantUML(diagramTextWithExistingLocalIncludeFile, {}),
       diagramTextWithIncludedText,
     )
   })
 
-  it('should return diagramText with inlined local file referenced with "!include local-file-or-url" and first "@startuml ... @enduml" block', () => {
+  it('should return diagramText with inlined local file referenced with "!include local-file-or-url" and first "@startuml ... @enduml" block', async () => {
     const localExistingFileNameWithBlocksPath =
       'test/fixtures/plantuml/styles/general.puml'
     const diagramTextWithExistingLocalIncludeFile = `
@@ -305,12 +305,12 @@ ${includedText}
 ${includedText}
       alice -> bob`
     assert.strictEqual(
-      preprocessPlantUML(diagramTextWithExistingLocalIncludeFile, {}),
+      await preprocessPlantUML(diagramTextWithExistingLocalIncludeFile, {}),
       diagramTextWithIncludedText,
     )
   })
 
-  it('should return diagramText with inlined local file referenced with "!include local-file-name-with-spaces # trailing comment"', () => {
+  it('should return diagramText with inlined local file referenced with "!include local-file-name-with-spaces # trailing comment"', async () => {
     const localExistingFileNameWithSpacesPath =
       'test/fixtures/plantuml/styles/general with spaces.iuml'
     const localExistingFileNameWithSpacesPathEscaped =
@@ -326,12 +326,12 @@ ${includedText}
 ${includedText} # this includes general style
       alice -> bob`
     assert.strictEqual(
-      preprocessPlantUML(diagramTextWithExistingLocalIncludeFile, {}),
+      await preprocessPlantUML(diagramTextWithExistingLocalIncludeFile, {}),
       diagramTextWithIncludedText,
     )
   })
 
-  it('should return diagramText with inlined local file(s) referenced multiple times with "!include local-file-or-url"', () => {
+  it('should return diagramText with inlined local file(s) referenced multiple times with "!include local-file-or-url"', async () => {
     const diagramTextWithExistingLocalIncludeFile = `
       !include ${localExistingFilePath}
       alice -> bob
@@ -342,12 +342,12 @@ ${includedText}
       alice -> bob
 ${includedText}`
     assert.strictEqual(
-      preprocessPlantUML(diagramTextWithExistingLocalIncludeFile, {}),
+      await preprocessPlantUML(diagramTextWithExistingLocalIncludeFile, {}),
       diagramTextWithIncludedText,
     )
   })
 
-  it('should return diagramText with inlined local file(s) referenced multiple times with "!include_many local-file-or-url"', () => {
+  it('should return diagramText with inlined local file(s) referenced multiple times with "!include_many local-file-or-url"', async () => {
     const diagramTextWithExistingLocalIncludeFile = `
       !include_many ${localExistingFilePath}
       alice -> bob
@@ -358,24 +358,24 @@ ${includedText}
       alice -> bob
 ${includedText}`
     assert.strictEqual(
-      preprocessPlantUML(diagramTextWithExistingLocalIncludeFile, {}),
+      await preprocessPlantUML(diagramTextWithExistingLocalIncludeFile, {}),
       diagramTextWithIncludedText,
     )
   })
 
-  it('should throw an error for local file(s) referenced multiple times with "!include_once local-file-or-url"', () => {
+  it('should throw an error for local file(s) referenced multiple times with "!include_once local-file-or-url"', async () => {
     const diagramTextWithExistingLocalIncludeOneFile = `
       !include_once ${localExistingFilePath}
       alice -> bob
       !include_once ${localExistingFilePath}`
     const errorMessage = `Preprocessing of PlantUML include failed, because including multiple times referenced file '${localExistingFilePath}' with '!include_once' guard`
-    assertThrows(
+    await assertRejects(
       () => preprocessPlantUML(diagramTextWithExistingLocalIncludeOneFile, {}),
       errorMessage,
     )
   })
 
-  it('should throw an error for local file(s) referenced multiple times nested with "!include_once local-file-or-url"', () => {
+  it('should throw an error for local file(s) referenced multiple times nested with "!include_once local-file-or-url"', async () => {
     const localExistingFileNameIncludedOncePath =
       'test/fixtures/plantuml/styles/style-include-once-general.iuml'
     const diagramTextWithExistingLocalIncludeOneFile = `
@@ -383,13 +383,13 @@ ${includedText}`
       alice -> bob
       !include ${localExistingFileNameIncludedOncePath}`
     const errorMessage = `Preprocessing of PlantUML include failed, because including multiple times referenced file '${localExistingFilePath}' with '!include_once' guard`
-    assertThrows(
+    await assertRejects(
       () => preprocessPlantUML(diagramTextWithExistingLocalIncludeOneFile, {}),
       errorMessage,
     )
   })
 
-  it('should return diagramText with inlined local file(s) referenced multiple times with "!include_once local-file-or-url ... !include local-file-or-url"', () => {
+  it('should return diagramText with inlined local file(s) referenced multiple times with "!include_once local-file-or-url ... !include local-file-or-url"', async () => {
     const diagramTextWithExistingLocalIncludeFile = `
       !include_once ${localExistingFilePath}
       alice -> bob
@@ -400,12 +400,12 @@ ${includedText}
       alice -> bob
 ${includedText}`
     assert.strictEqual(
-      preprocessPlantUML(diagramTextWithExistingLocalIncludeFile, {}),
+      await preprocessPlantUML(diagramTextWithExistingLocalIncludeFile, {}),
       diagramTextWithIncludedText,
     )
   })
 
-  it('should return diagramText while preserving inline and block comments"', () => {
+  it('should return diagramText while preserving inline and block comments"', async () => {
     const diagramTextWithExistingLocalIncludeFile = `
       '!include ${localExistingFilePath}' the whole line is preserved
       !include ${localExistingFilePath}
@@ -422,12 +422,12 @@ ${includedText}
         the whole block is preserved
       '/ alice -> bob /' this also should be preserved '/`
     assert.strictEqual(
-      preprocessPlantUML(diagramTextWithExistingLocalIncludeFile, {}),
+      await preprocessPlantUML(diagramTextWithExistingLocalIncludeFile, {}),
       diagramTextWithIncludedText,
     )
   })
 
-  it('should return diagramText while preserving trailing block comment"', () => {
+  it('should return diagramText while preserving trailing block comment"', async () => {
     const diagramTextWithExistingLocalIncludeFile = `
       !include ${localExistingFilePath} /'
       this is a trailing block comment
@@ -438,12 +438,12 @@ ${includedText} /'
       this is a trailing block comment
       '/`
     assert.strictEqual(
-      preprocessPlantUML(diagramTextWithExistingLocalIncludeFile, {}),
+      await preprocessPlantUML(diagramTextWithExistingLocalIncludeFile, {}),
       diagramTextWithIncludedText,
     )
   })
 
-  it('should return diagramText with inlined local file referenced with "!include local-file-name-with-spaces"', () => {
+  it('should return diagramText with inlined local file referenced with "!include local-file-name-with-spaces"', async () => {
     const localExistingFileNameWithSpacesPath =
       'test/fixtures/plantuml/styles/general with spaces.iuml'
     const localExistingFileNameWithSpacesPathEscaped =
@@ -459,12 +459,12 @@ ${includedText} /'
 ${includedText}
       alice -> bob`
     assert.strictEqual(
-      preprocessPlantUML(diagramTextWithExistingLocalIncludeFile, {}),
+      await preprocessPlantUML(diagramTextWithExistingLocalIncludeFile, {}),
       diagramTextWithIncludedText,
     )
   })
 
-  it('should return diagramText with inlined remote file referenced with "!include remote-url"', () => {
+  it('should return diagramText with inlined remote file referenced with "!include remote-url"', async () => {
     const remoteIncludeFilePath = `${remoteBasePath}${localExistingFilePath}`
     const diagramTextWithExistingRemoteIncludeFile = `
       !include ${remoteIncludeFilePath}
@@ -476,12 +476,12 @@ ${includedText}
 ${includedText}
       alice -> bob`
     assert.strictEqual(
-      preprocessPlantUML(diagramTextWithExistingRemoteIncludeFile, {}),
+      await preprocessPlantUML(diagramTextWithExistingRemoteIncludeFile, {}),
       diagramTextWithIncludedText,
     )
   })
 
-  it('should return diagramText with inlined remote file referenced with "!includeurl remote-url"', () => {
+  it('should return diagramText with inlined remote file referenced with "!includeurl remote-url"', async () => {
     const remoteIncludeFilePath = `${remoteBasePath}${localExistingFilePath}`
     const diagramTextWithExistingRemoteIncludeFile = `
       !includeurl ${remoteIncludeFilePath}
@@ -493,12 +493,12 @@ ${includedText}
 ${includedText}
       alice -> bob`
     assert.strictEqual(
-      preprocessPlantUML(diagramTextWithExistingRemoteIncludeFile, {}),
+      await preprocessPlantUML(diagramTextWithExistingRemoteIncludeFile, {}),
       diagramTextWithIncludedText,
     )
   })
 
-  it('should return diagramText with inlined multiple local files referenced with "!include local-file-or-url"', () => {
+  it('should return diagramText with inlined multiple local files referenced with "!include local-file-or-url"', async () => {
     const localExistingFilePath1 = 'test/fixtures/plantuml/styles/note.iuml'
     const localExistingFilePath2 = 'test/fixtures/plantuml/styles/sequence.iuml'
     const diagramTextWithExistingLocalIncludeFiles = `
@@ -515,12 +515,12 @@ ${includedText1}
 ${includedText2}
       alice -> bob`
     assert.strictEqual(
-      preprocessPlantUML(diagramTextWithExistingLocalIncludeFiles, {}),
+      await preprocessPlantUML(diagramTextWithExistingLocalIncludeFiles, {}),
       diagramTextWithIncludedText,
     )
   })
 
-  it('should return diagramText with inlined recursive local files referenced with "!include local-file-or-url"', () => {
+  it('should return diagramText with inlined recursive local files referenced with "!include local-file-or-url"', async () => {
     const localExistingFilePath0 = 'test/fixtures/plantuml/styles/style.iuml'
     const localExistingFilePath1 = 'test/fixtures/plantuml/styles/note.iuml'
     const localExistingFilePath2 = 'test/fixtures/plantuml/styles/sequence.iuml'
@@ -536,12 +536,15 @@ ${includedText1}
 ${includedText2}
       alice -> bob`
     assert.strictEqual(
-      preprocessPlantUML(diagramTextWithExistingRecursiveLocalIncludeFile, {}),
+      await preprocessPlantUML(
+        diagramTextWithExistingRecursiveLocalIncludeFile,
+        {},
+      ),
       diagramTextWithIncludedText,
     )
   })
 
-  it('should return diagramText with inlined recursive local files referenced with "!include local-file-name-with-spaces"', () => {
+  it('should return diagramText with inlined recursive local files referenced with "!include local-file-name-with-spaces"', async () => {
     const localExistingFileNameWithSpacesPath =
       'test/fixtures/plantuml/styles/general with spaces.iuml'
     const localExistingFilePath0WithSpaces =
@@ -565,38 +568,41 @@ ${includedText1}
 ${includedText2}
       alice -> bob`
     assert.strictEqual(
-      preprocessPlantUML(diagramTextWithExistingRecursiveLocalIncludeFile, {}),
+      await preprocessPlantUML(
+        diagramTextWithExistingRecursiveLocalIncludeFile,
+        {},
+      ),
       diagramTextWithIncludedText,
     )
   })
 
-  it('should throw an error for file recursive included itself', () => {
+  it('should throw an error for file recursive included itself', async () => {
     const localExistingFileIncludesItselfPath =
       'test/fixtures/plantuml/include/itself.iuml'
     const diagramTextWithIncludeItself = `
       !include ${localExistingFileIncludesItselfPath}
       alice -> bob`
     const errorMessage = `Preprocessing of PlantUML include failed, because recursive reading already included referenced file '${localExistingFileIncludesItselfPath}'`
-    assertThrows(
+    await assertRejects(
       () => preprocessPlantUML(diagramTextWithIncludeItself, {}),
       errorMessage,
     )
   })
 
-  it('should throw an error for file recursive included grand parent file', () => {
+  it('should throw an error for file recursive included grand parent file', async () => {
     const localExistingFileGrandParentName = 'grand-parent.iuml'
     const localExistingFileGrandParentPath = `test/fixtures/plantuml/include/${localExistingFileGrandParentName}`
     const diagramTextWithIncludeGrandParent = `
       !include ${localExistingFileGrandParentPath}
       alice -> bob`
     const errorMessage = `Preprocessing of PlantUML include failed, because recursive reading already included referenced file '${localExistingFileGrandParentPath}'`
-    assertThrows(
+    await assertRejects(
       () => preprocessPlantUML(diagramTextWithIncludeGrandParent, {}),
       errorMessage,
     )
   })
 
-  it('should return diagramText with inlined local file referenced with "!includesub local-file!sub-name"', () => {
+  it('should return diagramText with inlined local file referenced with "!includesub local-file!sub-name"', async () => {
     const localExistingFilePathWithSubs =
       'test/fixtures/plantuml/diagrams/subs.puml!BASIC'
     const diagramTextWithExistingIncludeFileWithSubs = `
@@ -609,15 +615,14 @@ D -> D : stuff4
 D -> D : stuff4.1
       alice -> bob`
     assert.strictEqual(
-      preprocessPlantUML(
-        diagramTextWithExistingIncludeFileWithSubs,
-        {},
+      (
+        await preprocessPlantUML(diagramTextWithExistingIncludeFileWithSubs, {})
       ).replace(/\r\n/g, '\n'),
       diagramTextWithIncludedText,
     )
   })
 
-  it('should return diagramText with inlined local file referenced with "!include local-file!id"', () => {
+  it('should return diagramText with inlined local file referenced with "!include local-file!id"', async () => {
     const localExistingFilePathWithID1 =
       'test/fixtures/plantuml/diagrams/id.puml!MY_OWN_ID1'
     const localExistingFilePathWithID2 =
@@ -633,15 +638,14 @@ C -> C : stuff3
 D -> D : stuff4
       alice -> bob`
     assert.strictEqual(
-      preprocessPlantUML(diagramTextWithExistingIncludeFileWithID, {}).replace(
-        /\r\n/g,
-        '\n',
-      ),
+      (
+        await preprocessPlantUML(diagramTextWithExistingIncludeFileWithID, {})
+      ).replace(/\r\n/g, '\n'),
       diagramTextWithIncludedText,
     )
   })
 
-  it('should return diagramText with inlined local file referenced with "!include local-file!index"', () => {
+  it('should return diagramText with inlined local file referenced with "!include local-file!index"', async () => {
     const localExistingFilePathWithIndex0 =
       'test/fixtures/plantuml/diagrams/index.puml!0'
     const localExistingFilePathWithIndex1 =
@@ -657,15 +661,17 @@ C -> C : stuff3
 D -> D : stuff4
       alice -> bob`
     assert.strictEqual(
-      preprocessPlantUML(
-        diagramTextWithExistingIncludeFileWithIndex,
-        {},
+      (
+        await preprocessPlantUML(
+          diagramTextWithExistingIncludeFileWithIndex,
+          {},
+        )
       ).replace(/\r\n/g, '\n'),
       diagramTextWithIncludedText,
     )
   })
 
-  it('should resolve include path relative to the included file', () => {
+  it('should resolve include path relative to the included file', async () => {
     const diagramTextWithExistingIncludeFile = `
       !include test/fixtures/plantuml/include/parent/child/handwritten.iuml
       alice -> bob`
@@ -675,15 +681,14 @@ skinparam DefaultFontName "Neucha"
 skinparam BackgroundColor black
       alice -> bob`
     assert.strictEqual(
-      preprocessPlantUML(diagramTextWithExistingIncludeFile, {}).replace(
-        /\r\n/g,
-        '\n',
-      ),
+      (
+        await preprocessPlantUML(diagramTextWithExistingIncludeFile, {})
+      ).replace(/\r\n/g, '\n'),
       diagramTextWithIncludedText,
     )
   })
 
-  it('should include a PlantUML file from an absolute path', () => {
+  it('should include a PlantUML file from an absolute path', async () => {
     // eslint-disable-next-line
     const diagramTextWithExistingIncludeFile = `
       !include ${__dirname}/../fixtures/plantuml/include/parent/child/handwritten.iuml
@@ -694,15 +699,14 @@ skinparam DefaultFontName "Neucha"
 skinparam BackgroundColor black
       alice -> bob`
     assert.strictEqual(
-      preprocessPlantUML(diagramTextWithExistingIncludeFile, {}).replace(
-        /\r\n/g,
-        '\n',
-      ),
+      (
+        await preprocessPlantUML(diagramTextWithExistingIncludeFile, {})
+      ).replace(/\r\n/g, '\n'),
       diagramTextWithIncludedText,
     )
   })
 
-  it('should remove all PlantUml tags', () => {
+  it('should remove all PlantUml tags', async () => {
     const diagramTextWithTags = `
       @startuml
       alice -> bob
@@ -712,7 +716,7 @@ skinparam BackgroundColor black
       here -> there
       @enduml`
 
-    const result = preprocessPlantUML(diagramTextWithTags, {})
+    const result = await preprocessPlantUML(diagramTextWithTags, {})
     assertNotContains(result, '@startuml')
     assertNotContains(result, '@enduml')
     assert.strictEqual(
@@ -757,7 +761,7 @@ describe('Structurizr preprocessing', { timeout: 30000 }, () => {
         }
       }`
 
-  it('should return original diagramText without "!include ..."', () => {
+  it('should return original diagramText without "!include ..."', async () => {
     const diagramTextWithoutInclude = `
       ${diagramTextHead}
           u = person "User"
@@ -765,12 +769,12 @@ describe('Structurizr preprocessing', { timeout: 30000 }, () => {
           u -> s "Uses"
       ${diagramTextTail}`
     assert.strictEqual(
-      preprocessStructurizr(diagramTextWithoutInclude, {}),
+      await preprocessStructurizr(diagramTextWithoutInclude, {}),
       diagramTextWithoutInclude,
     )
   })
 
-  it('should log and return original diagramText for unexisting local file referenced with "!include local-file-or-url", because it can perhaps be found by kroki server', () => {
+  it('should log and return original diagramText for unexisting local file referenced with "!include local-file-or-url", because it can perhaps be found by kroki server', async () => {
     const memoryLogger = MemoryLogger.create()
     const diagramTextWithUnexistingLocalIncludeFile = `
       ${diagramTextHead}
@@ -779,7 +783,7 @@ describe('Structurizr preprocessing', { timeout: 30000 }, () => {
           u -> s "Uses"
       ${diagramTextTail}`
     assert.strictEqual(
-      preprocessStructurizr(diagramTextWithUnexistingLocalIncludeFile, {
+      await preprocessStructurizr(diagramTextWithUnexistingLocalIncludeFile, {
         logger: memoryLogger,
       }),
       diagramTextWithUnexistingLocalIncludeFile,
@@ -793,7 +797,7 @@ describe('Structurizr preprocessing', { timeout: 30000 }, () => {
     )
   })
 
-  it('should log and return original diagramText for unexisting remote file referenced with "!include remote-url", because it can perhaps be found by kroki server', () => {
+  it('should log and return original diagramText for unexisting remote file referenced with "!include remote-url", because it can perhaps be found by kroki server', async () => {
     const memoryLogger = MemoryLogger.create()
     const remoteUnexistingIncludeFilePath = `${remoteBasePath}${localUnexistingFilePath}`
     const diagramTextWithUnexistingRemoteIncludeFile = `
@@ -803,9 +807,12 @@ describe('Structurizr preprocessing', { timeout: 30000 }, () => {
           u -> s "Uses"
       ${diagramTextTail}`
     assert.strictEqual(
-      preprocessStructurizr(diagramTextWithUnexistingRemoteIncludeFile, {
-        logger: memoryLogger,
-      }),
+      await preprocessStructurizr(
+        diagramTextWithUnexistingRemoteIncludeFile,
+        {
+          logger: memoryLogger,
+        },
+      ),
       diagramTextWithUnexistingRemoteIncludeFile,
     )
     const logs = memoryLogger.getMessages()
@@ -817,7 +824,7 @@ describe('Structurizr preprocessing', { timeout: 30000 }, () => {
     )
   })
 
-  it('should return diagramText with inlined local file referenced with "!include local-file-or-url"', () => {
+  it('should return diagramText with inlined local file referenced with "!include local-file-or-url"', async () => {
     const diagramTextWithExistingLocalIncludeFile = `
       ${diagramTextHead}
           !include ${localExistingFilePath}
@@ -832,12 +839,12 @@ ${includedText}
           u -> s "Uses"
       ${diagramTextTail}`
     assert.strictEqual(
-      preprocessStructurizr(diagramTextWithExistingLocalIncludeFile, {}),
+      await preprocessStructurizr(diagramTextWithExistingLocalIncludeFile, {}),
       diagramTextWithIncludedText,
     )
   })
 
-  it('should return diagramText while preserving inline and block comments"', () => {
+  it('should return diagramText while preserving inline and block comments"', async () => {
     const diagramTextWithExistingLocalIncludeFile = `
       ${diagramTextHead}
           // !include ${localExistingFilePath}// the whole line is preserved
@@ -862,12 +869,12 @@ ${includedText}
           u -> s "Uses"
       ${diagramTextTail}`
     assert.strictEqual(
-      preprocessStructurizr(diagramTextWithExistingLocalIncludeFile, {}),
+      await preprocessStructurizr(diagramTextWithExistingLocalIncludeFile, {}),
       diagramTextWithIncludedText,
     )
   })
 
-  it('should return diagramText while preserving trailing block comment"', () => {
+  it('should return diagramText while preserving trailing block comment"', async () => {
     const diagramTextWithExistingLocalIncludeFile = `
       ${diagramTextHead}
           !include ${localExistingFilePath} /*
@@ -886,12 +893,12 @@ ${includedText} /*
           u -> s "Uses"
       ${diagramTextTail}`
     assert.strictEqual(
-      preprocessStructurizr(diagramTextWithExistingLocalIncludeFile, {}),
+      await preprocessStructurizr(diagramTextWithExistingLocalIncludeFile, {}),
       diagramTextWithIncludedText,
     )
   })
 
-  it('should return diagramText with inlined local file referenced with "!include local-file-name-with-spaces"', () => {
+  it('should return diagramText with inlined local file referenced with "!include local-file-name-with-spaces"', async () => {
     const localExistingFileNameWithSpacesPath =
       'test/fixtures/structurizr/model/person with spaces.dsl'
     const localExistingFileNameWithSpacesPathEscaped =
@@ -913,12 +920,12 @@ ${includedText}
           u -> s "Uses"
       ${diagramTextTail}`
     assert.strictEqual(
-      preprocessStructurizr(diagramTextWithExistingLocalIncludeFile, {}),
+      await preprocessStructurizr(diagramTextWithExistingLocalIncludeFile, {}),
       diagramTextWithIncludedText,
     )
   })
 
-  it('should return diagramText with inlined multiple local files referenced with "!include local-file-or-url"', () => {
+  it('should return diagramText with inlined multiple local files referenced with "!include local-file-or-url"', async () => {
     const localExistingFilePath1 =
       'test/fixtures/structurizr/model/software-system.dsl'
     const diagramTextWithExistingLocalIncludeFiles = `
@@ -936,12 +943,15 @@ ${includedText1}
           u -> s "Uses"
       ${diagramTextTail}`
     assert.strictEqual(
-      preprocessStructurizr(diagramTextWithExistingLocalIncludeFiles, {}),
+      await preprocessStructurizr(
+        diagramTextWithExistingLocalIncludeFiles,
+        {},
+      ),
       diagramTextWithIncludedText,
     )
   })
 
-  it('should return diagramText with inlined recursive local files referenced with "!include local-file-or-url"', () => {
+  it('should return diagramText with inlined recursive local files referenced with "!include local-file-or-url"', async () => {
     const localExistingFilePath1 =
       'test/fixtures/structurizr/model/software-system.dsl'
     const localExistingFilePath2 =
@@ -961,7 +971,7 @@ ${includedText1}
           u -> s "Uses"
       ${diagramTextTail}`
     assert.strictEqual(
-      preprocessStructurizr(
+      await preprocessStructurizr(
         diagramTextWithExistingRecursiveLocalIncludeFile,
         {},
       ),
@@ -969,7 +979,7 @@ ${includedText1}
     )
   })
 
-  it('should throw an error for file recursive included itself', () => {
+  it('should throw an error for file recursive included itself', async () => {
     const localExistingFileIncludesItselfPath =
       'test/fixtures/structurizr/include/itself.dsl'
     const diagramTextWithIncludeItself = `
@@ -979,7 +989,7 @@ ${includedText1}
           u -> s "Uses"
       ${diagramTextTail}`
     const errorMessage = `Preprocessing of Structurizr include failed, because recursive reading already included referenced file '${localExistingFileIncludesItselfPath}'`
-    assertThrows(
+    await assertRejects(
       () => preprocessStructurizr(diagramTextWithIncludeItself, {}),
       errorMessage,
     )

@@ -29,8 +29,7 @@
   },
   "dependencies": {
     "json5": "2.2.3",
-    "pako": "2.1.0",
-    "unxhr": "1.2.0"
+    "pako": "2.1.0"
   },
   "devDependencies": {
     "@asciidoctor/core": ">=4.0.0-alpha <5.0.0",

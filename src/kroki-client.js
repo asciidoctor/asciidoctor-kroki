@@ -1,5 +1,5 @@
-import packageJson from '../package.json' with { type: 'json' }
 import pako from 'pako'
+import packageJson from '../package.json' with { type: 'json' }
 
 const MAX_URI_DEFAULT_VALUE = 4000
 const REFERER = `asciidoctor/kroki.js/${packageJson.version}`
@@ -56,11 +56,11 @@ export class KrokiClient {
     this.doc = doc
   }
 
-  getTextContent(krokiDiagram) {
+  async getTextContent(krokiDiagram) {
     return this.getImage(krokiDiagram, 'utf8')
   }
 
-  getImage(krokiDiagram, encoding) {
+  async getImage(krokiDiagram, encoding) {
     const serverUrl = this.getServerUrl()
     const type = krokiDiagram.type
     const format = krokiDiagram.format
