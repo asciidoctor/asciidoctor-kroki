@@ -1,0 +1,8 @@
+.Asciidoctor Kroki
+* xref:index.adoc[Overview]
+* xref:install.adoc[Install]
+* xref:usage.adoc[Usage]
+* xref:syntax.adoc[Syntax]
+* xref:configuration.adoc[Configuration]
+* xref:self-hosted.adoc[Self-Hosted Kroki]
+* xref:troubleshooting.adoc[Troubleshooting]

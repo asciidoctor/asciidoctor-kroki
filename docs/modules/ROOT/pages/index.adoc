@@ -1,0 +1,26 @@
+= Asciidoctor Kroki Extension
+:description: An Asciidoctor extension to convert diagrams to images using Kroki.
+
+Asciidoctor Kroki is an extension for https://github.com/asciidoctor/asciidoctor.js[Asciidoctor.js] and https://github.com/asciidoctor/asciidoctor[Asciidoctor] to convert diagrams to images using https://kroki.io[Kroki].
+
+Kroki provides a unified API with support for many diagram libraries.
+Write your diagram source directly in AsciiDoc, and Kroki renders it as an image.
+
+== Supported environments
+
+The extension is available for:
+
+* *Node.js* — use it in your build scripts or Asciidoctor.js-based toolchains
+* *Browser* — use it directly in the browser
+* *Ruby* — use it with the Asciidoctor Ruby gem
+* *Antora* — integrate it into your Antora documentation site
+
+== Getting started
+
+* xref:install.adoc[Install the extension]
+* xref:usage.adoc[Write your first diagram]
+* xref:configuration.adoc[Configure the extension]
+
+== Supported diagram types
+
+Asciidoctor Kroki supports xref:syntax.adoc#diagram-types[over 25 diagram libraries], including PlantUML, Mermaid, GraphViz, D2, Vega-Lite, and more.

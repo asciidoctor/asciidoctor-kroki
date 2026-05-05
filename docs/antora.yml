@@ -1,0 +1,5 @@
+name: asciidoctor-kroki
+version: ~
+title: Asciidoctor Kroki
+nav:
+  - modules/ROOT/nav.adoc
