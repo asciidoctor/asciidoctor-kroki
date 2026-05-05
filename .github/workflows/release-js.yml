@@ -40,33 +40,12 @@ jobs:
         run: |
           ./tasks/package.sh
           ./tasks/publish.sh
-      # create the GitHub release
-      - name: Create release
-        id: create_release
-        uses: actions/create-release@v1.1.4
+      # create the GitHub release and upload assets
+      - name: Create release and upload assets
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.ref }}
-          release_name: "🐙 JavaScript - ${{ github.ref }}"
-          draft: false
-          prerelease: false
-      # upload assets
-      - name: Upload source code as a zip file
-        uses: actions/upload-release-asset@v1.0.2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: bin/asciidoctor-kroki.dist.zip
-          asset_name: asciidoctor-kroki.dist.zip
-          asset_content_type: application/zip
-      - name: Upload source code as a tar.gz file
-        uses: actions/upload-release-asset@v1.0.2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: bin/asciidoctor-kroki.dist.tar.gz
-          asset_name: asciidoctor-kroki.dist.tar.gz
-          asset_content_type: application/tar+gzip
+        run: |
+          gh release create "${{ github.ref_name }}" \
+            --title "🐙 JavaScript - ${{ github.ref_name }}" \
+            dist/asciidoctor-kroki.dist.zip \
+            dist/asciidoctor-kroki.dist.tar.gz
