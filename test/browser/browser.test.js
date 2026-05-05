@@ -4,37 +4,28 @@ import { convert, Extensions } from '@asciidoctor/core'
 import pako from 'pako'
 import asciidoctorKroki from '../../src/asciidoctor-kroki.js'
 
-function httpGet(uri, encoding = 'utf8') {
-  let data = ''
-  let status = -1
-  try {
-    const xhr = new XMLHttpRequest()
-    xhr.open('GET', uri, false)
-    if (encoding === 'binary') {
-      xhr.responseType = 'arraybuffer'
-    }
-    xhr.addEventListener('load', function () {
-      status = this.status
-      if (status === 200 || status === 0) {
-        if (encoding === 'binary') {
-          const arrayBuffer = xhr.response
-          const byteArray = new Uint8Array(arrayBuffer)
-          for (let i = 0; i < byteArray.byteLength; i++) {
-            data += String.fromCharCode(byteArray[i])
-          }
-        } else {
-          data = this.responseText
-        }
-      }
-    })
-    xhr.send()
-  } catch (e) {
-    throw new Error(`Error reading file: ${uri}; reason: ${e.message}`)
-  }
-  if (status === 404 || !data) {
+async function fetchGet(uri, encoding = 'utf8') {
+  const response = await fetch(uri)
+  if (!response.ok) {
     throw new Error(`No such file: ${uri}`)
   }
-  return data
+  if (encoding === 'binary') {
+    const arrayBuffer = await response.arrayBuffer()
+    const byteArray = new Uint8Array(arrayBuffer)
+    let data = ''
+    for (let i = 0; i < byteArray.byteLength; i++) {
+      data += String.fromCharCode(byteArray[i])
+    }
+    if (!data) {
+      throw new Error(`No such file: ${uri}`)
+    }
+    return data
+  }
+  const text = await response.text()
+  if (!text) {
+    throw new Error(`No such file: ${uri}`)
+  }
+  return text
 }
 
 function encodeText(text) {
@@ -82,7 +73,7 @@ alice -> bob
       const registry = Extensions.create()
       asciidoctorKroki.register(registry, {
         vfs: {
-          read: (path, encoding = 'utf8') => httpGet(path, encoding),
+          read: (path, encoding = 'utf8') => fetchGet(path, encoding),
           exists: () => false,
           add: () => {},
           parse: (path) => ({
@@ -91,7 +82,7 @@ alice -> bob
           }),
         },
       })
-      const text = httpGet(fixtureUrl, 'utf8')
+      const text = await fetchGet(fixtureUrl, 'utf8')
       const html = await convert(input, { extension_registry: registry })
       assert.ok(
         html.includes(
@@ -106,7 +97,7 @@ alice -> bob
       const registry = Extensions.create()
       asciidoctorKroki.register(registry, {
         vfs: {
-          read: (path, encoding = 'utf8') => httpGet(path, encoding),
+          read: (path, encoding = 'utf8') => fetchGet(path, encoding),
           exists: () => false,
           add: () => {},
           parse: (path) => ({
@@ -115,7 +106,10 @@ alice -> bob
           }),
         },
       })
-      const text = httpGet(`${fixturesBaseUrl}/fixtures/alice.puml`, 'utf8')
+      const text = await fetchGet(
+        `${fixturesBaseUrl}/fixtures/alice.puml`,
+        'utf8',
+      )
       const html = await convert(input, { extension_registry: registry })
       assert.ok(
         html.includes(
