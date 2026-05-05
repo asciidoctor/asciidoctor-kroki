@@ -1,5 +1,5 @@
 import assert from 'node:assert'
-import { describe, it } from 'node:test'
+import { describe, test } from 'node:test'
 import { convert, Extensions } from '@asciidoctor/core'
 import { inject } from 'vitest'
 import asciidoctorKroki from '../../src/asciidoctor-kroki.js'
@@ -7,7 +7,7 @@ import asciidoctorKroki from '../../src/asciidoctor-kroki.js'
 const krokiUrl = inject('krokiUrl')
 
 describe('Integration with local Kroki server', () => {
-  it('should convert a plantuml diagram and get a valid SVG from the local server', async () => {
+  test('converts a plantuml diagram and gets a valid SVG from the local server', async () => {
     const input = `
 [plantuml,alice-bob,svg,role=sequence]
 ....
@@ -38,7 +38,7 @@ alice -> bob
     )
   })
 
-  it('should convert a graphviz diagram and get a valid SVG from the local server', async () => {
+  test('converts a graphviz diagram and gets a valid SVG from the local server', async () => {
     const input = `
 [graphviz,flow,svg]
 ....

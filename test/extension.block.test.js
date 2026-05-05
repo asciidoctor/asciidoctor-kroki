@@ -1,13 +1,13 @@
-import { describe, it } from 'node:test'
+import assert from 'node:assert'
+import { describe, test } from 'node:test'
 import { convert, Extensions } from '@asciidoctor/core'
 import asciidoctorKroki from '../src/asciidoctor-kroki.js'
-import assert from 'node:assert'
 import { assertContains } from './node/utils.js'
 
 const krokiServerUrl = 'https://my-kroki-server.example.com'
 
 describe('Conversion', () => {
-  it('should generate a kroki.io URL and apply format and role CSS classes', async () => {
+  test('generates a kroki.io URL and applies format and role CSS classes', async () => {
     const input = `
 [plantuml,alice-bob,png,role=sequence]
 ....
@@ -24,13 +24,11 @@ alice -> bob
       `Expected URL not found in:\n${html}`,
     )
     assert.ok(
-      html.includes(
-        '<div class="imageblock sequence kroki-format-png kroki">',
-      ),
+      html.includes('<div class="imageblock sequence kroki-format-png kroki">'),
       `Expected class not found in:\n${html}`,
     )
   })
-  it('should use the kroki-server-url attribute to override the default server URL', async () => {
+  test('uses the kroki-server-url attribute to override the default server URL', async () => {
     const input = `
 [plantuml,alice-bob,svg,role=sequence]
 ....

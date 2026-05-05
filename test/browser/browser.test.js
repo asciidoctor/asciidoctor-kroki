@@ -1,5 +1,5 @@
 import assert from 'node:assert'
-import { describe, it } from 'node:test'
+import { describe, test } from 'node:test'
 import { convert, Extensions } from '@asciidoctor/core'
 import pako from 'pako'
 import asciidoctorKroki from '../../src/asciidoctor-kroki.js'
@@ -43,7 +43,7 @@ const fixturesBaseUrl = window.location.origin
 
 describe('Conversion', () => {
   describe('When extension is registered', () => {
-    it('should convert a diagram to an image', async () => {
+    test('converts a diagram to an image', async () => {
       const input = `
 [plantuml,alice-bob,png,role=sequence]
 ....
@@ -67,7 +67,7 @@ alice -> bob
       )
     })
 
-    it('should convert a diagram with an absolute path to an image', async () => {
+    test('converts a diagram with an absolute path to an image', async () => {
       const fixtureUrl = `${fixturesBaseUrl}/fixtures/alice.puml`
       const input = `plantuml::${fixtureUrl}[svg,role=sequence]`
       const registry = Extensions.create()
@@ -92,7 +92,7 @@ alice -> bob
       )
     }, 5000)
 
-    it('should convert a diagram with a relative path to an image', async () => {
+    test('converts a diagram with a relative path to an image', async () => {
       const input = 'plantuml::../fixtures/alice.puml[svg,role=sequence]'
       const registry = Extensions.create()
       asciidoctorKroki.register(registry, {
