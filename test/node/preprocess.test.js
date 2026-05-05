@@ -807,12 +807,9 @@ describe('Structurizr preprocessing', { timeout: 30000 }, () => {
           u -> s "Uses"
       ${diagramTextTail}`
     assert.strictEqual(
-      await preprocessStructurizr(
-        diagramTextWithUnexistingRemoteIncludeFile,
-        {
-          logger: memoryLogger,
-        },
-      ),
+      await preprocessStructurizr(diagramTextWithUnexistingRemoteIncludeFile, {
+        logger: memoryLogger,
+      }),
       diagramTextWithUnexistingRemoteIncludeFile,
     )
     const logs = memoryLogger.getMessages()
@@ -943,10 +940,7 @@ ${includedText1}
           u -> s "Uses"
       ${diagramTextTail}`
     assert.strictEqual(
-      await preprocessStructurizr(
-        diagramTextWithExistingLocalIncludeFiles,
-        {},
-      ),
+      await preprocessStructurizr(diagramTextWithExistingLocalIncludeFiles, {}),
       diagramTextWithIncludedText,
     )
   })

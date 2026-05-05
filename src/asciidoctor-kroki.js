@@ -11,24 +11,6 @@ import {
   preprocessVegaLite,
 } from './preprocess.js'
 
-function UnsupportedFormatError(message) {
-  this.name = 'UnsupportedFormatError'
-  this.message = message
-  this.stack = new Error().stack
-}
-
-// eslint-disable-next-line new-parens
-UnsupportedFormatError.prototype = new Error()
-
-function InvalidConfigurationError(message) {
-  this.name = 'InvalidConfigurationError'
-  this.message = message
-  this.stack = new Error().stack
-}
-
-// eslint-disable-next-line new-parens
-InvalidConfigurationError.prototype = new Error()
-
 const isBrowser = () => typeof window === 'object'
 
 // A value of 20 (SECURE) disallows the document from attempting to read files from the file system
@@ -68,7 +50,10 @@ const wrapError = (err, message) => {
 }
 
 const createImageSrc = async (doc, krokiDiagram, target, vfs, krokiClient) => {
-  if (doc.isAttribute('kroki-fetch-diagram') && doc.getSafe() < SAFE_MODE_SECURE) {
+  if (
+    doc.isAttribute('kroki-fetch-diagram') &&
+    doc.getSafe() < SAFE_MODE_SECURE
+  ) {
     return fetch.save(krokiDiagram, doc, target, vfs, krokiClient)
   }
   return krokiDiagram.getDiagramUri(krokiClient.getServerUrl())

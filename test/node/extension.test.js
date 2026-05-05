@@ -344,8 +344,8 @@ plantuml::test/fixtures/alice.puml[png,role=sequence]
         const registry = Extensions.create()
         asciidoctorKroki.register(registry)
         const macroFile = fixturePath('alice.puml')
-        const html =
-          await (await loadFile(fixturePath('macro', 'doc.adoc'), {
+        const html = await (
+          await loadFile(fixturePath('macro', 'doc.adoc'), {
             extension_registry: registry,
             safe: 'unsafe',
             attributes: {
@@ -1741,7 +1741,13 @@ bytefield::test/fixtures/simple.bytefield[svg,role=bytefield${blockAttr}]
               },
             })
             const svg = fs.readFileSync(
-              ospath.join(__dirname, '..', 'fixtures', 'expected', 'bytefield.svg'),
+              ospath.join(
+                __dirname,
+                '..',
+                'fixtures',
+                'expected',
+                'bytefield.svg',
+              ),
               'utf8',
             )
             assertContains(html, svg)

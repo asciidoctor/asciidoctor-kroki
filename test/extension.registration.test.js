@@ -1,6 +1,6 @@
+import assert from 'node:assert'
 import { describe, it } from 'node:test'
 import { Extensions } from '@asciidoctor/core'
-import assert from 'node:assert'
 import asciidoctorKroki from '../src/asciidoctor-kroki.js'
 
 describe('Registration', () => {
