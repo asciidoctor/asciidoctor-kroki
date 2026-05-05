@@ -15,6 +15,7 @@ let krokiServerUrl
 describe('Kroki HTTP client — Adaptive mode with real server', {
   timeout: 30000,
 }, () => {
+  const isMacOS = os.platform() === 'darwin'
   if (os.platform() !== 'win32') {
     before(
       async () => {
@@ -47,7 +48,10 @@ describe('Kroki HTTP client — Adaptive mode with real server', {
       const image = (await krokiClient.getImage(krokiDiagram))
         .replace(/\r/, '')
         .replace(/\n/, '')
-      const expected = readFixture('expected', 'chart.svg')
+      const expected = readFixture(
+        'expected',
+        isMacOS ? 'chart-macos.svg' : 'chart.svg',
+      )
         .replace(/\r/, '')
         .replace(/\n/, '')
       assert.strictEqual(image, expected)
@@ -67,7 +71,10 @@ describe('Kroki HTTP client — Adaptive mode with real server', {
       const image = (await krokiClient.getImage(krokiDiagram))
         .replace(/\r/, '')
         .replace(/\n/, '')
-      const expected = readFixture('expected', 'cars-repeated-charts.svg')
+      const expected = readFixture(
+        'expected',
+        isMacOS ? 'cars-repeated-charts-macos.svg' : 'cars-repeated-charts.svg',
+      )
         .replace(/\r/, '')
         .replace(/\n/, '')
       assert.strictEqual(image, expected)
