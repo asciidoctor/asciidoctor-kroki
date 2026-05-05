@@ -1,0 +1,27 @@
+= Troubleshooting
+:description: Solutions to common issues with the Asciidoctor Kroki extension.
+
+== 414 URI Too Long
+
+By default, the extension retrieves images from the Kroki server using GET requests.
+If the requested URI exceeds the maximum length the server can process, the server returns a *414 Request-URI Too Long* error.
+The default maximum URI length on the public Kroki server is 4096 characters.
+
+To resolve this issue, choose one of the following approaches:
+
+* *Increase the max URI length* on a self-hosted Kroki instance. +
+  See the https://docs.kroki.io/kroki/setup/configuration/#_max_uri_length[Kroki configuration documentation].
+
+* *Switch to POST requests* by enabling `kroki-fetch-diagram` and setting `kroki-http-method` to `adaptive` or `post`:
++
+[source,asciidoc]
+----
+:kroki-fetch-diagram: true
+:kroki-http-method: post
+----
+
+[NOTE]
+====
+When using POST requests, the extension downloads images from the server and stores them locally.
+The images are then referenced using a relative path rather than a direct link to the Kroki server.
+====

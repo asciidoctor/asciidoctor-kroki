@@ -1,0 +1,136 @@
+= Install
+:description: How to install the Asciidoctor Kroki extension for Node.js, browser, Ruby, and Antora.
+
+== Node.js
+
+Install the dependencies:
+
+ npm i asciidoctor asciidoctor-kroki
+
+Create a file named `kroki.js` with the following content and run it:
+
+[source,js]
+----
+const asciidoctor = require('@asciidoctor/core')()
+const kroki = require('asciidoctor-kroki')
+
+const input = 'plantuml::hello.puml[svg,role=sequence]'
+
+kroki.register(asciidoctor.Extensions) // <1>
+console.log(asciidoctor.convert(input, { safe: 'safe' }))
+
+const registry = asciidoctor.Extensions.create()
+kroki.register(registry) // <2>
+console.log(asciidoctor.convert(input, { safe: 'safe', extension_registry: registry }))
+----
+<1> Register the extension in the global registry.
+<2> Register the extension in a dedicated registry.
+
+== Browser
+
+Install the dependencies:
+
+ npm i asciidoctor asciidoctor-kroki
+
+Create a file named `kroki.html` with the following content and open it in your browser:
+
+[source,html]
+----
+<html lang="en">
+  <head>
+    <title>Asciidoctor x Kroki</title>
+    <meta charset="utf-8">
+    <script src="node_modules/@asciidoctor/core/dist/browser/asciidoctor.js"></script>
+    <script src="node_modules/asciidoctor-kroki/dist/browser/asciidoctor-kroki.js"></script>
+  </head>
+  <body>
+    <div id="content"></div>
+    <script>
+      const input = `Let's take an example with a _GraphViz_ "Hello World":
+
+[graphviz]
+....
+digraph G {
+  Hello->World
+}
+....`
+
+      const asciidoctor = Asciidoctor()
+
+      const registry = asciidoctor.Extensions.create()
+      AsciidoctorKroki.register(registry) // <1>
+      const result = asciidoctor.convert(input, { safe: 'safe', extension_registry: registry })
+      document.getElementById('content').innerHTML = result
+    </script>
+  </body>
+</html>
+----
+<1> Register the extension in a dedicated registry.
+
+[IMPORTANT]
+====
+If you want to reference a diagram file in a browser environment, you will need to define the base directory using the `base_dir` option.
+In addition, you will also need to provide an implementation to read a binary file *synchronously* for a given path.
+You can find an implementation based on `XMLHttpRequest` in the https://github.com/ggrossetie/asciidoctor-kroki/blob/9585b969014a1894d0c9fb76df10e1e8c66ce2b2/test/browser/test.js#L2-L34[source code].
+Once `httpGet` is defined, configure the extension as follows:
+
+[source,js]
+----
+const registry = asciidoctor.Extensions.create()
+AsciidoctorKroki.register(registry, {
+  vfs: {
+    read: (path, encoding = 'utf8') => httpGet(path, encoding),
+    exists: (_) => false,
+    add: (_) => { /* no-op */ },
+    parse: (path) => ({
+      dir: path.substring(0, path.lastIndexOf('/') - 1),
+      path
+    })
+  }
+})
+const input = 'plantuml::hello.puml[svg,role=sequence]'
+asciidoctor.convert(input, { safe: 'safe', base_dir: window.location.origin, extension_registry: registry })
+----
+====
+
+== Ruby
+
+Install the dependency:
+
+ gem install asciidoctor-kroki
+
+Require the library using the `--require` (or `-r`) option from the Asciidoctor CLI:
+
+ asciidoctor -r asciidoctor-kroki doc.adoc
+
+== Antora
+
+If you are using https://antora.org/[Antora], you can integrate Kroki in your documentation site.
+
+. Install the extension in your playbook project:
++
+ npm i asciidoctor-kroki
+
+. Register the extension in your https://docs.antora.org/antora/latest/playbook/asciidoc-extensions/[playbook file]:
++
+[source,yaml]
+----
+asciidoc:
+  extensions:
+    - asciidoctor-kroki
+----
+
+. Enjoy!
+
+[TIP]
+====
+Use the `kroki-fetch-diagram` attribute to download images from Kroki at build time.
+This way, page rendering no longer depends on the Kroki server at viewing time.
+
+[source,yaml]
+----
+asciidoc:
+  attributes:
+    kroki-fetch-diagram: true
+----
+====

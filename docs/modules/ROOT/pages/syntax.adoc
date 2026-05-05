@@ -1,0 +1,227 @@
+= Syntax
+:description: Syntax reference for the Asciidoctor Kroki extension: positional attributes, named attributes, options, and supported diagram types.
+
+You can declare positional and named attributes when using the block or macro form.
+
+== Positional attributes
+
+=== Block form
+
+. The first positional attribute specifies the xref:#diagram-types[diagram type].
+. The second optional positional attribute assigns a file name (i.e., target) to the generated diagram.
+. The third optional positional attribute specifies the image format.
+
+[source,asciidoc]
+....
+[mermaid,abcd-flowchart,svg]
+----
+graph TD;
+    A-->B;
+    A-->C;
+    B-->D;
+    C-->D;
+----
+....
+
+In the above example, the diagram type is `mermaid`, the target is `abcd-flowchart`, and the image format is `svg`.
+
+=== Macro form
+
+. The first optional positional attribute specifies the image format.
+
+[source,asciidoc]
+----
+vegalite::chart.vlite[svg]
+----
+
+In the above example, the diagram type is `vegalite`, the target is `chart.vlite`, and the image format is `svg`.
+
+== Named attributes
+
+You can combine positional and named attributes:
+
+[source,asciidoc]
+....
+.PlantUML example
+[plantuml#diagAliceBob,alice-and-bob,svg,role=sequence]
+----
+alice -> bob
+----
+....
+
+In this example, an id is assigned using `#diagAliceBob` after the diagram type, and a role is defined using `role=sequence`.
+
+With the macro form:
+
+[source,asciidoc]
+----
+vegalite::chart.vlite[svg,role=chart,opts=interactive]
+----
+
+A positional attribute declares the image format, and two named attributes define the `role` and `opts`.
+
+== Attributes
+
+The following attributes are used by the built-in HTML 5 converter:
+
+[cols="1,3",options="header"]
+|===
+|Attribute|Description
+
+|`target`
+|File name for the generated image
+
+|`width`
+|Image width
+
+|`height`
+|Image height
+
+|`format`
+|Image format (default: `svg`)
+
+|`fallback`
+|Fallback image if the diagram cannot be rendered
+
+|`link`
+|URL to link the image to
+
+|`float`
+|Image float (`left` or `right`)
+
+|`align`
+|Image alignment
+
+|`role`
+|CSS class(es) to apply to the image
+
+|`title`
+|Alternative text description of the diagram
+|===
+
+== Options
+
+The following options are available when using the SVG format:
+
+[cols="1,3",options="header"]
+|===
+|Option|Description
+
+|`inline`
+|Inline the SVG content directly in the HTML
+
+|`interactive`
+|Make the SVG interactive (e.g., for Vega-Lite)
+
+|`none`
+|Cancel any default options
+|===
+
+Options are defined using the `options` attribute (or `opts` for short):
+
+[source,asciidoc]
+....
+[blockdiag,opts=inline]
+----
+blockdiag {
+  Kroki -> generates -> "Block diagrams";
+
+  Kroki [color = "greenyellow"];
+  "Block diagrams" [color = "pink"];
+}
+----
+....
+
+[#diagram-types]
+== Supported diagram types
+
+Kroki currently supports the following diagram libraries:
+
+[cols="1,1",options="header"]
+|===
+|Library|Block/macro name
+
+|https://github.com/blockdiag/actdiag[ActDiag]
+|`actdiag`
+
+|https://github.com/blockdiag/blockdiag[BlockDiag]
+|`blockdiag`
+
+|https://github.com/bpmn-io/bpmn-js[BPMN]
+|`bpmn`
+
+|https://github.com/Deep-Symmetry/bytefield-svg/[Bytefield]
+|`bytefield`
+
+|https://github.com/RicardoNiepel/C4-PlantUML[C4 (PlantUML)]
+|`c4plantuml`
+
+|https://d2lang.com/tour/intro/[D2]
+|`d2`
+
+|https://www.dbml.org/home/[DBML]
+|`dbml`
+
+|http://ditaa.sourceforge.net[Ditaa]
+|`ditaa`
+
+|https://github.com/BurntSushi/erd[ERD]
+|`erd`
+
+|https://github.com/excalidraw/excalidraw[Excalidraw]
+|`excalidraw`
+
+|https://www.graphviz.org/[GraphViz]
+|`graphviz`
+
+|https://github.com/knsv/mermaid[Mermaid]
+|`mermaid`
+
+|https://github.com/skanaar/nomnoml[Nomnoml]
+|`nomnoml`
+
+|https://github.com/blockdiag/nwdiag[NwDiag]
+|`nwdiag`
+
+|https://github.com/blockdiag/nwdiag[PacketDiag]
+|`packetdiag`
+
+|https://github.com/drhsqlite/pikchr[Pikchr]
+|`pikchr`
+
+|https://github.com/plantuml/plantuml[PlantUML]
+|`plantuml`
+
+|https://github.com/blockdiag/nwdiag[RackDiag]
+|`rackdiag`
+
+|https://github.com/blockdiag/seqdiag[SeqDiag]
+|`seqdiag`
+
+|https://github.com/ivanceras/svgbob[SVGBob]
+|`svgbob`
+
+|https://github.com/zebreus/symbolator[Symbolator]
+|`symbolator`
+
+|https://github.com/umlet/umlet[UMLet]
+|`umlet`
+
+|https://github.com/vega/vega[Vega]
+|`vega`
+
+|https://github.com/vega/vega-lite[Vega-Lite]
+|`vegalite`
+
+|https://github.com/wavedrom/wavedrom[WaveDrom]
+|`wavedrom`
+
+|https://github.com/structurizr/dsl[Structurizr]
+|`structurizr`
+
+|https://github.com/jgraph/drawio[Diagrams.net] footnote:[Only available via xref:self-hosted.adoc[self-hosted Kroki].]
+|`diagramsnet`
+|===
+
+Each diagram library supports one or more output formats.
+Consult the https://kroki.io/#support[Kroki documentation] for the supported formats per library.

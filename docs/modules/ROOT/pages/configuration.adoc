@@ -1,0 +1,101 @@
+= Configuration
+:description: Configuration reference for the Asciidoctor Kroki extension: attributes, default format, default options, and preprocessing.
+
+== Attributes
+
+[cols="2,4,1",options="header"]
+|===
+|Attribute|Description|Default
+
+|`kroki-server-url`
+|The URL of the Kroki server. See xref:self-hosted.adoc[].
+|`https://kroki.io`
+
+|`kroki-data-uri`
+|Embed images as data-URI elements in HTML so the file is completely self-contained.
+|`false`
+
+|`kroki-fetch-diagram`
+|Download images from the Kroki server and save them to disk. Not available in the browser.
+|`false`
+
+|`kroki-http-method`
+a|How to retrieve images from the Kroki server:
+
+* `get` — always use GET requests
+* `post` — always use POST requests
+* `adaptive` — use POST if the URI exceeds `kroki-max-uri-length` characters, otherwise use GET
+|`adaptive`
+
+|`kroki-plantuml-include`
+|A file included at the top of every PlantUML diagram, as if `!include file` was used. Useful for defining a common skin. Accepts a path or a URL.
+|
+
+|`kroki-plantuml-include-paths`
+|Additional search paths for resolving `!include file`, similar to https://plantuml.com/de/preprocessing[PlantUML's `plantuml.include.path`]. Use `;` (Windows) or `:` (Unix) to separate multiple paths.
+|
+
+|`kroki-max-uri-length`
+|Maximum URI length before switching to POST when using the `adaptive` HTTP method.
+|`4000`
+|===
+
+[IMPORTANT]
+====
+`kroki-fetch-diagram` and `kroki-plantuml-include` are only available when safe mode is `server` or lower.
+See https://docs.asciidoctor.org/asciidoctor/latest/safe-modes/[Asciidoctor safe modes].
+====
+
+== Default format
+
+By default, images are generated as SVG when possible.
+To change this, set the `kroki-default-format` attribute:
+
+[source,asciidoc]
+----
+:kroki-default-format: png
+----
+
+Unset it with `:kroki-default-format!:` or restore the default with `:kroki-default-format: svg`.
+
+[NOTE]
+====
+An AsciiDoc attribute can be defined through the CLI or API, in the document header, or in the document body.
+If you are using Antora, you can define attributes in your playbook and/or component descriptor.
+
+[source,yaml]
+----
+asciidoc:
+  attributes:
+    kroki-default-format: png@
+----
+
+The `@` suffix allows the value to be overridden in individual documents.
+
+References:
+
+* https://docs.asciidoctor.org/asciidoctor/latest/attributes/document-attributes-ref/[Asciidoctor document attributes]
+* https://docs.antora.org/antora/2.3/page/attributes/#custom-attributes[Antora custom attributes]
+====
+
+== Default options
+
+By default, Asciidoctor Kroki generates a link to the Kroki server or a local file for SVG diagrams.
+To change this default behavior, set the `kroki-default-options` attribute:
+
+[source,asciidoc]
+----
+:kroki-default-options: inline
+----
+
+Unset it with `:kroki-default-options: none`, `:kroki-default-options!:`, or override it per block or macro using `opts=none`.
+
+== Preprocessing
+
+Some diagram libraries support referencing external entities by URL or accessing filesystem resources.
+For example, PlantUML supports the `!import` directive, and Vega-Lite can load data from a URL.
+
+By default, the Kroki server runs in `SECURE` mode, which restricts access to the local file system and external network resources.
+
+To work around this, Asciidoctor Kroki resolves and loads external resources *before* sending the request to the Kroki server.
+This feature is only available when Asciidoctor safe mode is `server` or lower.
