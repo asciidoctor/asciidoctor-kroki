@@ -24,8 +24,8 @@
     "lint-fix": "biome check --write src/ test/ tasks/",
     "clean": "node -e \"require('fs').rmSync('build', {recursive: true, force: true})\"",
     "build": "npm run clean && rollup -c",
-    "build:browser": "rollup -c --filter browser",
-    "build:node": "rollup -c --filter node"
+    "build:browser": "BUILD_TARGET=browser rollup -c",
+    "build:node": "BUILD_TARGET=node rollup -c"
   },
   "dependencies": {
     "json5": "2.2.3",
