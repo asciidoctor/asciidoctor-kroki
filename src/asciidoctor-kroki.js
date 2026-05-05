@@ -133,16 +133,9 @@ const processKroki = async (
     attrs.format || doc.getAttribute('kroki-default-format') || 'svg'
   const caption = attrs.caption
   const title = attrs.title
-  let role = attrs.role
-  if (role) {
-    if (format) {
-      role = `${role} kroki-format-${format} kroki`
-    } else {
-      role = `${role} kroki`
-    }
-  } else {
-    role = 'kroki'
-  }
+  const role = attrs.role
+    ? `${attrs.role} kroki-format-${format} kroki`
+    : 'kroki'
   const blockAttrs = Object.assign({}, attrs)
   blockAttrs.role = role
   blockAttrs.format = format

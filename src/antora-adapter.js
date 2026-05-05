@@ -1,25 +1,12 @@
 import { posix as ospath } from 'node:path'
-import fs from './node-fs.js'
+import { resolveVfs } from './node-fs.js'
 
 export default function (file, contentCatalog, vfs) {
-  let baseReadFn
-  if (typeof vfs === 'undefined' || typeof vfs.read !== 'function') {
-    baseReadFn = fs.read
-  } else {
-    baseReadFn = vfs.read
-  }
-  let baseParseFn
-  if (typeof vfs === 'undefined' || typeof vfs.parse !== 'function') {
-    baseParseFn = fs.parse
-  } else {
-    baseParseFn = vfs.parse
-  }
-  let baseExistsFn
-  if (typeof vfs === 'undefined' || typeof vfs.exists !== 'function') {
-    baseExistsFn = fs.exists
-  } else {
-    baseExistsFn = vfs.exists
-  }
+  const {
+    read: baseReadFn,
+    parse: baseParseFn,
+    exists: baseExistsFn,
+  } = resolveVfs(vfs)
   return {
     add: (image) => {
       const { component, version, module } = file.src

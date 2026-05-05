@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto'
 import { posix as path } from 'node:path'
-import fs from './node-fs.js'
+import { resolveVfs } from './node-fs.js'
 
 const getImagesOutputDirectory = (doc) => {
   const imagesOutputDir = doc.getAttribute('imagesoutdir')
@@ -26,18 +26,7 @@ const getOutputDirectory = (doc) => {
 
 export default {
   save: async (krokiDiagram, doc, target, vfs, krokiClient) => {
-    const exists =
-      typeof vfs !== 'undefined' && typeof vfs.exists === 'function'
-        ? vfs.exists
-        : fs.exists
-    const read =
-      typeof vfs !== 'undefined' && typeof vfs.read === 'function'
-        ? vfs.read
-        : fs.read
-    const add =
-      typeof vfs !== 'undefined' && typeof vfs.add === 'function'
-        ? vfs.add
-        : fs.add
+    const { exists, read, add } = resolveVfs(vfs)
 
     const imagesOutputDirectory = getImagesOutputDirectory(doc)
     const dataUri =

@@ -3,7 +3,7 @@
 // https://www.typescriptlang.org/docs/handbook/intro-to-js-ts.html#ts-check
 import { delimiter, posix as path } from 'node:path'
 import JSON5 from 'json5'
-import fs from './node-fs.js'
+import { resolveVfs } from './node-fs.js'
 
 /**
  * @param {string} diagramText
@@ -35,12 +35,7 @@ ${diagramText}
   if (!diagramObject?.data?.url) {
     return diagramText
   }
-  const read =
-    'vfs' in context &&
-    typeof context.vfs !== 'undefined' &&
-    typeof context.vfs.read === 'function'
-      ? context.vfs.read
-      : fs.read
+  const { read } = resolveVfs(context.vfs)
   const data = diagramObject.data
   const urlOrPath = data.url
   try {
@@ -197,10 +192,7 @@ async function preprocessPlantUmlIncludes(
             text = getPlantUmlTextOrFirstBlock(text)
           }
           includeStack.push(readResult.filePath)
-          const parse =
-            typeof vfs !== 'undefined' && typeof vfs.parse === 'function'
-              ? vfs.parse
-              : fs.parse
+          const { parse } = resolveVfs(vfs)
           text = await preprocessPlantUmlIncludes(
             text,
             parse(readResult.filePath, resource),
@@ -234,10 +226,7 @@ async function preprocessPlantUmlIncludes(
  * @returns {string} the found file or include file path
  */
 function resolveIncludeFile(includeFile, resource, includePaths, vfs) {
-  const exists =
-    typeof vfs !== 'undefined' && typeof vfs.exists === 'function'
-      ? vfs.exists
-      : fs.exists
+  const { exists } = resolveVfs(vfs)
   if (resource.module) {
     // antora resource id
     const dirPath = path.dirname(resource.relative)
@@ -300,10 +289,7 @@ async function readStructurizrInclude(
   vfs,
   logger,
 ) {
-  const read =
-    typeof vfs !== 'undefined' && typeof vfs.read === 'function'
-      ? vfs.read
-      : fs.read
+  const { read } = resolveVfs(vfs)
   let skip = false
   let text = ''
   let filePath = url
@@ -359,10 +345,7 @@ async function readPlantUmlInclude(
   vfs,
   logger,
 ) {
-  const read =
-    typeof vfs !== 'undefined' && typeof vfs.read === 'function'
-      ? vfs.read
-      : fs.read
+  const { read } = resolveVfs(vfs)
   let skip = false
   let text = ''
   let filePath = url
@@ -567,10 +550,7 @@ async function preprocessStructurizrIncludes(
         if (!readResult.skip) {
           let text = readResult.text
           includeStack.push(readResult.filePath)
-          const parse =
-            typeof vfs !== 'undefined' && typeof vfs.parse === 'function'
-              ? vfs.parse
-              : fs.parse
+          const { parse } = resolveVfs(vfs)
           text = await preprocessStructurizrIncludes(
             text,
             parse(readResult.filePath, resource),

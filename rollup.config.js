@@ -10,7 +10,7 @@ const shim = (name) => join(__dirname, `test/shims/${name}.js`)
 
 // Stub code indexed by resolved absolute path suffix
 const PATH_STUBS = new Map([
-  ['/src/node-fs.js', 'export default {}'],
+  ['/src/node-fs.js', 'export default {}; export function resolveVfs(vfs) { return vfs || {} }'],
   ['/src/fetch.js', "export default { save: () => { throw new Error('kroki-fetch-diagram is not supported in the browser') } }"],
   ['/src/antora-adapter.js', 'export default function () {}'],
   ['/src/http/node-http.js', 'export default { get: () => {}, post: () => {} }'],
