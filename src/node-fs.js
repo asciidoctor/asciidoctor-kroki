@@ -4,7 +4,7 @@ import url from 'node:url'
 
 import http from './http/node-http.js'
 
-export default {
+const nodefs = {
   add: (image) => {
     fs.mkdirSync(image.relative, { recursive: true })
     const filePath = path.format({ dir: image.relative, base: image.basename })
@@ -29,3 +29,14 @@ export default {
     }
   },
 }
+
+export function resolveVfs(vfs) {
+  return {
+    read: typeof vfs?.read === 'function' ? vfs.read : nodefs.read,
+    exists: typeof vfs?.exists === 'function' ? vfs.exists : nodefs.exists,
+    parse: typeof vfs?.parse === 'function' ? vfs.parse : nodefs.parse,
+    add: typeof vfs?.add === 'function' ? vfs.add : nodefs.add,
+  }
+}
+
+export default nodefs
