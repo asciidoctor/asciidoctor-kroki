@@ -9,13 +9,13 @@ import fs from './node-fs.js'
  * @param {string} diagramText
  * @param {any} context
  * @param {string} diagramDir
- * @returns {string}
+ * @returns {Promise<string>}
  */
-export function preprocessVegaLite (
+export async function preprocessVegaLite(
   diagramText,
   context = {},
   diagramDir = '',
-)  {
+) {
   const logger =
     'logger' in context && typeof context.logger !== 'undefined'
       ? context.logger
@@ -44,7 +44,7 @@ ${diagramText}
   const data = diagramObject.data
   const urlOrPath = data.url
   try {
-    data.values = read(
+    data.values = await read(
       isLocalAndRelative(urlOrPath)
         ? path.join(diagramDir, urlOrPath)
         : urlOrPath,
@@ -104,9 +104,9 @@ function removePlantUmlTags(diagramText) {
  * @param {any} context
  * @param {string} diagramIncludePaths - predefined include paths (can be null)
  * @param {{[key: string]: string}} resource - diagram resource identity
- * @returns {string}
+ * @returns {Promise<string>}
  */
-export function preprocessPlantUML(
+export async function preprocessPlantUML(
   diagramText,
   context,
   diagramIncludePaths = '',
@@ -118,7 +118,7 @@ export function preprocessPlantUML(
   const includePaths = diagramIncludePaths
     ? diagramIncludePaths.split(delimiter)
     : []
-  diagramText = preprocessPlantUmlIncludes(
+  diagramText = await preprocessPlantUmlIncludes(
     diagramText,
     resource,
     includeOnce,
@@ -138,9 +138,9 @@ export function preprocessPlantUML(
  * @param {string[]} includePaths
  * @param {any} vfs
  * @param {any} logger
- * @returns {string}
+ * @returns {Promise<string>}
  */
-function preprocessPlantUmlIncludes(
+async function preprocessPlantUmlIncludes(
   diagramText,
   resource,
   includeOnce,
@@ -155,18 +155,21 @@ function preprocessPlantUmlIncludes(
   const regExInclude = /^\s*!(include(?:_many|_once|url|sub)?)\s+([\s\S]*)/
   const diagramLines = diagramText.split('\n')
   let insideCommentBlock = false
-  const diagramProcessed = diagramLines.map((line) => {
+  const diagramProcessed = []
+  for (const line of diagramLines) {
     let result = line
     // replace the !include directive unless inside a comment block
     if (!insideCommentBlock) {
-      result = line.replace(regExInclude, (_match, ...args) => {
+      const match = regExInclude.exec(line)
+      if (match) {
+        const [, ...args] = match
         const include = args[0].toLowerCase()
         const target = parseTarget(args[1])
         const urlSub = target.url.split('!')
         const trailingContent = target.comment
         const url = urlSub[0].replace(/\\ /g, ' ').replace(/\s+$/g, '')
         const sub = urlSub[1]
-        const result = readPlantUmlInclude(
+        const readResult = await readPlantUmlInclude(
           url,
           resource,
           includePaths,
@@ -174,47 +177,43 @@ function preprocessPlantUmlIncludes(
           vfs,
           logger,
         )
-        if (result.skip) {
-          return line
-        }
-        if (include === 'include_once') {
-          checkIncludeOnce(result.text, result.filePath, includeOnce)
-        }
-        let text = result.text
-        if (sub !== undefined && sub !== null && sub !== '') {
-          if (include === 'includesub') {
-            text = getPlantUmlTextFromSub(text, sub)
-          } else {
-            const index = parseInt(sub, 10)
-            if (Number.isNaN(index)) {
-              text = getPlantUmlTextFromId(text, sub)
-            } else {
-              text = getPlantUmlTextFromIndex(text, index)
-            }
+        if (!readResult.skip) {
+          if (include === 'include_once') {
+            checkIncludeOnce(readResult.text, readResult.filePath, includeOnce)
           }
-        } else {
-          text = getPlantUmlTextOrFirstBlock(text)
+          let text = readResult.text
+          if (sub !== undefined && sub !== null && sub !== '') {
+            if (include === 'includesub') {
+              text = getPlantUmlTextFromSub(text, sub)
+            } else {
+              const index = parseInt(sub, 10)
+              if (Number.isNaN(index)) {
+                text = getPlantUmlTextFromId(text, sub)
+              } else {
+                text = getPlantUmlTextFromIndex(text, index)
+              }
+            }
+          } else {
+            text = getPlantUmlTextOrFirstBlock(text)
+          }
+          includeStack.push(readResult.filePath)
+          const parse =
+            typeof vfs !== 'undefined' && typeof vfs.parse === 'function'
+              ? vfs.parse
+              : fs.parse
+          text = await preprocessPlantUmlIncludes(
+            text,
+            parse(readResult.filePath, resource),
+            includeOnce,
+            includeStack,
+            includePaths,
+            vfs,
+            logger,
+          )
+          includeStack.pop()
+          result = trailingContent !== '' ? `${text} ${trailingContent}` : text
         }
-        includeStack.push(result.filePath)
-        const parse =
-          typeof vfs !== 'undefined' && typeof vfs.parse === 'function'
-            ? vfs.parse
-            : fs.parse
-        text = preprocessPlantUmlIncludes(
-          text,
-          parse(result.filePath, resource),
-          includeOnce,
-          includeStack,
-          includePaths,
-          vfs,
-          logger,
-        )
-        includeStack.pop()
-        if (trailingContent !== '') {
-          return `${text} ${trailingContent}`
-        }
-        return text
-      })
+      }
     }
     if (line.includes("/'")) {
       insideCommentBlock = true
@@ -222,8 +221,8 @@ function preprocessPlantUmlIncludes(
     if (insideCommentBlock && line.includes("'/")) {
       insideCommentBlock = false
     }
-    return result
-  })
+    diagramProcessed.push(result)
+  }
   return diagramProcessed.join('\n')
 }
 
@@ -293,7 +292,7 @@ function parseTarget(value) {
   return { url: value, comment: '' }
 }
 
-function readStructurizrInclude(
+async function readStructurizrInclude(
   url,
   resource,
   includePaths,
@@ -314,7 +313,7 @@ function readStructurizrInclude(
   } else {
     if (isRemoteUrl(url)) {
       try {
-        text = read(url)
+        text = await read(url)
       } catch (e) {
         // Includes a remote file that cannot be found but might be resolved by the Kroki server (https://github.com/yuzutech/kroki/issues/60)
         logger.info(
@@ -329,7 +328,7 @@ function readStructurizrInclude(
         throw new Error(message)
       } else {
         try {
-          text = read(filePath, 'utf8', resource)
+          text = await read(filePath, 'utf8', resource)
         } catch (e) {
           // Includes a local file that cannot be found but might be resolved by the Kroki server
           logger.info(
@@ -350,9 +349,9 @@ function readStructurizrInclude(
  * @param {string[]} includeStack
  * @param {any} vfs
  * @param {any} logger
- * @returns {any}
+ * @returns {Promise<any>}
  */
-function readPlantUmlInclude(
+async function readPlantUmlInclude(
   url,
   resource,
   includePaths,
@@ -379,7 +378,7 @@ function readPlantUmlInclude(
   } else {
     if (isRemoteUrl(url)) {
       try {
-        text = read(url)
+        text = await read(url)
       } catch (e) {
         // Includes a remote file that cannot be found but might be resolved by the Kroki server (https://github.com/yuzutech/kroki/issues/60)
         logger.info(
@@ -394,7 +393,7 @@ function readPlantUmlInclude(
         throw new Error(message)
       } else {
         try {
-          text = read(filePath, 'utf8', resource)
+          text = await read(filePath, 'utf8', resource)
         } catch (e) {
           // Includes a local file that cannot be found but might be resolved by the Kroki server
           logger.info(
@@ -509,9 +508,9 @@ function checkIncludeOnce(_text, filePath, includeOnce) {
  * @param {string} diagramText
  * @param {any} context
  * @param {{[key: string]: string}} resource - diagram resource identity
- * @returns {string}
+ * @returns {Promise<string>}
  */
-export function preprocessStructurizr (
+export async function preprocessStructurizr(
   diagramText,
   context,
   resource = { dir: '' },
@@ -533,9 +532,9 @@ export function preprocessStructurizr (
  * @param {string[]} includeStack
  * @param {any} vfs
  * @param {any} logger
- * @returns {string}
+ * @returns {Promise<string>}
  */
-function preprocessStructurizrIncludes(
+async function preprocessStructurizrIncludes(
   diagramText,
   resource,
   includeStack,
@@ -546,15 +545,18 @@ function preprocessStructurizrIncludes(
   const regExInclude = /^\s*!include\s+([\s\S]*)/
   const diagramLines = diagramText.split('\n')
   let insideCommentBlock = false
-  const diagramProcessed = diagramLines.map((line) => {
+  const diagramProcessed = []
+  for (const line of diagramLines) {
     let result = line
     // replace the !include directive unless inside a comment block
     if (!insideCommentBlock) {
-      result = line.replace(regExInclude, (_match, ...args) => {
+      const match = regExInclude.exec(line)
+      if (match) {
+        const [, ...args] = match
         const target = parseStructurizrTarget(args[0], [' #', ' //', '/*'])
         const trailingContent = target.comment
         const url = target.url.replace(/\\ /g, ' ').replace(/\s+$/g, '')
-        const result = readStructurizrInclude(
+        const readResult = await readStructurizrInclude(
           url,
           resource,
           [],
@@ -562,28 +564,24 @@ function preprocessStructurizrIncludes(
           vfs,
           logger,
         )
-        if (result.skip) {
-          return line
+        if (!readResult.skip) {
+          let text = readResult.text
+          includeStack.push(readResult.filePath)
+          const parse =
+            typeof vfs !== 'undefined' && typeof vfs.parse === 'function'
+              ? vfs.parse
+              : fs.parse
+          text = await preprocessStructurizrIncludes(
+            text,
+            parse(readResult.filePath, resource),
+            includeStack,
+            vfs,
+            logger,
+          )
+          includeStack.pop()
+          result = trailingContent !== '' ? `${text} ${trailingContent}` : text
         }
-        let text = result.text
-        includeStack.push(result.filePath)
-        const parse =
-          typeof vfs !== 'undefined' && typeof vfs.parse === 'function'
-            ? vfs.parse
-            : fs.parse
-        text = preprocessStructurizrIncludes(
-          text,
-          parse(result.filePath, resource),
-          includeStack,
-          vfs,
-          logger,
-        )
-        includeStack.pop()
-        if (trailingContent !== '') {
-          return `${text} ${trailingContent}`
-        }
-        return text
-      })
+      }
     }
     let position = 0
     while (
@@ -595,8 +593,8 @@ function preprocessStructurizrIncludes(
       insideCommentBlock = !insideCommentBlock
       position += 2
     }
-    return result
-  })
+    diagramProcessed.push(result)
+  }
   return diagramProcessed.join('\n')
 }
 

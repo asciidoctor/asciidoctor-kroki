@@ -25,7 +25,7 @@ const getOutputDirectory = (doc) => {
 }
 
 export default {
-  save: (krokiDiagram, doc, target, vfs, krokiClient) => {
+  save: async (krokiDiagram, doc, target, vfs, krokiClient) => {
     const exists =
       typeof vfs !== 'undefined' && typeof vfs.exists === 'function'
         ? vfs.exists
@@ -64,9 +64,9 @@ export default {
     // file is either (already) on the file system or we should read it from Kroki
     let contents
     if (exists(filePath)) {
-      contents = read(filePath, encoding)
+      contents = await read(filePath, encoding)
     } else {
-      contents = krokiClient.getImage(krokiDiagram, encoding)
+      contents = await krokiClient.getImage(krokiDiagram, encoding)
     }
     if (dataUri) {
       return (

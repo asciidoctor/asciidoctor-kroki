@@ -29,9 +29,7 @@ function InvalidConfigurationError(message) {
 // eslint-disable-next-line new-parens
 InvalidConfigurationError.prototype = new Error()
 
-const isBrowser = () => {
-  return typeof window === 'object' && typeof window.XMLHttpRequest === 'object'
-}
+const isBrowser = () => typeof window === 'object'
 
 // A value of 20 (SECURE) disallows the document from attempting to read files from the file system
 const SAFE_MODE_SECURE = 20
@@ -69,15 +67,11 @@ const wrapError = (err, message) => {
   return result
 }
 
-const createImageSrc = (doc, krokiDiagram, target, vfs, krokiClient) => {
-  const shouldFetch = doc.isAttribute('kroki-fetch-diagram')
-  let imageUrl
-  if (shouldFetch && doc.getSafe() < SAFE_MODE_SECURE) {
-    imageUrl = fetch.save(krokiDiagram, doc, target, vfs, krokiClient)
-  } else {
-    imageUrl = krokiDiagram.getDiagramUri(krokiClient.getServerUrl())
+const createImageSrc = async (doc, krokiDiagram, target, vfs, krokiClient) => {
+  if (doc.isAttribute('kroki-fetch-diagram') && doc.getSafe() < SAFE_MODE_SECURE) {
+    return fetch.save(krokiDiagram, doc, target, vfs, krokiClient)
   }
-  return imageUrl
+  return krokiDiagram.getDiagramUri(krokiClient.getServerUrl())
 }
 
 /**
@@ -126,7 +120,7 @@ const processKroki = async (
   }
   if (doc.getSafe() < SAFE_MODE_SECURE) {
     if (diagramType === 'vegalite') {
-      diagramText = preprocessVegaLite(
+      diagramText = await preprocessVegaLite(
         diagramText,
         context,
         resource?.dir || '',
@@ -139,14 +133,14 @@ const processKroki = async (
       const plantUmlIncludePaths = doc.getAttribute(
         'kroki-plantuml-include-paths',
       )
-      diagramText = preprocessPlantUML(
+      diagramText = await preprocessPlantUML(
         diagramText,
         context,
         plantUmlIncludePaths,
         resource,
       )
     } else if (diagramType === 'structurizr') {
-      diagramText = preprocessStructurizr(diagramText, context, resource)
+      diagramText = await preprocessStructurizr(diagramText, context, resource)
     }
   }
   const blockId = attrs.id
@@ -191,7 +185,7 @@ const processKroki = async (
   const krokiClient = new KrokiClient(doc, httpClient)
   let block
   if (format === 'txt' || format === 'atxt' || format === 'utxt') {
-    const textContent = krokiClient.getTextContent(krokiDiagram)
+    const textContent = await krokiClient.getTextContent(krokiDiagram)
     block = processor.createBlock(parent, 'literal', textContent, blockAttrs)
   } else {
     let alt
@@ -202,7 +196,7 @@ const processKroki = async (
     } else {
       alt = 'Diagram'
     }
-    blockAttrs.target = createImageSrc(
+    blockAttrs.target = await createImageSrc(
       doc,
       krokiDiagram,
       attrs.target,
@@ -283,7 +277,7 @@ function diagramBlockMacro(name, context) {
       const role = attrs.role
       const diagramType = name
       try {
-        const diagramText = vfs.read(target)
+        const diagramText = await vfs.read(target)
         const resource = (typeof vfs.parse === 'function' &&
           vfs.parse(target)) || { dir: '' }
         return await processKroki(

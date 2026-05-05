@@ -4,7 +4,6 @@ import { describe, it } from 'node:test'
 import { fileURLToPath } from 'node:url'
 import { Worker } from 'node:worker_threads'
 import httpClient from '../../src/http/node-http.js'
-import { assertContains } from './utils.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
@@ -24,28 +23,34 @@ async function startServer(name) {
   })
 }
 
-describe('Synchronous HTTP client (unxhr)', () => {
-  it('should return throw error when the server returns a 500', async () => {
+describe('Async HTTP client (fetch)', () => {
+  it('should throw an error when the server returns a 500', async () => {
     const { worker, port } = await startServer('500-server.js')
     try {
-      httpClient.get(`http://localhost:${port}`, {}, 'utf8')
-      assert.fail('it should throw an error when the server returns a 500')
-    } catch (err) {
-      // it should include the response from the server in the error message
-      assertContains(err.message, '500 Something went bad!')
+      await assert.rejects(
+        () => httpClient.get(`http://localhost:${port}`, {}, 'utf8'),
+        (err) => {
+          assert.ok(err.message.includes('500'), err.message)
+          return true
+        },
+      )
     } finally {
       await worker.terminate()
     }
   })
-  it('should return throw an error when the server returns an empty response', async () => {
+  it('should throw an error when the server returns an empty response', async () => {
     const { worker, port } = await startServer('204-server.js')
     try {
-      httpClient.get(`http://localhost:${port}`, {}, 'utf8')
-      assert.fail(
-        'it should throw an error when the server returns an empty response',
+      await assert.rejects(
+        () => httpClient.get(`http://localhost:${port}`, {}, 'utf8'),
+        (err) => {
+          assert.ok(
+            err.message.includes('server returns an empty response'),
+            err.message,
+          )
+          return true
+        },
       )
-    } catch (err) {
-      assertContains(err.message, 'server returns an empty response')
     } finally {
       await worker.terminate()
     }
