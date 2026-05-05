@@ -1,10 +1,10 @@
 import assert from 'node:assert'
-import { describe, it } from 'node:test'
+import { describe, test } from 'node:test'
 import { Extensions } from '@asciidoctor/core'
 import asciidoctorKroki from '../src/asciidoctor-kroki.js'
 
 describe('Registration', () => {
-  it('should register the extension', () => {
+  test('registers the extension', () => {
     const registry = Extensions.create()
     assert.strictEqual(registry.hasBlockMacros(), false)
     asciidoctorKroki.register(registry)

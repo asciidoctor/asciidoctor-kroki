@@ -4,7 +4,7 @@ import fs from 'node:fs'
 import fsPromises from 'node:fs/promises'
 import os from 'node:os'
 import ospath, { dirname } from 'node:path'
-import { after, before, describe, it } from 'node:test'
+import { after, before, describe, test } from 'node:test'
 import { fileURLToPath } from 'node:url'
 import {
   convert,
@@ -79,7 +79,7 @@ describe('Conversion', () => {
         },
         { timeout: 60000 },
       )
-      it('should convert a diagram to an image', async () => {
+      test('converts a diagram to an image', async () => {
         const input = `
 [plantuml,alice-bob,svg,role=sequence]
 ....
@@ -103,7 +103,7 @@ alice -> bob
           '<div class="imageblock sequence kroki-format-svg kroki">',
         )
       })
-      it('should only pass diagram options as query parameters', async () => {
+      test('only passes diagram options as query parameters', async () => {
         const input = `
 [plantuml,alice-bob,svg,role=sequence,width=100,format=svg,link=https://asciidoc.org/,align=center,float=right,theme=bluegray]
 ....
@@ -125,7 +125,7 @@ alice -> bob: hello
           '<div class="imageblock right text-center sequence kroki-format-svg kroki">',
         )
       })
-      it('should convert a diagram with an absolute path to an image', async () => {
+      test('converts a diagram with an absolute path to an image', async () => {
         const file = fixturePath('alice.puml')
         const input = `plantuml::${file}[svg,role=sequence]`
         const registry = Extensions.create()
@@ -140,7 +140,7 @@ alice -> bob: hello
           '<div class="imageblock sequence kroki-format-svg kroki">',
         )
       })
-      it('should convert a PlantUML diagram and resolve include relative to base directory', async () => {
+      test('converts a PlantUML diagram and resolves include relative to base directory', async () => {
         const file = fixturePath('plantuml', 'alice-with-styles.puml')
         const diagramText = fs
           .readFileSync(file, 'utf8')
@@ -171,7 +171,7 @@ alice -> bob: hello
           '<div class="imageblock sequence kroki-format-svg kroki">',
         )
       })
-      it('should convert a PlantUML diagram and resolve include relative to diagram directory', async () => {
+      test('converts a PlantUML diagram and resolves include relative to diagram directory', async () => {
         const file = fixturePath('plantuml', 'hello.puml')
         const diagramText = fs
           .readFileSync(file, 'utf8')
@@ -202,7 +202,7 @@ alice -> bob: hello
           '<div class="imageblock sequence kroki-format-svg kroki">',
         )
       })
-      it('should convert a PlantUML diagram and resolve includes from configured kroki-plantuml-include-paths attribute with single path', async () => {
+      test('converts a PlantUML diagram and resolves includes from configured kroki-plantuml-include-paths attribute with single path', async () => {
         const file = fixturePath(
           'plantuml',
           'diagrams',
@@ -249,7 +249,7 @@ alice -> bob: hello
           '<div class="imageblock sequence kroki-format-svg kroki">',
         )
       })
-      it('should convert a PlantUML diagram and resolve includes from configured kroki-plantuml-include-paths attribute with multiple paths', async () => {
+      test('converts a PlantUML diagram and resolves includes from configured kroki-plantuml-include-paths attribute with multiple paths', async () => {
         const file = fixturePath(
           'plantuml',
           'diagrams',
@@ -293,7 +293,7 @@ alice -> bob: hello
           '<div class="imageblock sequence kroki-format-svg kroki">',
         )
       })
-      it('should convert a diagram with a relative path to an image', async () => {
+      test('converts a diagram with a relative path to an image', async () => {
         const input = `
 :imagesdir: .asciidoctor/kroki
 
@@ -318,7 +318,7 @@ plantuml::test/fixtures/alice.puml[png,role=sequence]
           `<img src=".asciidoctor/kroki/diag-${hash}.png" alt="Diagram">`,
         )
       })
-      it('should include the plantuml-config at the top of the diagram', async () => {
+      test('includes the plantuml-config at the top of the diagram', async () => {
         const file = fixturePath('alice.puml')
         const config = fixturePath('plantuml', 'include', 'base.iuml')
         const input = `plantuml::${file}[svg,role=sequence]`
@@ -340,7 +340,7 @@ plantuml::test/fixtures/alice.puml[png,role=sequence]
           '<div class="imageblock sequence kroki-format-svg kroki">',
         )
       })
-      it('should convert a file containing the macro form using a relative path to a diagram', async () => {
+      test('converts a file containing the macro form using a relative path to a diagram', async () => {
         const registry = Extensions.create()
         asciidoctorKroki.register(registry)
         const macroFile = fixturePath('alice.puml')
@@ -362,7 +362,7 @@ plantuml::test/fixtures/alice.puml[png,role=sequence]
           '<div class="imageblock sequence kroki-format-svg kroki">',
         )
       })
-      it('should download and embed an SVG image with kroki-fetch-diagram and kroki-data-uri', async () => {
+      test('downloads and embeds an SVG image with kroki-fetch-diagram and kroki-data-uri', async () => {
         const registry = Extensions.create()
         asciidoctorKroki.register(registry)
         const html = await convert(
@@ -381,7 +381,7 @@ plantuml::test/fixtures/alice.puml[png,role=sequence]
           '<img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d',
         )
       })
-      it('should create diagrams in imagesdir if kroki-fetch-diagram is set', async () => {
+      test('creates diagrams in imagesdir if kroki-fetch-diagram is set', async () => {
         const registry = Extensions.create()
         asciidoctorKroki.register(registry)
         const doc = await convertFile(fixturePath('fetch', 'doc.adoc'), {
@@ -403,7 +403,7 @@ plantuml::test/fixtures/alice.puml[png,role=sequence]
           deleteDirWithFiles(imageLocation)
         }
       })
-      it('should not fetch diagram (and write to disk) when safe mode is secure', async () => {
+      test('does not fetch diagram (and write to disk) when safe mode is secure', async () => {
         const input = `
 :imagesdir: .asciidoctor/kroki
 
@@ -427,7 +427,7 @@ Hello -> World
           `<img src="${krokiServerUrl}/plantuml/svg/eNrzSM3JyVfQtVMIzy_KSQEAIiQEqA==" alt="hello-world">`,
         )
       })
-      it('should download and save an image to a local folder', async () => {
+      test('downloads and saves an image to a local folder', async () => {
         const input = `
 :imagesdir: .asciidoctor/kroki
 
@@ -448,7 +448,7 @@ Hello -> World
           '<img src=".asciidoctor/kroki/hello-world-7a123c0b2909750ca5526554cd8620774ccf6cd9.svg" alt="hello-world">',
         )
       })
-      it('should download and save an image to a local folder using a generated unique name (md5sum)', async () => {
+      test('downloads and saves an image to a local folder using a generated unique name (md5sum)', async () => {
         const input = `
 :imagesdir: .asciidoctor/kroki
 
@@ -469,7 +469,7 @@ Hello -> World
         })
         assertContains(html, '<img src=".asciidoctor/kroki/diag-')
       })
-      it('should download and save an image to the images output directory (imagesoutdir attribute and imagesdir)', async () => {
+      test('downloads and saves an image to the images output directory (imagesoutdir attribute and imagesdir)', async () => {
         const input = `
 [plantuml,"",svg,role=sequence]
 ....
@@ -508,7 +508,7 @@ Hello -> World
           '<img src="../images/diag-7a123c0b2909750ca5526554cd8620774ccf6cd9.svg" alt="Diagram">',
         )
       })
-      it('should download and save an image to the output directory (to_dir option)', async () => {
+      test('downloads and saves an image to the output directory (to_dir option)', async () => {
         const input = `
 [plantuml,"",svg,role=sequence]
 ....
@@ -543,7 +543,7 @@ Hello -> World
           '<img src="diag-7a123c0b2909750ca5526554cd8620774ccf6cd9.svg" alt="Diagram">',
         )
       })
-      it('should download and save an image relative to the output directory (to_dir option and imagedir attribute)', async () => {
+      test('downloads and saves an image relative to the output directory (to_dir option and imagedir attribute)', async () => {
         const input = `
 [plantuml,"",svg,role=sequence]
 ....
@@ -578,7 +578,7 @@ Hello -> World
           '<img src="img/diag-7a123c0b2909750ca5526554cd8620774ccf6cd9.svg" alt="Diagram">',
         )
       })
-      it('should apply substitutions in diagram block', async () => {
+      test('applies substitutions in diagram block', async () => {
         const input = `
 :action: generates
 
@@ -607,7 +607,7 @@ blockdiag {
           `<img src="${krokiServerUrl}/blockdiag/svg/eNpdzDEKQjEQhOHeU4zpPYFoYesRxGJ9bwghMSsbUYJ4d10UCZbDfPynolOek0Q8FsDeNCestoisNLmy-Qg7R3Blcm5hPcr0ITdaB6X15fv-_YdJixo2CNHI2lmK3sPRA__RwV5SzV80ZAegJjXSyfMFptc71w==" alt="block-diag">`,
         )
       })
-      it('should apply attributes substitution in target', async () => {
+      test('applies attributes substitution in target', async () => {
         const input = `
 :fixtures-dir: test/fixtures
 :imagesdir: .asciidoctor/kroki
@@ -633,7 +633,7 @@ plantuml::{fixtures-dir}/alice.puml[svg,role=sequence]
           `<img src=".asciidoctor/kroki/diag-${hash}.svg" alt="Diagram">`,
         )
       })
-      it('should not download twice the same image with generated name', async () => {
+      test('does not download twice the same image with generated name', async () => {
         const input = `
 :imagesdir: .asciidoctor/kroki
 
@@ -663,7 +663,7 @@ AsciiDoc -> HTML5: convert
           http.get.restore()
         }
       })
-      it('should create a literal block when format is txt', async () => {
+      test('creates a literal block when format is txt', async () => {
         const input = `
 [plantuml,format=txt]
 ....
@@ -696,7 +696,7 @@ Bob->Alice : hello
           http.get.restore()
         }
       })
-      it('should embed an SVG image with built-in allow-uri-read and data-uri', async () => {
+      test('embeds an SVG image with built-in allow-uri-read and data-uri', async () => {
         const input = `
 :imagesdir: .asciidoctor/kroki
 
@@ -718,7 +718,7 @@ vegalite::test/fixtures/chart.vlite[svg,role=chart]
           '<img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz',
         )
       })
-      it('should convert a PacketDiag diagram to an image', async () => {
+      test('converts a PacketDiag diagram to an image', async () => {
         const input = `
 [packetdiag]
 ....
@@ -760,7 +760,7 @@ packetdiag {
         )
         assertContains(html, '<div class="imageblock kroki">')
       })
-      it('should convert a RackDiag diagram to an image', async () => {
+      test('converts a RackDiag diagram to an image', async () => {
         const input = `
 [rackdiag]
 ....
@@ -790,7 +790,7 @@ rackdiag {
         )
         assertContains(html, '<div class="imageblock kroki">')
       })
-      it('should convert a Vega diagram to an image', async () => {
+      test('converts a Vega diagram to an image', async () => {
         const input = `
 [vega]
 ....
@@ -905,7 +905,7 @@ rackdiag {
         )
         assertContains(html, '<div class="imageblock kroki">')
       })
-      it('should convert a Vega-Lite diagram to an image', async () => {
+      test('converts a Vega-Lite diagram to an image', async () => {
         const input = `
 [vegalite]
 ....
@@ -1054,7 +1054,7 @@ rackdiag {
         )
         assertContains(html, '<div class="imageblock kroki">')
       })
-      it('should inline a referenced data file for a Vega-Lite diagram and convert to an image', async () => {
+      test('inlines a referenced data file for a Vega-Lite diagram and converts to an image', async () => {
         const input = `
 [vegalite]
 ....
@@ -1121,7 +1121,7 @@ rackdiag {
         )
         assertContains(html, '<div class="imageblock kroki">')
       })
-      it('should convert a WaveDrom diagram to an image', async () => {
+      test('converts a WaveDrom diagram to an image', async () => {
         const input = `
 [wavedrom]
 ....
@@ -1148,7 +1148,7 @@ rackdiag {
         )
         assertContains(html, '<div class="imageblock kroki">')
       })
-      it('should convert a BPMN diagram to an image', async () => {
+      test('converts a BPMN diagram to an image', async () => {
         const input = `
 [bpmn]
 ....
@@ -1310,7 +1310,7 @@ rackdiag {
         )
         assertContains(html, '<div class="imageblock kroki">')
       })
-      it('should convert a Bytefield diagram to an image', async () => {
+      test('converts a Bytefield diagram to an image', async () => {
         const input = `
 [bytefield]
 ....
@@ -1336,7 +1336,7 @@ rackdiag {
         )
         assertContains(html, '<div class="imageblock kroki">')
       })
-      it('should convert a Pikchr diagram to an image', async () => {
+      test('converts a Pikchr diagram to an image', async () => {
         const input = `
 [pikchr]
 ....
@@ -1392,7 +1392,7 @@ line up $r*0.45 right $r*0.45 then right
         )
         assertContains(html, '<div class="imageblock kroki">')
       })
-      it('should convert a Diagrams.net diagram to an image', async () => {
+      test('converts a Diagrams.net diagram to an image', async () => {
         const input = `
 [diagramsnet]
 ....
@@ -1429,7 +1429,7 @@ line up $r*0.45 right $r*0.45 then right
         )
         assertContains(html, '<div class="imageblock kroki">')
       })
-      it('should convert a Vega-Lite diagram and resolve data.url relative to the diagram file', async () => {
+      test('converts a Vega-Lite diagram and resolves data.url relative to the diagram file', async () => {
         const registry = Extensions.create()
         asciidoctorKroki.register(registry)
         const html = await convertFile(fixturePath('docs', 'data.adoc'), {
@@ -1461,7 +1461,7 @@ line up $r*0.45 right $r*0.45 then right
           `${krokiServerUrl}/vegalite/svg/${encodeText(diagramText)}`,
         )
       })
-      it('should convert a WireViz diagram to an image', async () => {
+      test('converts a WireViz diagram to an image', async () => {
         const input = `
 [wireviz]
 ....
@@ -1507,7 +1507,7 @@ connections:
       })
 
       describe('Diagram options', () => {
-        it('should pass diagram options as query params', async () => {
+        test('passes diagram options as query params', async () => {
           const input = `
 plantuml::test/fixtures/alice.puml[svg,opts=inline,theme=bluegray]
 `
@@ -1540,7 +1540,7 @@ ${svg}
 </div>`,
           )
         })
-        it('should pass diagram options as HTTP headers', async () => {
+        test('passes diagram options as HTTP headers', async () => {
           const input = `
 plantuml::test/fixtures/alice.puml[svg,opts=inline,theme=bluegray]
 `
@@ -1642,7 +1642,7 @@ ${svg}
           pageAttr,
           blockAttr,
         } of defaultOptionsFixtures) {
-          it(`should read diagram text, ${format}, ${formatLocation}`, async () => {
+          test(`reads diagram text, ${format}, ${formatLocation}`, async () => {
             const input = `${pageAttr}
 
 [plantuml${blockAttr}]
@@ -1693,7 +1693,7 @@ paragraph
           },
         ]
         for (const { location, pageAttr, blockAttr } of inlineOptionsFixtures) {
-          it(`should inline (via ${location}) an SVG image with built-in allow-uri-read`, async () => {
+          test(`inlines (via ${location}) an SVG image with built-in allow-uri-read`, async () => {
             const input = `
 :imagesdir: .asciidoctor/kroki
 ${pageAttr}
@@ -1723,7 +1723,7 @@ ${svg}
 </div>`,
             )
           })
-          it(`should inline (via ${location}) an SVG image with kroki-fetch-diagram`, async () => {
+          test(`inlines (via ${location}) an SVG image with kroki-fetch-diagram`, async () => {
             const input = `
 :imagesdir: .asciidoctor/kroki
 ${pageAttr}
@@ -1776,7 +1776,7 @@ bytefield::test/fixtures/simple.bytefield[svg,role=bytefield${blockAttr}]
           pageAttr,
           blockAttr,
         } of interactiveOptionsFixtures) {
-          it.skip(`should include an interactive (via ${location}) SVG image with built-in allow-uri-read and data-uri`, {
+          test.skip(`includes an interactive (via ${location}) SVG image with built-in allow-uri-read and data-uri`, {
             todo: 'regression in Asciidoctor.js 4.0.0-alpha.1',
           }, async () => {
             const input = `
@@ -1801,7 +1801,7 @@ vegalite::test/fixtures/chart.vlite[svg,role=chart${blockAttr}]
               '<object type="image/svg+xml" data="data:image/svg+xml;base64,PHN2Zy',
             )
           })
-          it(`should include an interactive (via ${location}) SVG image with kroki-fetch-diagram`, {
+          test(`includes an interactive (via ${location}) SVG image with kroki-fetch-diagram`, {
             todo: 'regression in Asciidoctor.js 4.0.0-alpha.1',
           }, async () => {
             const input = `

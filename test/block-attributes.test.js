@@ -1,11 +1,11 @@
 import assert from 'node:assert'
-import { describe, it } from 'node:test'
+import { describe, test } from 'node:test'
 import { convert, Extensions } from '@asciidoctor/core'
 import asciidoctorKroki from '../src/asciidoctor-kroki.js'
 
 describe('Block attributes', { timeout: 30000 }, () => {
   describe('When extension is registered', () => {
-    it('should convert a diagram with an explicit width and height', async () => {
+    test('converts a diagram with an explicit width and height', async () => {
       const input = `
 [plantuml,alice-bob,svg,width=100%,height=100%]
 ....
@@ -24,7 +24,7 @@ alice -> bob
 </div>`,
       )
     })
-    it('should convert a diagram with a title', async () => {
+    test('converts a diagram with a title', async () => {
       const input = `
 .alice and bob
 [plantuml,alice-bob,svg]
@@ -45,7 +45,7 @@ alice -> bob
 </div>`,
       )
     })
-    it('should convert a diagram with a caption', async () => {
+    test('converts a diagram with a caption', async () => {
       const input = `
 .alice and bob
 [plantuml,alice-bob,svg,caption="Figure A. "]
@@ -66,7 +66,7 @@ alice -> bob
 </div>`,
       )
     })
-    it('should convert a diagram with the float attribute', async () => {
+    test('converts a diagram with the float attribute', async () => {
       const input = `
 [plantuml,alice-bob,svg,float=left]
 ....
@@ -85,7 +85,7 @@ alice -> bob
 </div>`,
       )
     })
-    it('should automatically increment caption if diagrams has title and caption is enabled', async () => {
+    test('automatically increments caption if diagrams has title and caption is enabled', async () => {
       const input = `
 .alice and bob
 [plantuml,alice-bob,svg]

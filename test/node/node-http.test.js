@@ -1,6 +1,6 @@
 import assert from 'node:assert'
 import ospath, { dirname } from 'node:path'
-import { describe, it } from 'node:test'
+import { describe, test } from 'node:test'
 import { fileURLToPath } from 'node:url'
 import { Worker } from 'node:worker_threads'
 import httpClient from '../../src/http/http-client.js'
@@ -24,7 +24,7 @@ async function startServer(name) {
 }
 
 describe('Async HTTP client (fetch)', () => {
-  it('should throw an error when the server returns a 500', async () => {
+  test('throws an error when the server returns a 500', async () => {
     const { worker, port } = await startServer('500-server.js')
     try {
       await assert.rejects(
@@ -38,7 +38,7 @@ describe('Async HTTP client (fetch)', () => {
       await worker.terminate()
     }
   })
-  it('should throw an error when the server returns an empty response', async () => {
+  test('throws an error when the server returns an empty response', async () => {
     const { worker, port } = await startServer('204-server.js')
     try {
       await assert.rejects(
