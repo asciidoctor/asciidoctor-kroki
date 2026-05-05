@@ -1,7 +1,11 @@
 export function createHash() {
   return {
-    update() { return this },
-    digest() { return '' },
+    update() {
+      return this
+    },
+    digest() {
+      return ''
+    },
   }
 }
 

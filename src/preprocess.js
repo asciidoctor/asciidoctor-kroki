@@ -258,7 +258,7 @@ function parseStructurizrTarget(value, tokens) {
   for (const token of tokens) {
     const i = value.indexOf(token)
     if (i > 0 && value.charAt(i - 1) !== '\\') {
-      return { url: value.substr(0, i).trim(), comment: value.substr(i).trim() }
+      return { url: value.slice(0, i).trim(), comment: value.slice(i).trim() }
     }
   }
   return { url: value, comment: '' }
@@ -274,7 +274,7 @@ function parseTarget(value) {
         value.charAt(i - 1) === ' ' &&
         value.charAt(i - 2) !== '\\'
       ) {
-        return { url: value.substr(0, i - 1).trim(), comment: value.substr(i) }
+        return { url: value.slice(0, i - 1).trim(), comment: value.slice(i) }
       }
       // /' multi-lines comment '/
       if (
@@ -283,8 +283,8 @@ function parseTarget(value) {
         value.charAt(i - 2) !== '\\'
       ) {
         return {
-          url: value.substr(0, i - 1).trim(),
-          comment: value.substr(i - 1),
+          url: value.slice(0, i - 1).trim(),
+          comment: value.slice(i - 1),
         }
       }
     }

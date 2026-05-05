@@ -18,7 +18,6 @@ const PATH_STUBS = new Map([
 
 // Stub code indexed by bare module specifier
 const ID_STUBS = new Map([
-  ['unxhr', 'export const XMLHttpRequest = undefined; export default {}'],
   ['node:fs', 'export default {}'],
   ['node:os', 'export default {}'],
   ['node:url', 'export const fileURLToPath = (u) => u; export const pathToFileURL = (p) => p; export default {}'],
@@ -84,7 +83,6 @@ export default defineConfig([
       /^node:/,
       'json5',
       'pako',
-      'unxhr',
     ],
     plugins: [
       json(),

@@ -22,7 +22,10 @@ export function fixturePath(...paths) {
 }
 
 export function readFixture(...paths) {
-  return fs.readFileSync(ospath.join(__dirname, '..', 'fixtures', ...paths), 'utf-8')
+  return fs.readFileSync(
+    ospath.join(__dirname, '..', 'fixtures', ...paths),
+    'utf-8',
+  )
 }
 
 export function assertContains(actual, expected) {
