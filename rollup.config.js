@@ -13,7 +13,6 @@ const PATH_STUBS = new Map([
   ['/src/node-fs.js', 'export default {}; export function resolveVfs(vfs) { return vfs || {} }'],
   ['/src/fetch.js', "export default { save: () => { throw new Error('kroki-fetch-diagram is not supported in the browser') } }"],
   ['/src/antora-adapter.js', 'export default function () {}'],
-  ['/src/http/node-http.js', 'export default { get: () => {}, post: () => {} }'],
 ])
 
 // Stub code indexed by bare module specifier

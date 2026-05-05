@@ -2,7 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import url from 'node:url'
 
-import http from './http/node-http.js'
+import http from './http/http-client.js'
 
 const nodefs = {
   add: (image) => {

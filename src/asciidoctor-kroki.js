@@ -1,8 +1,7 @@
 // @ts-check
 
 import fetch from './fetch.js'
-import browserHttp from './http/browser-http.js'
-import nodeHttp from './http/node-http.js'
+import httpClient from './http/http-client.js'
 import { KrokiClient, KrokiDiagram } from './kroki-client.js'
 import fs from './node-fs.js'
 import {
@@ -159,7 +158,6 @@ const processKroki = async (
     ),
   )
   const krokiDiagram = new KrokiDiagram(diagramType, format, diagramText, opts)
-  const httpClient = isBrowser() ? browserHttp : nodeHttp
   const krokiClient = new KrokiClient(doc, httpClient)
   let block
   if (format === 'txt' || format === 'atxt' || format === 'utxt') {

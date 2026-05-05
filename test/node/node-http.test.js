@@ -3,7 +3,7 @@ import ospath, { dirname } from 'node:path'
 import { describe, it } from 'node:test'
 import { fileURLToPath } from 'node:url'
 import { Worker } from 'node:worker_threads'
-import httpClient from '../../src/http/node-http.js'
+import httpClient from '../../src/http/http-client.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
