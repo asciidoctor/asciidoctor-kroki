@@ -5,7 +5,7 @@ import asciidoctorKroki from '../src/asciidoctor-kroki.js'
 
 describe('Block attributes', { timeout: 30000 }, () => {
   describe('When extension is registered', () => {
-    test('converts a diagram with an explicit width and height', async () => {
+    test('sets width and height attributes on the img element', async () => {
       const input = `
 [plantuml,alice-bob,svg,width=100%,height=100%]
 ....
@@ -24,7 +24,7 @@ alice -> bob
 </div>`,
       )
     })
-    test('converts a diagram with a title', async () => {
+    test('renders the block title as a numbered figure caption', async () => {
       const input = `
 .alice and bob
 [plantuml,alice-bob,svg]
@@ -45,7 +45,7 @@ alice -> bob
 </div>`,
       )
     })
-    test('converts a diagram with a caption', async () => {
+    test('uses a custom caption attribute as the figure caption prefix', async () => {
       const input = `
 .alice and bob
 [plantuml,alice-bob,svg,caption="Figure A. "]
@@ -66,7 +66,7 @@ alice -> bob
 </div>`,
       )
     })
-    test('converts a diagram with the float attribute', async () => {
+    test('adds the float direction as a CSS class on the imageblock wrapper', async () => {
       const input = `
 [plantuml,alice-bob,svg,float=left]
 ....
@@ -85,7 +85,7 @@ alice -> bob
 </div>`,
       )
     })
-    test('automatically increments caption if diagrams has title and caption is enabled', async () => {
+    test('assigns sequential figure numbers to multiple titled diagrams', async () => {
       const input = `
 .alice and bob
 [plantuml,alice-bob,svg]

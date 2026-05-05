@@ -14,58 +14,58 @@ let krokiServerUrl
 
 describe('Kroki HTTP client', { timeout: 30000 }, () => {
   describe('kroki-http-method attribute', () => {
-    test('uses post method when kroki-http-method value is post', async () => {
+    test('forces POST when kroki-http-method is "post"', async () => {
       const doc = await load('', {
         attributes: { 'kroki-http-method': 'post' },
       })
       const krokiClient = new KrokiClient(doc, httpClient)
       assert.strictEqual(krokiClient.method, 'post')
     })
-    test('uses get method when kroki-http-method value is get', async () => {
+    test('forces GET when kroki-http-method is "get"', async () => {
       const doc = await load('', {
         attributes: { 'kroki-http-method': 'get' },
       })
       const krokiClient = new KrokiClient(doc, httpClient)
       assert.strictEqual(krokiClient.method, 'get')
     })
-    test('uses adaptive method when kroki-http-method value is invalid', async () => {
+    test('falls back to adaptive when kroki-http-method has an invalid value', async () => {
       const doc = await load('', {
         attributes: { 'kroki-http-method': 'delete' },
       })
       const krokiClient = new KrokiClient(doc, httpClient)
       assert.strictEqual(krokiClient.method, 'adaptive')
     })
-    test('uses adaptive method when kroki-http-method is adaptive', async () => {
+    test('uses adaptive when kroki-http-method is "adaptive"', async () => {
       const doc = await load('', {
         attributes: { 'kroki-http-method': 'adaptive' },
       })
       const krokiClient = new KrokiClient(doc, httpClient)
       assert.strictEqual(krokiClient.method, 'adaptive')
     })
-    test('uses adaptive method when kroki-http-method is undefined', async () => {
+    test('defaults to adaptive when kroki-http-method is not set', async () => {
       const doc = await load('')
       const krokiClient = new KrokiClient(doc, httpClient)
       assert.strictEqual(krokiClient.method, 'adaptive')
     })
-    test('uses adaptive method when kroki-http-method is undefined', async () => {
+    test('defaults to adaptive when kroki-http-method is not set', async () => {
       const doc = await load('')
       const krokiClient = new KrokiClient(doc, httpClient)
       assert.strictEqual(krokiClient.method, 'adaptive')
     })
   })
   describe('kroki-max-uri-length attribute', () => {
-    test('uses the default value (4000) when kroki-max-uri-length is undefined', async () => {
+    test('defaults to 4000 when kroki-max-uri-length is not set', async () => {
       const doc = await load('')
       const krokiClient = new KrokiClient(doc, httpClient)
       assert.strictEqual(krokiClient.maxUriLength, 4000)
     })
-    test('uses the default value (4000) when kroki-max-uri-length is invalid', async () => {
+    test('falls back to 4000 when kroki-max-uri-length is not a number', async () => {
       const doc = await load('')
       doc.setAttribute('kroki-max-uri-length', 'foo')
       const krokiClient = new KrokiClient(doc, httpClient)
       assert.strictEqual(krokiClient.maxUriLength, 4000)
     })
-    test('uses a custom value when kroki-max-uri-length is a number', async () => {
+    test('uses the numeric kroki-max-uri-length value', async () => {
       const doc = await load('')
       doc.setAttribute('kroki-max-uri-length', '8000')
       const krokiClient = new KrokiClient(doc, httpClient)
@@ -90,7 +90,7 @@ describe('Kroki HTTP client', { timeout: 30000 }, () => {
         },
         { timeout: 60000 },
       )
-      test.skip('gets an image with GET request if the URI length is <= 4000', async () => {
+      test.skip('uses GET when the diagram URI length is <= 4000', async () => {
         const doc = await load('', {
           attributes: { 'kroki-server-url': krokiServerUrl },
         })
@@ -110,7 +110,7 @@ describe('Kroki HTTP client', { timeout: 30000 }, () => {
           .replace(/\n/, '')
         assert.strictEqual(image, expected)
       })
-      test.skip('gets an image with POST request if the URI length is > 4000', async () => {
+      test.skip('uses POST when the diagram URI length is > 4000', async () => {
         const doc = await load('', {
           attributes: { 'kroki-server-url': krokiServerUrl },
         })
@@ -130,7 +130,7 @@ describe('Kroki HTTP client', { timeout: 30000 }, () => {
           .replace(/\n/, '')
         assert.strictEqual(image, expected)
       })
-      test('gets an image with POST request if the URI length is greater than the value configured', async () => {
+      test('uses POST when the diagram URI exceeds kroki-max-uri-length', async () => {
         const doc = await load('')
         doc.setAttribute('kroki-max-uri-length', '10')
         const krokiClient = new KrokiClient(doc, {
@@ -147,7 +147,7 @@ describe('Kroki HTTP client', { timeout: 30000 }, () => {
         const image = await krokiClient.getImage(krokiDiagram)
         assert.strictEqual(image, 'POST https://kroki.io/type/format - text')
       })
-      test('gets an image with GET request if the URI length is lower or equals than the value configured', async () => {
+      test('uses GET when the diagram URI is within kroki-max-uri-length', async () => {
         const doc = await load('')
         doc.setAttribute('kroki-max-uri-length', '11')
         const krokiClient = new KrokiClient(doc, {

@@ -43,7 +43,7 @@ const fixturesBaseUrl = window.location.origin
 
 describe('Conversion', () => {
   describe('When extension is registered', () => {
-    test('converts a diagram to an image', async () => {
+    test('generates a kroki.io URL for an inline PlantUML block', async () => {
       const input = `
 [plantuml,alice-bob,png,role=sequence]
 ....
@@ -67,7 +67,7 @@ alice -> bob
       )
     })
 
-    test('converts a diagram with an absolute path to an image', async () => {
+    test('reads a block macro file via the custom VFS and encodes it in the Kroki URL', async () => {
       const fixtureUrl = `${fixturesBaseUrl}/fixtures/alice.puml`
       const input = `plantuml::${fixtureUrl}[svg,role=sequence]`
       const registry = Extensions.create()
@@ -92,7 +92,7 @@ alice -> bob
       )
     }, 5000)
 
-    test('converts a diagram with a relative path to an image', async () => {
+    test('resolves a block macro relative URL using the custom VFS', async () => {
       const input = 'plantuml::../fixtures/alice.puml[svg,role=sequence]'
       const registry = Extensions.create()
       asciidoctorKroki.register(registry, {

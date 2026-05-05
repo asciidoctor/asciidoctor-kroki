@@ -4,7 +4,7 @@ import { Extensions } from '@asciidoctor/core'
 import asciidoctorKroki from '../src/asciidoctor-kroki.js'
 
 describe('Registration', () => {
-  test('registers the extension', () => {
+  test('registers block macros for all supported diagram types', () => {
     const registry = Extensions.create()
     assert.strictEqual(registry.hasBlockMacros(), false)
     asciidoctorKroki.register(registry)
