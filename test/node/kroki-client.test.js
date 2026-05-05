@@ -12,11 +12,13 @@ import { readFixture } from './utils.js'
 let container
 let krokiServerUrl
 
-describe('Kroki HTTP client — Adaptive mode with real server', { timeout: 30000 }, () => {
+describe('Kroki HTTP client — Adaptive mode with real server', {
+  timeout: 30000,
+}, () => {
   if (os.platform() !== 'win32') {
     before(
       async () => {
-        container = await new GenericContainer('yuzutech/kroki:0.28.0')
+        container = await new GenericContainer('yuzutech/kroki:0.30.1')
           .withExposedPorts(8000)
           .start()
         krokiServerUrl = `http://${container.getHost()}:${container.getMappedPort(8000)}`
@@ -31,7 +33,7 @@ describe('Kroki HTTP client — Adaptive mode with real server', { timeout: 3000
       { timeout: 60000 },
     )
 
-    test.skip('uses GET when the diagram URI length is <= 4000', async () => {
+    test('uses GET when the diagram URI length is <= 4000', async () => {
       const doc = await load('', {
         attributes: { 'kroki-server-url': krokiServerUrl },
       })
@@ -42,8 +44,7 @@ describe('Kroki HTTP client — Adaptive mode with real server', { timeout: 3000
         readFixture('chart.vlite'),
         {},
       )
-      const image = krokiClient
-        .getImage(krokiDiagram)
+      const image = (await krokiClient.getImage(krokiDiagram))
         .replace(/\r/, '')
         .replace(/\n/, '')
       const expected = readFixture('expected', 'chart.svg')
@@ -52,7 +53,7 @@ describe('Kroki HTTP client — Adaptive mode with real server', { timeout: 3000
       assert.strictEqual(image, expected)
     })
 
-    test.skip('uses POST when the diagram URI length is > 4000', async () => {
+    test('uses POST when the diagram URI length is > 4000', async () => {
       const doc = await load('', {
         attributes: { 'kroki-server-url': krokiServerUrl },
       })
@@ -63,8 +64,7 @@ describe('Kroki HTTP client — Adaptive mode with real server', { timeout: 3000
         readFixture('cars-repeated-charts.vlite'),
         {},
       )
-      const image = krokiClient
-        .getImage(krokiDiagram)
+      const image = (await krokiClient.getImage(krokiDiagram))
         .replace(/\r/, '')
         .replace(/\n/, '')
       const expected = readFixture('expected', 'cars-repeated-charts.svg')
