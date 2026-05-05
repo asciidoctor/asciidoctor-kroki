@@ -8,6 +8,7 @@ const shim = (name) => join(__dirname, `test/shims/${name}.js`)
 
 export default defineConfig({
   test: {
+    globalSetup: [join(__dirname, 'test/globalSetup.js')],
     browser: {
       enabled: true,
       provider: playwright(),
