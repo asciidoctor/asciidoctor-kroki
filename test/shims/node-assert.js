@@ -30,10 +30,10 @@ function match(actual, pattern, message) {
 function doesNotMatch(actual, pattern, message) {
   expect(actual, message).not.toMatch(pattern)
 }
-function throws(fn, errorOrMessage, message) {
+function throws(fn, _errorOrMessage, _message) {
   expect(fn).toThrow()
 }
-async function rejects(fnOrPromise, errorOrMessage, message) {
+async function rejects(fnOrPromise, _errorOrMessage, _message) {
   const p = typeof fnOrPromise === 'function' ? fnOrPromise() : fnOrPromise
   await expect(p).rejects.toThrow()
 }
@@ -55,17 +55,17 @@ assert.throws = throws
 assert.rejects = rejects
 
 export {
-  equal,
   deepEqual,
-  strictEqual,
   deepStrictEqual,
-  notEqual,
-  notDeepStrictEqual,
-  ok,
+  doesNotMatch,
+  equal,
   fail,
   match,
-  doesNotMatch,
-  throws,
+  notDeepStrictEqual,
+  notEqual,
+  ok,
   rejects,
+  strictEqual,
+  throws,
 }
 export default assert

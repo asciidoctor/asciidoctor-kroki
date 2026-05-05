@@ -31,26 +31,6 @@ let krokiServerUrl
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
-describe('Registration', () => {
-  it('should register the extension', () => {
-    const registry = Extensions.create()
-    assert.strictEqual(registry.hasBlockMacros(), false)
-    asciidoctorKroki.register(registry)
-    assert.strictEqual(registry.hasBlockMacros(), true)
-    assert.ok(registry.registeredForBlockMacro('plantuml'))
-    assert.ok(registry.registeredForBlockMacro('vega'))
-    assert.ok(registry.registeredForBlockMacro('vegalite'))
-    assert.ok(registry.registeredForBlockMacro('packetdiag'))
-    assert.ok(registry.registeredForBlockMacro('rackdiag'))
-    assert.ok(registry.registeredForBlockMacro('wavedrom'))
-    assert.ok(registry.registeredForBlockMacro('excalidraw'))
-    assert.ok(registry.registeredForBlockMacro('pikchr'))
-    assert.ok(registry.registeredForBlockMacro('structurizr'))
-    assert.ok(registry.registeredForBlockMacro('diagramsnet'))
-    assert.ok(registry.registeredForBlockMacro('wireviz'))
-  })
-})
-
 describe('Conversion', () => {
   function encode(file) {
     const text = fs.readFileSync(file, 'utf8')

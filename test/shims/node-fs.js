@@ -1,7 +1,7 @@
 function notSupported(name) {
   return () => {
     throw new Error(
-      `node:fs ${name}() is not supported in browser environments`
+      `node:fs ${name}() is not supported in browser environments`,
     )
   }
 }

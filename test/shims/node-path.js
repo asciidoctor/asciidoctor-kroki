@@ -60,4 +60,6 @@ const path = {
   sep,
   delimiter,
 }
+
+export const posix = path
 export default path
