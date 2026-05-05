@@ -18,7 +18,7 @@ import pako from 'pako'
 import sinon from 'sinon'
 import { GenericContainer } from 'testcontainers'
 import asciidoctorKroki from '../../src/asciidoctor-kroki.js'
-import http from '../../src/http/node-http.js'
+import http from '../../src/http/http-client.js'
 import {
   assertContains,
   deleteDirWithFiles,

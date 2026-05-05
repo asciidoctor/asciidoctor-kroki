@@ -5,7 +5,7 @@ import os from 'node:os'
 import { after, before, describe, it } from 'node:test'
 import { load } from '@asciidoctor/core'
 import { GenericContainer } from 'testcontainers'
-import httpClient from '../../src/http/node-http.js'
+import httpClient from '../../src/http/http-client.js'
 import { KrokiClient, KrokiDiagram } from '../../src/kroki-client.js'
 import { readFixture } from './utils.js'
 
