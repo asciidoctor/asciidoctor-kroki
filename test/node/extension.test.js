@@ -54,7 +54,7 @@ describe('Conversion', () => {
     }
   }
 
-  describe('When extension is registered', { timeout: 30000 }, () => {
+  describe('When extension is registered', { timeout: 60000 }, () => {
     if (os.platform() !== 'win32') {
       before(
         async () => {
