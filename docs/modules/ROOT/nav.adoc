@@ -1,4 +1,3 @@
-.Asciidoctor Kroki
 * xref:index.adoc[Overview]
 * xref:install.adoc[Install]
 * xref:usage.adoc[Usage]
