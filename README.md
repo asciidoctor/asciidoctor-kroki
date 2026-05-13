@@ -10,7 +10,7 @@ An extension for [Asciidoctor.js](https://github.com/asciidoctor/asciidoctor.js)
 
 ## Documentation
 
-Full documentation is available at **https://docs.asciidoctor.org/asciidoctor-kroki/latest**.
+Full documentation is available at **https://docs.asciidoctor.org/kroki-extension/latest**.
 
 ## Quick start
 

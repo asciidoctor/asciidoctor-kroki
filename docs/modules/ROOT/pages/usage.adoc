@@ -22,7 +22,7 @@ digraph foo {
 ----
 ....
 
-image::https://kroki.io/graphviz/png/eNo9jjEOwjAMRfee4itzGKBzuEjVIaldWsnEVQBBVXp3AqQdLFlP_32bxkvy04BeFUsFRCVGc7vPwi7pIxJTW_Ax88FP7IK-NnZC048inYomN7OIPi3-tim6_QaYTOY_m0Z_1bi31lpr4k4TWYgPLM4s8Hgj5Omwmrbanzicy-Wy1NX6AUS2QVQ=[GraphViz diagram example]
+image::https://kroki.io/graphviz/svg/eNo9jjEOwjAMRfee4itzGKBzuEjVIaldWsnEVQBBVXp3AqQdLFlP_32bxkvy04BeFUsFRCVGc7vPwi7pIxJTW_Ax88FP7IK-NnZC048inYomN7OIPi3-tim6_QaYTOY_m0Z_1bi31ltr4k4TWYgPLM4s8Hgj5Omwmrbanzicy-Wy1NX6AUS2QVQ=[]
 
 == Macro form
 
@@ -43,7 +43,7 @@ Use the `include` directive to embed a diagram file inline:
 ....
 [plantuml,alice-bob,svg,role=sequence]
 ----
-include::alice-bob.puml[]
+\include::alice-bob.puml[]
 ----
 ....
 
@@ -67,6 +67,6 @@ vegalite::partial$chart.vlite[svg,role=chart,opts=interactive]
 ....
 [plantuml,alice-bob,svg,role=sequence]
 ----
-include::partial$alice-bob.puml[]
+\include::partial$alice-bob.puml[]
 ----
 ....
