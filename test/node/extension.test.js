@@ -54,7 +54,7 @@ describe('Conversion', () => {
     }
   }
 
-  describe('When extension is registered', { timeout: 60000 }, () => {
+  describe('When extension is registered', { timeout: 10000 }, () => {
     if (os.platform() !== 'win32') {
       before(
         async () => {
@@ -441,11 +441,19 @@ Hello -> World
         const html = await convert(input, {
           safe: 'safe',
           extension_registry: registry,
-          attributes: { 'kroki-fetch-diagram': true },
+          attributes: {
+            'kroki-fetch-diagram': true,
+            'kroki-server-url': krokiServerUrl,
+          },
         })
+        const hash = createHash('sha1')
+          .update(
+            `${krokiServerUrl}/plantuml/svg/${encodeText('Hello -> World')}`,
+          )
+          .digest('hex')
         assertContains(
           html,
-          '<img src=".asciidoctor/kroki/hello-world-7a123c0b2909750ca5526554cd8620774ccf6cd9.svg" alt="hello-world">',
+          `<img src=".asciidoctor/kroki/hello-world-${hash}.svg" alt="hello-world">`,
         )
       })
       test('generates a diag-<hash> filename when the block target is empty', async () => {
@@ -483,6 +491,7 @@ Hello -> World
           extension_registry: registry,
           attributes: {
             'kroki-fetch-diagram': true,
+            'kroki-server-url': krokiServerUrl,
             imagesoutdir: '.asciidoctor/kroki/images',
             imagesdir: '../images',
           },
@@ -503,9 +512,14 @@ Hello -> World
           ),
           'utf8',
         )
+        const hash = createHash('sha1')
+          .update(
+            `${krokiServerUrl}/plantuml/svg/${encodeText('Hello -> World')}`,
+          )
+          .digest('hex')
         assertContains(
           html,
-          '<img src="../images/diag-7a123c0b2909750ca5526554cd8620774ccf6cd9.svg" alt="Diagram">',
+          `<img src="../images/diag-${hash}.svg" alt="Diagram">`,
         )
       })
       test('saves the fetched image at the root of to_dir when imagesdir is not set', async () => {
@@ -520,7 +534,10 @@ Hello -> World
         await convert(input, {
           safe: 'safe',
           extension_registry: registry,
-          attributes: { 'kroki-fetch-diagram': true },
+          attributes: {
+            'kroki-fetch-diagram': true,
+            'kroki-server-url': krokiServerUrl,
+          },
           to_dir: '.asciidoctor/kroki/to_dir',
           to_file: 'to-dir-option.html',
           standalone: false,
@@ -538,10 +555,12 @@ Hello -> World
           ),
           'utf8',
         )
-        assertContains(
-          html,
-          '<img src="diag-7a123c0b2909750ca5526554cd8620774ccf6cd9.svg" alt="Diagram">',
-        )
+        const hash = createHash('sha1')
+          .update(
+            `${krokiServerUrl}/plantuml/svg/${encodeText('Hello -> World')}`,
+          )
+          .digest('hex')
+        assertContains(html, `<img src="diag-${hash}.svg" alt="Diagram">`)
       })
       test('saves the fetched image inside imagesdir relative to to_dir', async () => {
         const input = `
@@ -555,7 +574,11 @@ Hello -> World
         await convert(input, {
           safe: 'safe',
           extension_registry: registry,
-          attributes: { 'kroki-fetch-diagram': true, imagesdir: 'img' },
+          attributes: {
+            'kroki-fetch-diagram': true,
+            'kroki-server-url': krokiServerUrl,
+            imagesdir: 'img',
+          },
           to_dir: '.asciidoctor/kroki/to_dir',
           to_file: 'to-dir-option-with-imagedir-attr.html',
           standalone: false,
@@ -573,10 +596,12 @@ Hello -> World
           ),
           'utf8',
         )
-        assertContains(
-          html,
-          '<img src="img/diag-7a123c0b2909750ca5526554cd8620774ccf6cd9.svg" alt="Diagram">',
-        )
+        const hash = createHash('sha1')
+          .update(
+            `${krokiServerUrl}/plantuml/svg/${encodeText('Hello -> World')}`,
+          )
+          .digest('hex')
+        assertContains(html, `<img src="img/diag-${hash}.svg" alt="Diagram">`)
       })
       test('substitutes document attributes in diagram text when subs=+attributes', async () => {
         const input = `
@@ -649,11 +674,19 @@ AsciiDoc -> HTML5: convert
           const html = await convert(input, {
             safe: 'safe',
             extension_registry: registry,
-            attributes: { 'kroki-fetch-diagram': true },
+            attributes: {
+              'kroki-fetch-diagram': true,
+              'kroki-server-url': krokiServerUrl,
+            },
           })
+          const hash = createHash('sha1')
+            .update(
+              `${krokiServerUrl}/plantuml/svg/${encodeText('AsciiDoc -> HTML5: convert')}`,
+            )
+            .digest('hex')
           assertContains(
             html,
-            '<img src=".asciidoctor/kroki/diag-ea85be88a0e4e5fb02f59602af7fe207feb5b904.svg" alt="Diagram">',
+            `<img src=".asciidoctor/kroki/diag-${hash}.svg" alt="Diagram">`,
           )
           assert.ok(
             http.get.callCount <= 1,
