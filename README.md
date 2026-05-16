@@ -1,7 +1,7 @@
 # Asciidoctor Kroki Extension
 
-[![Build JavaScript](https://github.com/ggrossetie/asciidoctor-kroki/actions/workflows/build-js.yml/badge.svg)](https://github.com/ggrossetie/asciidoctor-kroki/actions/workflows/build-js.yml)
-[![Build Ruby](https://github.com/ggrossetie/asciidoctor-kroki/actions/workflows/build-ruby.yml/badge.svg)](https://github.com/ggrossetie/asciidoctor-kroki/actions/workflows/build-ruby.yml)
+[![Build JavaScript](https://github.com/asciidoctor/asciidoctor-kroki/actions/workflows/build-js.yml/badge.svg)](https://github.com/ggrossetie/asciidoctor-kroki/actions/workflows/build-js.yml)
+[![Build Ruby](https://github.com/asciidoctor/asciidoctor-kroki/actions/workflows/build-ruby.yml/badge.svg)](https://github.com/ggrossetie/asciidoctor-kroki/actions/workflows/build-ruby.yml)
 [![npm version](http://img.shields.io/npm/v/asciidoctor-kroki.svg)](https://www.npmjs.com/package/asciidoctor-kroki)
 [![Gem version](https://img.shields.io/gem/v/asciidoctor-kroki)](https://rubygems.org/gems/asciidoctor-kroki)
 [![Zulip Chat](https://img.shields.io/badge/zulip-join_chat-brightgreen.svg)](https://kroki.zulipchat.com/)
