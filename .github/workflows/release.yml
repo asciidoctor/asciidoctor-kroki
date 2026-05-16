@@ -1,0 +1,137 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g. 0.19.0)'
+        required: true
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      version: ${{ steps.set-version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+      - name: Set version
+        id: set-version
+        run: |
+          VERSION="${{ inputs.version }}"
+          VERSION="${VERSION#v}"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+      - name: Bump npm and Ruby versions
+        run: |
+          VERSION="${{ steps.set-version.outputs.version }}"
+          npm version "$VERSION" --no-git-tag-version
+          sed -i "s/VERSION = '.*'/VERSION = '$VERSION'/" ruby/lib/asciidoctor/extensions/asciidoctor_kroki/version.rb
+      - name: Commit and tag
+        run: |
+          VERSION="${{ steps.set-version.outputs.version }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add package.json ruby/lib/asciidoctor/extensions/asciidoctor_kroki/version.rb
+          git commit -m "chore: release v$VERSION"
+          git tag "v$VERSION"
+          git push origin HEAD:master
+          git push origin "v$VERSION"
+
+  build-js:
+    needs: prepare
+    uses: ./.github/workflows/build-js.yml
+    with:
+      ref: v${{ needs.prepare.outputs.version }}
+
+  build-ruby:
+    needs: prepare
+    uses: ./.github/workflows/build-ruby.yml
+    with:
+      ref: v${{ needs.prepare.outputs.version }}
+
+  publish-js:
+    needs: [prepare, build-js]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: v${{ needs.prepare.outputs.version }}
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          registry-url: 'https://registry.npmjs.org'
+      - name: Install dependencies
+        run: npm ci
+      - name: Build
+        run: npm run build
+      - name: Package
+        run: |
+          mkdir dist
+          cd build
+          zip -r ../dist/asciidoctor-kroki.dist.zip .
+          tar -zcvf ../dist/asciidoctor-kroki.dist.tar.gz .
+      - name: Publish to npm
+        run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Upload JS artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: js-dist
+          path: dist/
+
+  publish-ruby:
+    needs: [prepare, build-ruby]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: v${{ needs.prepare.outputs.version }}
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.4'
+          bundler-cache: true
+          working-directory: ./ruby
+      - name: Configure credentials
+        run: |
+          mkdir -p $HOME/.gem
+          touch $HOME/.gem/credentials
+          chmod 0600 $HOME/.gem/credentials
+          printf -- "---\n:rubygems_api_key: ${RUBYGEMS_API_KEY}" > $HOME/.gem/credentials
+        env:
+          RUBYGEMS_API_KEY: ${{ secrets.RUBYGEMS_API_KEY }}
+      - name: Build and publish gem
+        run: |
+          bundle exec rake build
+          gem push pkg/asciidoctor-kroki-${{ needs.prepare.outputs.version }}.gem
+        working-directory: ./ruby
+
+  release:
+    needs: [prepare, publish-js, publish-ruby]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: v${{ needs.prepare.outputs.version }}
+      - name: Download JS artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: js-dist
+          path: dist/
+      - name: Create GitHub release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "v${{ needs.prepare.outputs.version }}" \
+            --title "v${{ needs.prepare.outputs.version }}" \
+            dist/asciidoctor-kroki.dist.zip \
+            dist/asciidoctor-kroki.dist.tar.gz
