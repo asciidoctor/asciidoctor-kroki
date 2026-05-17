@@ -21,11 +21,11 @@ Install the dependencies:
 Register and use the extension:
 
 ```js
-const asciidoctor = require('@asciidoctor/core')()
-const kroki = require('asciidoctor-kroki')
+import { convert, Extensions } from '@asciidoctor/core'
+import asciidoctorKroki from 'asciidoctor-kroki'
 
-kroki.register(asciidoctor.Extensions)
-console.log(asciidoctor.convert('[graphviz]\n....\ndigraph G { Hello->World }\n....'))
+asciidoctorKroki.register(Extensions)
+console.log(await convert('[graphviz]\n....\ndigraph G { Hello->World }\n....'))
 ```
 
 For installation instructions for Node.js, Browser, Ruby, and Antora, as well as the full configuration reference, see the [documentation](https://docs.asciidoctor.org/asciidoctor-kroki/latest).
@@ -43,9 +43,9 @@ We recommend [`volta`](https://volta.sh/) to manage multiple active Node.js vers
 
        npm i
 
-2. Generate a distribution:
+2. Build the project:
 
-       npm run dist
+       npm run build
 
 When working on a new feature or when fixing a bug, make sure to run the linter and the test suite:
 
