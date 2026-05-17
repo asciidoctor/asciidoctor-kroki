@@ -79,8 +79,6 @@ jobs:
           tar -zcvf ../dist/asciidoctor-kroki.dist.tar.gz .
       - name: Publish to npm
         run: npm publish --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: Upload JS artifacts
         uses: actions/upload-artifact@v4
         with:
