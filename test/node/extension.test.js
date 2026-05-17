@@ -1809,9 +1809,7 @@ bytefield::test/fixtures/simple.bytefield[svg,role=bytefield${blockAttr}]
           pageAttr,
           blockAttr,
         } of interactiveOptionsFixtures) {
-          test.skip(`renders SVG as interactive object (opts via ${location}) using allow-uri-read`, {
-            todo: 'regression in Asciidoctor.js 4.0.0-alpha.1',
-          }, async () => {
+          test(`renders SVG as interactive object (opts via ${location}) using allow-uri-read`, async () => {
             const input = `
 :imagesdir: .asciidoctor/kroki
 ${pageAttr}
@@ -1834,9 +1832,7 @@ vegalite::test/fixtures/chart.vlite[svg,role=chart${blockAttr}]
               '<object type="image/svg+xml" data="data:image/svg+xml;base64,PHN2Zy',
             )
           })
-          test(`renders SVG as interactive object (opts via ${location}) using kroki-fetch-diagram`, {
-            todo: 'regression in Asciidoctor.js 4.0.0-alpha.1',
-          }, async () => {
+          test(`renders SVG as interactive object (opts via ${location}) using kroki-fetch-diagram`, async () => {
             const input = `
 :imagesdir: .asciidoctor/kroki
 ${pageAttr}
