@@ -118,5 +118,20 @@ alice -> bob
         `Expected img src not found in:\n${html}`,
       )
     }, 5000)
+
+    test('reads a block macro file using the default fetch-based VFS', async () => {
+      const fixtureUrl = `${fixturesBaseUrl}/fixtures/alice.puml`
+      const input = `plantuml::${fixtureUrl}[svg,role=sequence]`
+      const registry = Extensions.create()
+      asciidoctorKroki.register(registry)
+      const text = await fetchGet(fixtureUrl, 'utf8')
+      const html = await convert(input, { extension_registry: registry })
+      assert.ok(
+        html.includes(
+          `<img src="https://kroki.io/plantuml/svg/${encodeText(text)}" alt="Diagram">`,
+        ),
+        `Expected img src not found in:\n${html}`,
+      )
+    }, 5000)
   })
 })

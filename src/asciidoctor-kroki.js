@@ -243,6 +243,25 @@ function diagramBlockMacro(name, context) {
           target =
             startDir !== '.' ? doc.normalizeWebPath(target, startDir) : target
         }
+        if (vfs === undefined || typeof vfs.read !== 'function') {
+          vfs = {
+            read: async (path, encoding = 'utf8') => {
+              const response = await globalThis.fetch(path)
+              if (!response.ok) throw new Error(`No such file: ${path}`)
+              if (encoding === 'binary') {
+                const buf = await response.arrayBuffer()
+                return String.fromCharCode(...new Uint8Array(buf))
+              }
+              return response.text()
+            },
+            exists: (_) => false,
+            add: (_) => {},
+            parse: (path) => ({
+              dir: path.substring(0, path.lastIndexOf('/') - 1),
+              path,
+            }),
+          }
+        }
       } else {
         if (vfs === undefined || typeof vfs.read !== 'function') {
           vfs = fs
