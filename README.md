@@ -47,7 +47,8 @@ We recommend [`volta`](https://volta.sh/) to manage multiple active Node.js vers
 
        npm run build
 
-When working on a new feature or when fixing a bug, make sure to run the linter and the test suite:
+When working on a new feature or when fixing a bug, make sure to run the formatter, the linter and the test suite:
 
+    npm run format
     npm run lint
     npm run test
