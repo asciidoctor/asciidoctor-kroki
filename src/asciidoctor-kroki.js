@@ -254,13 +254,15 @@ function diagramBlockMacro(name, context) {
               }
               return response.text()
             },
-            exists: (_) => false,
+            exists: (path) =>
+              path.startsWith('http://') || path.startsWith('https://'),
             add: (_) => {},
             parse: (path) => ({
-              dir: path.substring(0, path.lastIndexOf('/') - 1),
+              dir: path.substring(0, path.lastIndexOf('/')),
               path,
             }),
           }
+          context.vfs = vfs
         }
       } else {
         if (vfs === undefined || typeof vfs.read !== 'function') {
