@@ -99,9 +99,11 @@ export class KrokiClient {
     if (method === 'get' || method === 'post' || method === 'adaptive') {
       this.method = method
     } else {
-      console.warn(
-        `Invalid value '${method}' for kroki-http-method attribute. The value must be either: 'get', 'post' or 'adaptive'. Proceeding using: 'adaptive'.`,
-      )
+      doc
+        .getLogger()
+        .warn(
+          `Invalid value '${method}' for kroki-http-method attribute. The value must be either: 'get', 'post' or 'adaptive'. Proceeding using: 'adaptive'.`,
+        )
       this.method = 'adaptive'
     }
     this.doc = doc
@@ -151,9 +153,17 @@ export class KrokiClient {
       if (uri.length > this.maxUriLength) {
         // The request URI is longer than the max URI length.
         if (this.method === 'get') {
-          // The request might be rejected by the server with a 414 Request-URI Too Large.
-          // Consider using the attribute kroki-http-method with the value 'adaptive'.
-          return this.httpClient.get(uri, headers, encoding, expectedContentType)
+          this.doc
+            .getLogger()
+            .warn(
+              `The diagram URI length (${uri.length}) exceeds kroki-max-uri-length (${this.maxUriLength}). The server may reject the request with a 414 (URI Too Long). Consider using the 'kroki-http-method' attribute set to 'adaptive' or 'post'.`,
+            )
+          return this.httpClient.get(
+            uri,
+            headers,
+            encoding,
+            expectedContentType,
+          )
         }
         return this.httpClient.post(
           `${serverUrl}/${type}/${format}`,

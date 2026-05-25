@@ -1,4 +1,11 @@
-const httpRequest = async (uri, method, headers, encoding = 'utf8', body, expectedContentType) => {
+const httpRequest = async (
+  uri,
+  method,
+  headers,
+  encoding = 'utf8',
+  body,
+  expectedContentType,
+) => {
   let response
   try {
     response = await fetch(uri, { method, headers, body })
@@ -8,7 +15,9 @@ const httpRequest = async (uri, method, headers, encoding = 'utf8', body, expect
   if (response.ok) {
     if (expectedContentType) {
       const contentType = response.headers.get('content-type') || ''
-      if (!contentType.toLowerCase().startsWith(expectedContentType.toLowerCase())) {
+      if (
+        !contentType.toLowerCase().startsWith(expectedContentType.toLowerCase())
+      ) {
         throw new Error(
           `${method} ${uri} - unexpected content-type; expected: ${expectedContentType}, got: ${contentType}`,
         )
@@ -37,6 +46,11 @@ const httpRequest = async (uri, method, headers, encoding = 'utf8', body, expect
     try {
       errorBody = await response.text()
     } catch (_) {}
+  }
+  if (response.status === 414) {
+    throw new Error(
+      `${method} ${uri} - server returns 414 (URI Too Long). The diagram URI is too long for the server. Consider using the 'kroki-http-method' attribute set to 'post' or 'adaptive' to send the diagram source via POST.`,
+    )
   }
   throw new Error(
     `${method} ${uri} - server returns ${response.status} status code; response: ${errorBody}`,

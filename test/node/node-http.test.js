@@ -55,13 +55,37 @@ describe('Async HTTP client (fetch)', () => {
       await worker.terminate()
     }
   })
+  test('rejects with actionable message on HTTP 414', async () => {
+    const { worker, port } = await startServer('414-server.js')
+    try {
+      await assert.rejects(
+        () => httpClient.get(`http://localhost:${port}`, {}, 'utf8'),
+        (err) => {
+          assert.ok(err.message.includes('414'), err.message)
+          assert.ok(err.message.includes('kroki-http-method'), err.message)
+          return true
+        },
+      )
+    } finally {
+      await worker.terminate()
+    }
+  })
   test('rejects with "unexpected content-type" when server returns wrong content-type', async () => {
     const { worker, port } = await startServer('200-html-server.js')
     try {
       await assert.rejects(
-        () => httpClient.get(`http://localhost:${port}`, {}, 'utf8', 'image/svg+xml'),
+        () =>
+          httpClient.get(
+            `http://localhost:${port}`,
+            {},
+            'utf8',
+            'image/svg+xml',
+          ),
         (err) => {
-          assert.ok(err.message.includes('unexpected content-type'), err.message)
+          assert.ok(
+            err.message.includes('unexpected content-type'),
+            err.message,
+          )
           assert.ok(err.message.includes('image/svg+xml'), err.message)
           assert.ok(err.message.includes('text/html'), err.message)
           return true

@@ -1,7 +1,7 @@
 // @ts-check
 
 import assert from 'node:assert'
-import { describe, test } from 'node:test'
+import { describe, mock, test } from 'node:test'
 import { load } from '@asciidoctor/core'
 import httpClient from '../src/http-client.js'
 import { KrokiClient, KrokiDiagram } from '../src/kroki-client.js'
@@ -101,6 +101,36 @@ describe('Kroki HTTP client', () => {
       doc.setAttribute('kroki-max-uri-length', '8000')
       const krokiClient = new KrokiClient(doc, httpClient)
       assert.strictEqual(krokiClient.maxUriLength, 8000)
+    })
+  })
+
+  describe('GET mode', () => {
+    test('emits a warning when the diagram URI exceeds kroki-max-uri-length', async () => {
+      const doc = await load('')
+      doc.setAttribute('kroki-http-method', 'get')
+      doc.setAttribute('kroki-max-uri-length', '10')
+      const warnings = []
+      const logger = doc.getLogger()
+      mock.method(logger, 'warn', (msg) => warnings.push(msg))
+      try {
+        const krokiClient = new KrokiClient(doc, {
+          get: (uri) => `GET ${uri}`,
+          post: (uri, body) => `POST ${uri} - ${body}`,
+        })
+        const krokiDiagram = {
+          type: 'type',
+          format: 'format',
+          text: 'text',
+          opts: {},
+          getDiagramUri: () => 'diagram-uri', // length: 11
+        }
+        await krokiClient.getImage(krokiDiagram)
+        assert.strictEqual(warnings.length, 1)
+        assert.ok(warnings[0].includes('414'), warnings[0])
+        assert.ok(warnings[0].includes('kroki-http-method'), warnings[0])
+      } finally {
+        mock.restoreAll()
+      }
     })
   })
 

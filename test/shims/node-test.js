@@ -3,6 +3,7 @@ import {
   afterEach,
   beforeAll,
   beforeEach,
+  vi,
   describe as vitestDescribe,
   test as vitestTest,
 } from 'vitest'
@@ -65,3 +66,10 @@ export function describe(name, optionsOrFn, maybeFn) {
 export { afterEach, beforeEach }
 export const before = beforeAll
 export const after = afterAll
+
+export const mock = {
+  method: (obj, methodName, implementation) => {
+    vi.spyOn(obj, methodName).mockImplementation(implementation)
+  },
+  restoreAll: () => vi.restoreAllMocks(),
+}
