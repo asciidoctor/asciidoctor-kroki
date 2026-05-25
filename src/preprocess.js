@@ -73,8 +73,8 @@ ${diagramText}
   return JSON.stringify(diagramObject)
 }
 
-const plantUmlBlocksRx = /@startuml(?:\r?\n)([\s\S]*?)(?:\r?\n)@enduml/gm
-const plantUmlFirstBlockRx = /@startuml(?:\r?\n)([\s\S]*?)(?:\r?\n)@enduml/m
+const plantUmlBlocksRx = /@startuml\r?\n([\s\S]*?)\r?\n@enduml/gm
+const plantUmlFirstBlockRx = /@startuml\r?\n([\s\S]*?)\r?\n@enduml/m
 
 /**
  * Removes all plantuml tags (@startuml/@enduml) from the diagram
@@ -478,7 +478,7 @@ function getPlantUmlTextOrFirstBlock(text) {
 }
 
 /**
- * @param {string} text
+ * @param {string} _text
  * @param {string} filePath
  * @param {string[]} includeOnce
  */
