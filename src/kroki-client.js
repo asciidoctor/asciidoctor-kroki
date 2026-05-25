@@ -4,6 +4,19 @@ import packageJson from '../package.json' with { type: 'json' }
 /** @type {number} Default maximum URI length before switching to POST. */
 const MAX_URI_DEFAULT_VALUE = 4000
 
+/** @type {Object<string, string>} Maps diagram output format to its expected MIME type. */
+const MIME_TYPES = {
+  svg: 'image/svg+xml',
+  png: 'image/png',
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  pdf: 'application/pdf',
+  txt: 'text/plain',
+  atxt: 'text/plain',
+  utxt: 'text/plain',
+  base64: 'text/plain',
+}
+
 /** @type {string} Referer header value sent with every request. */
 const REFERER = `asciidoctor/kroki.js/${packageJson.version}`
 
@@ -132,6 +145,7 @@ export class KrokiClient {
         ]),
       ),
     }
+    const expectedContentType = MIME_TYPES[format]
     if (this.method === 'adaptive' || this.method === 'get') {
       const uri = krokiDiagram.getDiagramUri(serverUrl)
       if (uri.length > this.maxUriLength) {
@@ -139,22 +153,24 @@ export class KrokiClient {
         if (this.method === 'get') {
           // The request might be rejected by the server with a 414 Request-URI Too Large.
           // Consider using the attribute kroki-http-method with the value 'adaptive'.
-          return this.httpClient.get(uri, headers, encoding)
+          return this.httpClient.get(uri, headers, encoding, expectedContentType)
         }
         return this.httpClient.post(
           `${serverUrl}/${type}/${format}`,
           text,
           headers,
           encoding,
+          expectedContentType,
         )
       }
-      return this.httpClient.get(uri, headers, encoding)
+      return this.httpClient.get(uri, headers, encoding, expectedContentType)
     }
     return this.httpClient.post(
       `${serverUrl}/${type}/${format}`,
       text,
       headers,
       encoding,
+      expectedContentType,
     )
   }
 

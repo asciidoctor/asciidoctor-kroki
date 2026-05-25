@@ -3,7 +3,7 @@
 import assert from 'node:assert'
 import { describe, test } from 'node:test'
 import { load } from '@asciidoctor/core'
-import httpClient from '../src/http/http-client.js'
+import httpClient from '../src/http-client.js'
 import { KrokiClient, KrokiDiagram } from '../src/kroki-client.js'
 
 describe('KrokiDiagram', () => {

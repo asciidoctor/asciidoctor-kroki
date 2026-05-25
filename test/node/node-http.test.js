@@ -3,7 +3,7 @@ import ospath, { dirname } from 'node:path'
 import { describe, test } from 'node:test'
 import { fileURLToPath } from 'node:url'
 import { Worker } from 'node:worker_threads'
-import httpClient from '../../src/http/http-client.js'
+import httpClient from '../../src/http-client.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
@@ -48,6 +48,22 @@ describe('Async HTTP client (fetch)', () => {
             err.message.includes('server returns an empty response'),
             err.message,
           )
+          return true
+        },
+      )
+    } finally {
+      await worker.terminate()
+    }
+  })
+  test('rejects with "unexpected content-type" when server returns wrong content-type', async () => {
+    const { worker, port } = await startServer('200-html-server.js')
+    try {
+      await assert.rejects(
+        () => httpClient.get(`http://localhost:${port}`, {}, 'utf8', 'image/svg+xml'),
+        (err) => {
+          assert.ok(err.message.includes('unexpected content-type'), err.message)
+          assert.ok(err.message.includes('image/svg+xml'), err.message)
+          assert.ok(err.message.includes('text/html'), err.message)
           return true
         },
       )
