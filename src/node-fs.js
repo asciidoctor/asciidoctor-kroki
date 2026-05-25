@@ -2,7 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import url from 'node:url'
 
-import http from './http/http-client.js'
+import http from './http-client.js'
 
 /**
  * Descriptor for a diagram image to be persisted by {@link Vfs#add}.
