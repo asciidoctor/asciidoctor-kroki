@@ -13,13 +13,13 @@ const httpRequest = async (uri, method, headers, encoding = 'utf8', body) => {
       for (let i = 0; i < byteArray.byteLength; i++) {
         data += String.fromCharCode(byteArray[i])
       }
-      if (data) {
+      if (data !== '') {
         return data
       }
       throw new Error(`${method} ${uri} - server returns an empty response`)
     }
     const data = await response.text()
-    if (data) {
+    if (data !== '') {
       return data
     }
     throw new Error(`${method} ${uri} - server returns an empty response`)

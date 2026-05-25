@@ -30,6 +30,7 @@ const BUILTIN_ATTRIBUTES = [
   'cloaked-context',
   '$positional',
   'subs',
+  'opts',
 ]
 
 const wrapError = (err, message) => {
@@ -83,7 +84,7 @@ function getOption(attrs, document) {
 }
 
 function isNumeric(value) {
-  return /^[1-9]\d*$/.test(value)
+  return /^\d+$/.test(value)
 }
 
 const processKroki = async (
