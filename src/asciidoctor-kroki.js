@@ -1,7 +1,7 @@
 // @ts-check
 
 import fetch from './fetch.js'
-import httpClient from './http/http-client.js'
+import httpClient from './http-client.js'
 import { KrokiClient, KrokiDiagram } from './kroki-client.js'
 import fs from './node-fs.js'
 import {
