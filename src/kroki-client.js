@@ -14,7 +14,7 @@ export class KrokiDiagram {
 
   getDiagramUri(serverUrl) {
     const queryParams = Object.entries(this.opts)
-      .map(([key, value]) => `${key}=${encodeURIComponent(value.toString())}`)
+      .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value.toString())}`)
       .join('&')
     return `${serverUrl}/${this.type}/${this.format}/${this.encode()}${queryParams ? `?${queryParams}` : ''}`
   }
