@@ -155,9 +155,14 @@ const processKroki = async (
       ([key, _]) =>
         !key.endsWith('-option') &&
         !BUILTIN_ATTRIBUTES.includes(key) &&
-        !isNumeric(key),
+        !isNumeric(key) &&
+        key !== 'view',
     ),
   )
+  // `view` is an alias for `view-key` (asciidoctor-diagram compatibility); `view-key` takes precedence.
+  if ('view' in attrs && !('view-key' in opts)) {
+    opts['view-key'] = attrs.view
+  }
   const krokiDiagram = new KrokiDiagram(diagramType, format, diagramText, opts)
   const krokiClient = new KrokiClient(doc, httpClient)
   let block

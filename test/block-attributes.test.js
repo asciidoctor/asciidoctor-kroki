@@ -85,6 +85,52 @@ alice -> bob
 </div>`,
       )
     })
+    test('converts view attribute to view-key query parameter', async () => {
+      const input = `
+[structurizr,alice-bob,svg,view=SystemContext]
+....
+workspace {
+  model {
+    user = person "User"
+  }
+}
+....
+`
+      const registry = Extensions.create()
+      asciidoctorKroki.register(registry)
+      const html = await convert(input, { extension_registry: registry })
+      assert.ok(
+        html.includes('?view-key=SystemContext'),
+        `Expected view-key query parameter in: ${html}`,
+      )
+      assert.ok(
+        !html.includes('view='),
+        `Expected view attribute not to appear as-is in: ${html}`,
+      )
+    })
+    test('view-key takes precedence over view when both are present', async () => {
+      const input = `
+[structurizr,alice-bob,svg,view=SystemContext,view-key=ContainerView]
+....
+workspace {
+  model {
+    user = person "User"
+  }
+}
+....
+`
+      const registry = Extensions.create()
+      asciidoctorKroki.register(registry)
+      const html = await convert(input, { extension_registry: registry })
+      assert.ok(
+        html.includes('view-key=ContainerView'),
+        `Expected view-key=ContainerView in: ${html}`,
+      )
+      assert.ok(
+        !html.includes('view-key=SystemContext'),
+        `Expected view alias not to override view-key in: ${html}`,
+      )
+    })
     test('assigns sequential figure numbers to multiple titled diagrams', async () => {
       const input = `
 .alice and bob
