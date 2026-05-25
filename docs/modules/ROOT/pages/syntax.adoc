@@ -60,6 +60,7 @@ vegalite::chart.vlite[svg,role=chart,opts=interactive]
 
 A positional attribute declares the image format, and two named attributes define the `role` and `opts`.
 
+[#attributes]
 == Attributes
 
 The following attributes are used by the built-in HTML 5 converter:
@@ -128,6 +129,36 @@ blockdiag {
 
   Kroki [color = "greenyellow"];
   "Block diagrams" [color = "pink"];
+}
+----
+....
+
+== Diagram-specific options
+
+Any named attribute that is not a xref:#attributes[built-in attribute] is forwarded to the Kroki server as a diagram-specific option (query parameter).
+This allows you to pass diagram type options supported by Kroki directly on the block or macro.
+
+Consult the https://docs.kroki.io[Kroki documentation] for the available options per diagram type.
+
+For example, Structurizr workspaces often define multiple views.
+By default, only the last view is rendered.
+Use the `view-key` option to specify which view to render:
+
+[source,asciidoc]
+....
+[structurizr,view-key=SystemContext]
+----
+workspace {
+  model {
+    user = person "User"
+    system = softwareSystem "Software System"
+    user -> system "Uses"
+  }
+  views {
+    systemContext system "SystemContext" {
+      include *
+    }
+  }
 }
 ----
 ....
