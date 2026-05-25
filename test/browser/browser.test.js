@@ -133,5 +133,28 @@ alice -> bob
         `Expected img src not found in:\n${html}`,
       )
     }, 5000)
+
+    test('inlines relative !include paths in a block macro loaded via the default fetch-based VFS', async () => {
+      // alice-with-styles.puml contains: !include styles/general.iuml
+      // The default browser VFS must resolve that relative path against the parent file's directory.
+      const parentUrl = `${fixturesBaseUrl}/fixtures/plantuml/alice-with-styles.puml`
+      const input = `plantuml::${parentUrl}[svg,role=sequence]`
+      const registry = Extensions.create()
+      asciidoctorKroki.register(registry)
+      const stylesText = await fetchGet(
+        `${fixturesBaseUrl}/fixtures/plantuml/styles/general.iuml`,
+      )
+      const expectedDiagramText = `${stylesText}\nalice -> bob`
+      const html = await convert(input, {
+        extension_registry: registry,
+        safe: 'unsafe',
+      })
+      assert.ok(
+        html.includes(
+          `<img src="https://kroki.io/plantuml/svg/${encodeText(expectedDiagramText)}" alt="Diagram">`,
+        ),
+        `Expected relative !include to be inlined in the Kroki URL.\nGot:\n${html}`,
+      )
+    }, 5000)
   })
 })
