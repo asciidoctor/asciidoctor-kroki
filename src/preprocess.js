@@ -376,7 +376,7 @@ async function readPlantUmlInclude(
         throw new Error(message)
       } else {
         try {
-          text = await read(filePath, 'utf8', resource)
+          text = await read(filePath, 'utf8')
         } catch (e) {
           // Includes a local file that cannot be found but might be resolved by the Kroki server
           logger.info(
