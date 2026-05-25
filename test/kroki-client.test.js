@@ -4,7 +4,48 @@ import assert from 'node:assert'
 import { describe, test } from 'node:test'
 import { load } from '@asciidoctor/core'
 import httpClient from '../src/http/http-client.js'
-import { KrokiClient } from '../src/kroki-client.js'
+import { KrokiClient, KrokiDiagram } from '../src/kroki-client.js'
+
+describe('KrokiDiagram', () => {
+  describe('getDiagramUri', () => {
+    test('URL-encodes both key and value of diagram options', () => {
+      const diagram = new KrokiDiagram('plantuml', 'svg', 'alice -> bob', {
+        theme: 'forest',
+      })
+      const uri = diagram.getDiagramUri('https://kroki.io')
+      assert.ok(
+        uri.includes('?theme=forest'),
+        `Expected ?theme=forest in URI: ${uri}`,
+      )
+    })
+
+    test('URL-encodes keys containing special characters', () => {
+      const diagram = new KrokiDiagram('plantuml', 'svg', 'alice -> bob', {
+        'theme&other': 'value',
+      })
+      const uri = diagram.getDiagramUri('https://kroki.io')
+      assert.ok(
+        !uri.includes('theme&other'),
+        `Expected raw & to be encoded in URI key: ${uri}`,
+      )
+      assert.ok(
+        uri.includes('theme%26other=value'),
+        `Expected theme%26other=value in URI: ${uri}`,
+      )
+    })
+
+    test('URL-encodes values containing special characters', () => {
+      const diagram = new KrokiDiagram('plantuml', 'svg', 'alice -> bob', {
+        theme: 'my theme/value',
+      })
+      const uri = diagram.getDiagramUri('https://kroki.io')
+      assert.ok(
+        uri.includes('theme=my%20theme%2Fvalue'),
+        `Expected encoded value in URI: ${uri}`,
+      )
+    })
+  })
+})
 
 describe('Kroki HTTP client', () => {
   describe('kroki-http-method attribute', () => {

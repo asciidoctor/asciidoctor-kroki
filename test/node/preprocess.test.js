@@ -622,6 +622,40 @@ D -> D : stuff4.1
     )
   })
 
+  test('matches only the exact sub name when the name contains a dot (regex metachar)', async () => {
+    const fixture =
+      'test/fixtures/plantuml/diagrams/subs-with-special-chars.puml'
+    const diagramText = `!includesub ${fixture}!BASIC.ONE\nalice -> bob`
+    const result = (await preprocessPlantUML(diagramText, {})).replace(
+      /\r\n/g,
+      '\n',
+    )
+    assert.ok(
+      result.includes('B -> B : dot section'),
+      `Expected dot section to be inlined:\n${result}`,
+    )
+    assert.ok(
+      !result.includes('C -> C : should not match dot'),
+      `Expected BASICXONE section NOT to be matched by BASIC.ONE:\n${result}`,
+    )
+  })
+
+  test('does not throw when a sub name contains unbalanced regex metacharacters', async () => {
+    const fixture =
+      'test/fixtures/plantuml/diagrams/subs-with-special-chars.puml'
+    const diagramText = `!includesub ${fixture}!BASIC(ONE\nalice -> bob`
+    // Should not throw SyntaxError — the section is not found, result is empty for that include
+    const result = await preprocessPlantUML(diagramText, {})
+    assert.ok(
+      typeof result === 'string',
+      'Expected a string result, not a thrown error',
+    )
+    assert.ok(
+      result.includes('D -> D : paren section'),
+      `Expected paren section to be inlined:\n${result}`,
+    )
+  })
+
   test('inlines a subsection by ID via !include file!id', async () => {
     const localExistingFilePathWithID1 =
       'test/fixtures/plantuml/diagrams/id.puml!MY_OWN_ID1'

@@ -1,0 +1,11 @@
+@startuml
+!startsub BASIC.ONE
+B -> B : dot section
+!endsub
+!startsub BASICXONE
+C -> C : should not match dot
+!endsub
+!startsub BASIC(ONE
+D -> D : paren section
+!endsub
+@enduml
