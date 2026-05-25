@@ -390,6 +390,10 @@ async function readPlantUmlInclude(
   return { skip, text, filePath }
 }
 
+function escapeRegExp(string) {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
 /**
  * @param {string} text
  * @param {string} sub
@@ -397,7 +401,7 @@ async function readPlantUmlInclude(
  */
 function getPlantUmlTextFromSub(text, sub) {
   const regEx = new RegExp(
-    `!startsub\\s+${sub}(?:\\r\\n|\\n)([\\s\\S]*?)(?:\\r\\n|\\n)!endsub`,
+    `!startsub\\s+${escapeRegExp(sub)}(?:\\r\\n|\\n)([\\s\\S]*?)(?:\\r\\n|\\n)!endsub`,
     'gm',
   )
   return getPlantUmlTextRegEx(text, regEx)
@@ -410,7 +414,7 @@ function getPlantUmlTextFromSub(text, sub) {
  */
 function getPlantUmlTextFromId(text, id) {
   const regEx = new RegExp(
-    `@startuml\\(id=${id}\\)(?:\\r\\n|\\n)([\\s\\S]*?)(?:\\r\\n|\\n)@enduml`,
+    `@startuml\\(id=${escapeRegExp(id)}\\)(?:\\r\\n|\\n)([\\s\\S]*?)(?:\\r\\n|\\n)@enduml`,
     'gm',
   )
   return getPlantUmlTextRegEx(text, regEx)
