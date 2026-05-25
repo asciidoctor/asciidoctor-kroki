@@ -1,4 +1,4 @@
-const httpRequest = async (uri, method, headers, encoding = 'utf8', body) => {
+const httpRequest = async (uri, method, headers, encoding = 'utf8', body, expectedContentType) => {
   let response
   try {
     response = await fetch(uri, { method, headers, body })
@@ -6,6 +6,14 @@ const httpRequest = async (uri, method, headers, encoding = 'utf8', body) => {
     throw new Error(`${method} ${uri} - error; reason: ${e.message}`)
   }
   if (response.ok) {
+    if (expectedContentType) {
+      const contentType = response.headers.get('content-type') || ''
+      if (!contentType.toLowerCase().startsWith(expectedContentType.toLowerCase())) {
+        throw new Error(
+          `${method} ${uri} - unexpected content-type; expected: ${expectedContentType}, got: ${contentType}`,
+        )
+      }
+    }
     if (encoding === 'binary') {
       const arrayBuffer = await response.arrayBuffer()
       const byteArray = new Uint8Array(arrayBuffer)
@@ -36,8 +44,8 @@ const httpRequest = async (uri, method, headers, encoding = 'utf8', body) => {
 }
 
 export default {
-  get: (uri, headers, encoding = 'utf8') =>
-    httpRequest(uri, 'GET', headers, encoding),
-  post: (uri, body, headers, encoding = 'utf8') =>
-    httpRequest(uri, 'POST', headers, encoding, body),
+  get: (uri, headers, encoding = 'utf8', expectedContentType) =>
+    httpRequest(uri, 'GET', headers, encoding, undefined, expectedContentType),
+  post: (uri, body, headers, encoding = 'utf8', expectedContentType) =>
+    httpRequest(uri, 'POST', headers, encoding, body, expectedContentType),
 }
