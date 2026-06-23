@@ -5,7 +5,7 @@ on:
     paths:
       - 'ruby/**'
     branches:
-      - master
+      - main
   pull_request:
     paths:
       - 'ruby/**'

@@ -12,7 +12,7 @@ The Ruby gem and npm package share the same version and are released simultaneou
 The workflow will automatically:
 
 - Update the version in `package.json` and `ruby/lib/asciidoctor/extensions/asciidoctor_kroki/version.rb`
-- Commit and push the changes to `master`
+- Commit and push the changes to `main`
 - Create and push the tag `v<version>`
 - Build and test both the npm package and the Ruby gem
 - Publish to [npmjs.com](https://www.npmjs.com/package/asciidoctor-kroki) and [rubygems.org](https://rubygems.org/gems/asciidoctor-kroki)

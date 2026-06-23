@@ -38,7 +38,7 @@ jobs:
           git add package.json ruby/lib/asciidoctor/extensions/asciidoctor_kroki/version.rb
           git commit -m "chore: release v$VERSION"
           git tag "v$VERSION"
-          git push origin HEAD:master
+          git push origin HEAD:main
           git push origin "v$VERSION"
 
   build-js:
