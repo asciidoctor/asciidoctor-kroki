@@ -310,7 +310,7 @@ plantuml::test/fixtures/alice.puml[png,role=sequence]
           },
         })
         const file = fixturePath('alice.puml')
-        const hash = createHash('sha1')
+        const hash = createHash('sha256')
           .update(`${krokiServerUrl}/plantuml/png/${encode(file)}`)
           .digest('hex')
         assertContains(
@@ -446,14 +446,9 @@ Hello -> World
             'kroki-server-url': krokiServerUrl,
           },
         })
-        const hash = createHash('sha1')
-          .update(
-            `${krokiServerUrl}/plantuml/svg/${encodeText('Hello -> World')}`,
-          )
-          .digest('hex')
         assertContains(
           html,
-          `<img src=".asciidoctor/kroki/hello-world-${hash}.svg" alt="hello-world">`,
+          '<img src=".asciidoctor/kroki/hello-world.svg" alt="hello-world">',
         )
       })
       test('generates a diag-<hash> filename when the block target is empty', async () => {
@@ -512,7 +507,7 @@ Hello -> World
           ),
           'utf8',
         )
-        const hash = createHash('sha1')
+        const hash = createHash('sha256')
           .update(
             `${krokiServerUrl}/plantuml/svg/${encodeText('Hello -> World')}`,
           )
@@ -555,7 +550,7 @@ Hello -> World
           ),
           'utf8',
         )
-        const hash = createHash('sha1')
+        const hash = createHash('sha256')
           .update(
             `${krokiServerUrl}/plantuml/svg/${encodeText('Hello -> World')}`,
           )
@@ -596,7 +591,7 @@ Hello -> World
           ),
           'utf8',
         )
-        const hash = createHash('sha1')
+        const hash = createHash('sha256')
           .update(
             `${krokiServerUrl}/plantuml/svg/${encodeText('Hello -> World')}`,
           )
@@ -650,7 +645,7 @@ plantuml::{fixtures-dir}/alice.puml[svg,role=sequence]
           },
         })
         const file = fixturePath('alice.puml')
-        const hash = createHash('sha1')
+        const hash = createHash('sha256')
           .update(`${krokiServerUrl}/plantuml/svg/${encode(file)}`)
           .digest('hex')
         assertContains(
@@ -679,7 +674,7 @@ AsciiDoc -> HTML5: convert
               'kroki-server-url': krokiServerUrl,
             },
           })
-          const hash = createHash('sha1')
+          const hash = createHash('sha256')
             .update(
               `${krokiServerUrl}/plantuml/svg/${encodeText('AsciiDoc -> HTML5: convert')}`,
             )
@@ -1850,7 +1845,7 @@ plantuml::test/fixtures/alice.puml[svg,role=sequence${blockAttr}]
               },
             })
             const file = fixturePath('alice.puml')
-            const hash = createHash('sha1')
+            const hash = createHash('sha256')
               .update(`${krokiServerUrl}/plantuml/svg/${encode(file)}`)
               .digest('hex')
             assertContains(

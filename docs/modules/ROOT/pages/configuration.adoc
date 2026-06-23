@@ -90,6 +90,31 @@ To change this default behavior, set the `kroki-default-options` attribute:
 
 Unset it with `:kroki-default-options: none`, `:kroki-default-options!:`, or override it per block or macro using `opts=none`.
 
+== Generated file names
+
+When `kroki-fetch-diagram` is set, diagrams are downloaded and saved to disk.
+The generated file name depends on whether you give the diagram a name:
+
+* *Named diagram* — the name is used as-is, so the link stays stable even when the diagram content changes:
++
+[source,asciidoc]
+----
+[plantuml,my-diagram]
+....
+alice -> bob
+....
+----
++
+generates `my-diagram.svg`.
+
+* *Anonymous diagram* — a content-addressed name such as `diag-<checksum>.svg` is generated so anonymous diagrams never collide.
+
+[WARNING]
+====
+If the same name is used for two diagrams with different content in the same document, the file is overwritten and a warning is logged.
+Use unique names to keep links stable.
+====
+
 == Preprocessing
 
 Some diagram libraries support referencing external entities by URL or accessing filesystem resources.
