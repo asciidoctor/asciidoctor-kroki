@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0-beta.1] - 2026-06-23
+
 ### Added
 
 - Ruby: support the `kroki-default-options` document attribute, on par with the JavaScript extension ([#156](https://github.com/asciidoctor/asciidoctor-kroki/issues/156)).
