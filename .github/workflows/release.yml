@@ -19,6 +19,10 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: 24
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.4'
+          working-directory: ./ruby
       - name: Set version
         id: set-version
         run: |
@@ -30,6 +34,9 @@ jobs:
           VERSION="${{ steps.set-version.outputs.version }}"
           npm version "$VERSION" --no-git-tag-version
           sed -i "s/VERSION = '.*'/VERSION = '$VERSION'/" ruby/lib/asciidoctor/extensions/asciidoctor_kroki/version.rb
+      - name: Update Gemfile.lock
+        run: bundle lock
+        working-directory: ./ruby
       - name: Roll the changelog
         run: node scripts/changelog.js release "${{ steps.set-version.outputs.version }}"
       - name: Commit and tag
@@ -37,7 +44,7 @@ jobs:
           VERSION="${{ steps.set-version.outputs.version }}"
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add package.json ruby/lib/asciidoctor/extensions/asciidoctor_kroki/version.rb CHANGELOG.md
+          git add package.json ruby/lib/asciidoctor/extensions/asciidoctor_kroki/version.rb ruby/Gemfile.lock CHANGELOG.md
           git commit -m "chore: release v$VERSION"
           git tag "v$VERSION"
           git push origin HEAD:main
@@ -80,7 +87,12 @@ jobs:
           zip -r ../dist/asciidoctor-kroki.dist.zip .
           tar -zcvf ../dist/asciidoctor-kroki.dist.tar.gz .
       - name: Publish to npm
-        run: npm publish --provenance --access public
+        run: |
+          NPM_TAG=latest
+          case "${{ needs.prepare.outputs.version }}" in
+            *-*) NPM_TAG=testing ;;
+          esac
+          npm publish --provenance --access public --tag "$NPM_TAG"
       - name: Upload JS artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -110,7 +122,7 @@ jobs:
       - name: Build and publish gem
         run: |
           bundle exec rake build
-          gem push pkg/asciidoctor-kroki-${{ needs.prepare.outputs.version }}.gem
+          gem push pkg/*.gem
         working-directory: ./ruby
 
   release:
