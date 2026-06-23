@@ -70,7 +70,7 @@ describe AsciidoctorExtensions::KrokiDiagram do
     output_dir_path = "#{__dir__}/../.asciidoctor/kroki"
     diagram_name = kroki_diagram.save(output_dir_path, kroki_client)
     diagram_path = File.join(output_dir_path, diagram_name)
-    expect(diagram_name).to start_with('hello-world-'), "diagram name should use the target as a prefix, got: #{diagram_name}"
+    expect(diagram_name).to eq('hello-world.txt'), "diagram name should be the target name without a checksum, got: #{diagram_name}"
     expect(File.exist?(diagram_path)).to be_truthy, "diagram should be saved at: #{diagram_path}"
     content = <<-TXT.chomp
      ,-----.          ,---.
@@ -98,5 +98,28 @@ describe AsciidoctorExtensions::KrokiDiagram do
     # calling again... should read the file from disk (and not do a GET request)
     kroki_diagram.save(output_dir_path, kroki_client)
     expect(File.size(diagram_path)).to be_eql(diagram_contents.length), 'diagram should be fully saved on disk'
+  end
+  it 'should warn when the same target name is reused for diagrams with different content' do
+    generated_files = {}
+    logger = double('logger', warn: nil)
+    kroki_http_client = AsciidoctorExtensions::KrokiHttpClient
+    kroki_client = AsciidoctorExtensions::KrokiClient.new(server_url: 'https://kroki.io', http_method: 'get', http_client: kroki_http_client)
+    output_dir_path = "#{__dir__}/../.asciidoctor/kroki"
+    allow(kroki_http_client).to receive(:get).and_return('content')
+    AsciidoctorExtensions::KrokiDiagram.new('plantuml', 'svg', 'alice -> bob', 'shared').save(output_dir_path, kroki_client, generated_files, logger)
+    AsciidoctorExtensions::KrokiDiagram.new('plantuml', 'svg', 'carol -> dave', 'shared').save(output_dir_path, kroki_client, generated_files, logger)
+    expect(logger).to have_received(:warn).once
+  end
+  it 'should not warn when the same target name maps to the same diagram' do
+    generated_files = {}
+    logger = double('logger', warn: nil)
+    kroki_http_client = AsciidoctorExtensions::KrokiHttpClient
+    kroki_client = AsciidoctorExtensions::KrokiClient.new(server_url: 'https://kroki.io', http_method: 'get', http_client: kroki_http_client)
+    output_dir_path = "#{__dir__}/../.asciidoctor/kroki"
+    allow(kroki_http_client).to receive(:get).and_return('content')
+    2.times do
+      AsciidoctorExtensions::KrokiDiagram.new('plantuml', 'svg', 'alice -> bob', 'shared').save(output_dir_path, kroki_client, generated_files, logger)
+    end
+    expect(logger).not_to have_received(:warn)
   end
 end
