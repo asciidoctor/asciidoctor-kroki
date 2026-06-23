@@ -152,8 +152,13 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          PRERELEASE_FLAG=
+          case "${{ needs.prepare.outputs.version }}" in
+            *-*) PRERELEASE_FLAG=--prerelease ;;
+          esac
           gh release create "v${{ needs.prepare.outputs.version }}" \
             --title "v${{ needs.prepare.outputs.version }}" \
             --notes-file release-notes.md \
+            $PRERELEASE_FLAG \
             dist/asciidoctor-kroki.dist.zip \
             dist/asciidoctor-kroki.dist.tar.gz

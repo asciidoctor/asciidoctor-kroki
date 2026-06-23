@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+First stable release. It includes every change from the `1.0.0-beta.*` prereleases.
+
+This version requires [Asciidoctor.js 4.0](https://github.com/asciidoctor/asciidoctor.js) (`@asciidoctor/core` `>=4.0.0 <5.0.0`).
+It is **not yet compatible with Antora**, which still bundles an older Asciidoctor.js; keep using the `latest-0` release line (currently 0.18.1) with Antora.
+See the [installation guide](https://docs.asciidoctor.org/kroki-extension/latest/install/#antora).
+
 ## [1.0.0-beta.1] - 2026-06-23
 
 ### Added
@@ -15,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Breaking:** require Asciidoctor.js 4.0 (`@asciidoctor/core` `>=4.0.0 <5.0.0`). Antora is not yet supported because it ships an older Asciidoctor.js; use the `latest-0` release line with Antora until it upgrades.
 - Use a stable file name for fetched diagrams that are given an explicit name: `[ditaa,foo]` now generates `foo.svg` instead of `foo-<checksum>.svg`, so links to generated images stay stable across content changes. Anonymous diagrams keep a content-addressed name (`diag-<sha256>.svg`); reusing the same name for diagrams with different content overwrites the file and logs a warning. The JavaScript checksum is also switched from SHA-1 to SHA-256 to match the Ruby gem ([#451](https://github.com/asciidoctor/asciidoctor-kroki/issues/451)).
 - Lower the minimum supported Node.js version to 22 (nothing in the code requires Node.js 24).
 - Document the feature parity between the JavaScript/Node.js extension and the Ruby gem. Preprocessing (resolving PlantUML/Structurizr `!include` and Vega-Lite `data.url`) and `kroki-plantuml-include-paths` are available in the JavaScript/Node.js extension only; the Ruby gem relies on the Kroki server to resolve includes.
