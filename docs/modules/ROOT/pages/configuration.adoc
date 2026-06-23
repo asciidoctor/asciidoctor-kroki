@@ -32,7 +32,7 @@ a|How to retrieve images from the Kroki server:
 |
 
 |`kroki-plantuml-include-paths`
-|Additional search paths for resolving `!include file`, similar to https://plantuml.com/de/preprocessing[PlantUML's `plantuml.include.path`]. Use `;` (Windows) or `:` (Unix) to separate multiple paths.
+|Additional search paths for resolving `!include file`, similar to https://plantuml.com/de/preprocessing[PlantUML's `plantuml.include.path`]. Use `;` (Windows) or `:` (Unix) to separate multiple paths. _JavaScript only_ (see xref:_feature_parity[]).
 |
 
 |`kroki-max-uri-length`
@@ -99,3 +99,46 @@ By default, the Kroki server runs in `SECURE` mode, which restricts access to th
 
 To work around this, Asciidoctor Kroki resolves and loads external resources *before* sending the request to the Kroki server.
 This feature is only available when Asciidoctor safe mode is `server` or lower.
+
+[IMPORTANT]
+====
+Preprocessing is implemented in the *JavaScript/Node.js* extension only.
+The Ruby gem does not resolve includes locally and instead relies on the Kroki server to resolve them (for example by running the server with `KROKI_PLANTUML_ALLOW_INCLUDE=true`).
+See xref:_feature_parity[].
+====
+
+[#_feature_parity]
+== Feature parity (JavaScript vs Ruby)
+
+The JavaScript/Node.js extension and the Ruby gem share the same version and are released together, but a few features are currently available in the JavaScript/Node.js extension only:
+
+[cols="3,1,1",options="header"]
+|===
+|Feature|JavaScript|Ruby
+
+|Preprocessing of PlantUML `!include` (local, remote and recursive)
+|Yes
+|No (resolved by the Kroki server)
+
+|Preprocessing of Structurizr `!include`
+|Yes
+|No (resolved by the Kroki server)
+
+|Preprocessing of Vega-Lite `data.url`
+|Yes
+|No (resolved by the Kroki server)
+
+|`kroki-plantuml-include-paths`
+|Yes
+|No
+
+|`kroki-plantuml-include` (single shared file)
+|Yes
+|Yes
+
+|`kroki-default-options`
+|Yes
+|Yes
+|===
+
+NOTE: Antora uses the JavaScript/Node.js extension, so preprocessing is fully available in an Antora pipeline.
