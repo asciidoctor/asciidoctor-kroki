@@ -33,7 +33,11 @@ jobs:
         run: |
           VERSION="${{ steps.set-version.outputs.version }}"
           npm version "$VERSION" --no-git-tag-version
-          sed -i "s/VERSION = '.*'/VERSION = '$VERSION'/" ruby/lib/asciidoctor/extensions/asciidoctor_kroki/version.rb
+          # RubyGems uses dots for prereleases (1.0.0.beta.1), whereas npm/semver
+          # uses a hyphen (1.0.0-beta.1). Converting avoids the .pre. RubyGems
+          # would otherwise insert when normalizing the hyphenated form.
+          RUBY_VERSION="${VERSION//-/.}"
+          sed -i "s/VERSION = '.*'/VERSION = '$RUBY_VERSION'/" ruby/lib/asciidoctor/extensions/asciidoctor_kroki/version.rb
       - name: Update Gemfile.lock
         run: bundle lock
         working-directory: ./ruby
