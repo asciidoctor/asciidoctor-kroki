@@ -2,6 +2,6 @@
 
 module Asciidoctor
   module AsciidoctorKroki
-    VERSION = '1.0.0-beta.1'
+    VERSION = '0.10.2'
   end
 end
