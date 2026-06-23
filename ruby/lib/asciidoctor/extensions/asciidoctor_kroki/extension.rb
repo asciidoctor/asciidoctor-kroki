@@ -156,7 +156,7 @@ module AsciidoctorExtensions
     BUILTIN_ATTRIBUTES = %w[target width height format fallback link float align role caption title cloaked-context subs].freeze
 
     class << self
-      # rubocop:disable Metrics/AbcSize
+      # rubocop:disable Metrics/AbcSize, Metrics/PerceivedComplexity
       def process(processor, parent, attrs, diagram_type, diagram_text, logger)
         doc = parent.document
         diagram_text = prepend_plantuml_config(diagram_text, diagram_type, doc, logger)
@@ -166,6 +166,10 @@ module AsciidoctorExtensions
           diagram_text = parent.apply_subs(diagram_text, parent.resolve_subs(subs))
         end
         attrs.delete('opts')
+        # Apply the option defined on the block/macro or, as a fallback, the document-wide kroki-default-options.
+        if (option = get_option(attrs, doc)) && option != 'none'
+          attrs["#{option}-option"] = ''
+        end
         format = get_format(doc, attrs, diagram_type)
         attrs['role'] = get_role(format, attrs['role'])
         attrs['format'] = format
@@ -193,7 +197,7 @@ module AsciidoctorExtensions
         block.assign_caption(caption, 'figure')
         block
       end
-      # rubocop:enable Metrics/AbcSize
+      # rubocop:enable Metrics/AbcSize, Metrics/PerceivedComplexity
 
       private
 
@@ -233,6 +237,20 @@ module AsciidoctorExtensions
         else
           'kroki'
         end
+      end
+
+      # Get the option defined on the block or macro.
+      #
+      # First, check if an option is defined as an attribute (e.g. opts=inline).
+      # If there is no match, fall back to the document-wide kroki-default-options attribute.
+      #
+      # @param attrs [Hash] the block or macro attributes
+      # @param doc [Asciidoctor::Document] the Asciidoctor document
+      # @return [String, nil] the option name (inline, interactive or none) or nil
+      def get_option(attrs, doc)
+        available_options = %w[inline interactive none]
+        available_options.find { |option| attrs["#{option}-option"] == '' } ||
+          available_options.find { |option| doc.attr('kroki-default-options') == option }
       end
 
       def get_format(doc, attrs, diagram_type)

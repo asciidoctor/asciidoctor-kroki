@@ -30,4 +30,24 @@ describe '::AsciidoctorExtensions::KrokiProcessor' do
     output_dir_path = AsciidoctorExtensions::KrokiProcessor.send(:output_dir_path, doc)
     expect(output_dir_path).to eq "#{Dir.pwd}/img"
   end
+  it 'should return the option defined on the block' do
+    doc = Asciidoctor.load('hello')
+    option = AsciidoctorExtensions::KrokiProcessor.send(:get_option, { 'inline-option' => '' }, doc)
+    expect(option).to eq 'inline'
+  end
+  it 'should fall back to the kroki-default-options document attribute' do
+    doc = Asciidoctor.load('hello', attributes: { 'kroki-default-options' => 'inline' })
+    option = AsciidoctorExtensions::KrokiProcessor.send(:get_option, {}, doc)
+    expect(option).to eq 'inline'
+  end
+  it 'should let the block option override the kroki-default-options document attribute' do
+    doc = Asciidoctor.load('hello', attributes: { 'kroki-default-options' => 'inline' })
+    option = AsciidoctorExtensions::KrokiProcessor.send(:get_option, { 'none-option' => '' }, doc)
+    expect(option).to eq 'none'
+  end
+  it 'should return nil when no option is defined' do
+    doc = Asciidoctor.load('hello')
+    option = AsciidoctorExtensions::KrokiProcessor.send(:get_option, {}, doc)
+    expect(option).to be_nil
+  end
 end
