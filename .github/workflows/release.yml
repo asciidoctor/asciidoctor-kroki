@@ -30,12 +30,14 @@ jobs:
           VERSION="${{ steps.set-version.outputs.version }}"
           npm version "$VERSION" --no-git-tag-version
           sed -i "s/VERSION = '.*'/VERSION = '$VERSION'/" ruby/lib/asciidoctor/extensions/asciidoctor_kroki/version.rb
+      - name: Roll the changelog
+        run: node scripts/changelog.js release "${{ steps.set-version.outputs.version }}"
       - name: Commit and tag
         run: |
           VERSION="${{ steps.set-version.outputs.version }}"
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add package.json ruby/lib/asciidoctor/extensions/asciidoctor_kroki/version.rb
+          git add package.json ruby/lib/asciidoctor/extensions/asciidoctor_kroki/version.rb CHANGELOG.md
           git commit -m "chore: release v$VERSION"
           git tag "v$VERSION"
           git push origin HEAD:main
@@ -120,16 +122,22 @@ jobs:
       - uses: actions/checkout@v6
         with:
           ref: v${{ needs.prepare.outputs.version }}
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
       - name: Download JS artifacts
         uses: actions/download-artifact@v4
         with:
           name: js-dist
           path: dist/
+      - name: Generate release notes from the changelog
+        run: node scripts/changelog.js notes "${{ needs.prepare.outputs.version }}" > release-notes.md
       - name: Create GitHub release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh release create "v${{ needs.prepare.outputs.version }}" \
             --title "v${{ needs.prepare.outputs.version }}" \
+            --notes-file release-notes.md \
             dist/asciidoctor-kroki.dist.zip \
             dist/asciidoctor-kroki.dist.tar.gz
