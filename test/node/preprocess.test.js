@@ -498,6 +498,41 @@ ${includedText}
     )
   })
 
+  test('resolves a relative !include nested inside a remote file against the remote URL (#398)', async () => {
+    // A remote file that includes a sibling and a nested file using relative paths.
+    // These must be resolved against the remote URL of the including file, not
+    // looked up on the local file system (which silently skipped them before, see #398).
+    const remote = {
+      'https://example.com/diagrams/main.puml':
+        '!include shared/style.puml\nalice -> bob',
+      'https://example.com/diagrams/shared/style.puml':
+        '!include theme.puml\nskinparam backgroundColor white',
+      'https://example.com/diagrams/shared/theme.puml':
+        'skinparam shadowing false',
+    }
+    const vfs = {
+      read: async (p) => {
+        if (p in remote) {
+          return remote[p]
+        }
+        throw new Error(`HTTP 404: ${p}`)
+      },
+      // mirrors fs.existsSync returning false for remote-looking paths
+      exists: () => false,
+    }
+    const memoryLogger = MemoryLogger.create()
+    const result = await preprocessPlantUML(
+      '!include https://example.com/diagrams/main.puml',
+      { vfs, logger: memoryLogger },
+    )
+    assert.strictEqual(
+      result,
+      'skinparam shadowing false\nskinparam backgroundColor white\nalice -> bob',
+    )
+    // no include should be skipped (no warning/info logged)
+    assert.strictEqual(memoryLogger.getMessages().length, 0)
+  })
+
   test('inlines multiple distinct local files via multiple !include directives', async () => {
     const localExistingFilePath1 = 'test/fixtures/plantuml/styles/note.iuml'
     const localExistingFilePath2 = 'test/fixtures/plantuml/styles/sequence.iuml'

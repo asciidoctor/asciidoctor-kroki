@@ -232,6 +232,12 @@ function resolveIncludeFile(includeFile, resource, includePaths, vfs) {
     const dirPath = path.dirname(resource.relative)
     return path.join(dirPath, includeFile)
   }
+  // When the including file was itself fetched from a remote URL, resolve a
+  // relative include against that URL so it can be fetched remotely as well,
+  // instead of being (incorrectly) looked up on the local file system (see #398).
+  if (typeof resource.path === 'string' && isRemoteUrl(resource.path)) {
+    return new URL(includeFile, resource.path).toString()
+  }
   let filePath = includeFile
   for (const includePath of [resource.dir, ...includePaths]) {
     const localFilePath = path.join(includePath, includeFile)
