@@ -94,7 +94,7 @@ jobs:
         run: |
           NPM_TAG=latest
           case "${{ needs.prepare.outputs.version }}" in
-            *-*) NPM_TAG=testing ;;
+            *-*) NPM_TAG=next ;;
           esac
           npm publish --provenance --access public --tag "$NPM_TAG"
       - name: Upload JS artifacts
