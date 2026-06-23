@@ -69,7 +69,7 @@
     "access": "public"
   },
   "engines": {
-    "node": ">=24"
+    "node": ">=22"
   },
   "volta": {
     "node": "24.15.0"
