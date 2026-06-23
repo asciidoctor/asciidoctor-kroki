@@ -10,11 +10,11 @@ Gem::Specification.new do |s|
 
   s.authors = ['Guillaume Grossetie']
   s.email = ['ggrossetie@yuzutech.fr']
-  s.homepage = 'https://github.com/ggrossetie/asciidoctor-kroki'
+  s.homepage = 'https://github.com/asciidoctor/asciidoctor-kroki'
   s.license = 'MIT'
   s.metadata = {
-    'bug_tracker_uri' => 'https://github.com/ggrossetie/asciidoctor-kroki/issues',
-    'source_code_uri' => 'https://github.com/ggrossetie/asciidoctor-kroki',
+    'bug_tracker_uri' => 'https://github.com/asciidoctor/asciidoctor-kroki/issues',
+    'source_code_uri' => 'https://github.com/asciidoctor/asciidoctor-kroki',
     'rubygems_mfa_required' => 'true'
   }
   # NOTE: the logic to build the list of files is designed to produce a usable package even when the git command is not available

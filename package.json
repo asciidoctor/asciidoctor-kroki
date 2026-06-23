@@ -34,7 +34,7 @@
     "pako": "2.1.0"
   },
   "devDependencies": {
-    "@asciidoctor/core": ">=4.0.0-alpha <5.0.0",
+    "@asciidoctor/core": ">=4.0.0 <5.0.0",
     "@biomejs/biome": "~2.4",
     "@rollup/plugin-commonjs": "~29.0",
     "@rollup/plugin-json": "~6.1",
@@ -46,11 +46,11 @@
     "testcontainers": "~11.14"
   },
   "peerDependencies": {
-    "@asciidoctor/core": ">=4.0.0-alpha <5.0.0"
+    "@asciidoctor/core": ">=4.0.0 <5.0.0"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/Mogztter/asciidoctor-kroki.git"
+    "url": "https://github.com/asciidoctor/asciidoctor-kroki.git"
   },
   "keywords": [
     "asciidoctor",
