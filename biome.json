@@ -6,7 +6,12 @@
     "useIgnoreFile": true
   },
   "files": {
-    "includes": ["**", "!!**/dist", "!!test/browser/test.js"]
+    "includes": [
+      "**",
+      "!!**/dist",
+      "!!test/browser/test.js",
+      "!!test/fixtures"
+    ]
   },
   "formatter": {
     "enabled": true,
