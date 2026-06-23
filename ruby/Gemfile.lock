@@ -1,13 +1,13 @@
 PATH
   remote: .
   specs:
-    asciidoctor-kroki (0.10.2)
+    asciidoctor-kroki (1.0.0.beta.1)
       asciidoctor (~> 2.0)
 
 GEM
   remote: https://rubygems.org/
   specs:
-    asciidoctor (2.0.22)
+    asciidoctor (2.0.26)
     ast (2.4.3)
     diff-lcs (1.6.2)
     json (2.13.0)
