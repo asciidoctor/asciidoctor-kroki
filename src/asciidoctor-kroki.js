@@ -315,6 +315,7 @@ export default {
       'ditaa',
       'erd',
       'excalidraw',
+      'goat',
       'graphviz',
       'mermaid',
       'nomnoml',

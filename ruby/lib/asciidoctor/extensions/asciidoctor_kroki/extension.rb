@@ -124,6 +124,7 @@ module AsciidoctorExtensions
       ditaa
       erd
       excalidraw
+      goat
       graphviz
       mermaid
       nomnoml
@@ -239,8 +240,8 @@ module AsciidoctorExtensions
         if format == 'png'
           # redirect PNG format to SVG if the diagram library only supports SVG as output format.
           # this is useful when the default format has been set to PNG
-          # Currently, nomnoml, svgbob, wavedrom only support SVG as output format.
-          svg_only_diagram_types = %i[nomnoml svgbob wavedrom]
+          # Currently, goat, nomnoml, svgbob, wavedrom only support SVG as output format.
+          svg_only_diagram_types = %i[goat nomnoml svgbob wavedrom]
           format = 'svg' if svg_only_diagram_types.include?(diagram_type)
         end
         format
