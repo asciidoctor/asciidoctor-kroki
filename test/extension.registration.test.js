@@ -16,6 +16,7 @@ describe('Registration', () => {
     assert.ok(registry.registeredForBlockMacro('rackdiag'))
     assert.ok(registry.registeredForBlockMacro('wavedrom'))
     assert.ok(registry.registeredForBlockMacro('excalidraw'))
+    assert.ok(registry.registeredForBlockMacro('goat'))
     assert.ok(registry.registeredForBlockMacro('pikchr'))
     assert.ok(registry.registeredForBlockMacro('structurizr'))
     assert.ok(registry.registeredForBlockMacro('diagramsnet'))
