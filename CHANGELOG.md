@@ -7,17 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [1.0.0-beta.2] - 2026-07-06
-
 First stable release. It includes every change from the `1.0.0-beta.*` prereleases.
 
 This version requires [Asciidoctor.js 4.0](https://github.com/asciidoctor/asciidoctor.js) (`@asciidoctor/core` `>=4.0.0 <5.0.0`).
 It is **not yet compatible with Antora**, which still bundles an older Asciidoctor.js; keep using the `latest-0` release line (currently 0.18.1) with Antora.
 See the [installation guide](https://docs.asciidoctor.org/kroki-extension/latest/install/#antora).
 
+## [1.0.0-beta.2] - 2026-07-06
+
 ### Changed
 
 - The `inline` option (`opts=inline` or `kroki-default-options: inline`) now embeds the diagram as a `data:` URI image target when neither `kroki-fetch-diagram` nor `allow-uri-read` is set, instead of producing a server URL the converter cannot read (which rendered as the image's alt text). The extension still only sets the image target — the converter decides how to render it — so DocBook, PDF and other backends keep working from the same data-URI image. Inlining the result as `<svg>` requires `@asciidoctor/core` with `data:`-URI inline SVG support.
+
+### Fixed
+
+- Encode diagram sources with `TextEncoder`/`btoa` instead of the Node-only `Buffer` global, so the JavaScript extension works in a real browser (VS Code for the Web / vscode.dev) where modern bundlers no longer polyfill `Buffer`. Previously every diagram failed with `ReferenceError: Buffer is not defined`; the new encoding produces byte-for-byte identical output.
+- Attach a source location to warnings emitted when a diagram is skipped, so the message points at the offending block instead of embedding a JSON stack blob.
 
 ## [1.0.0-beta.1] - 2026-06-23
 
