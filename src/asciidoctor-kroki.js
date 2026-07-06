@@ -33,20 +33,32 @@ const BUILTIN_ATTRIBUTES = [
   'opts',
 ]
 
-const wrapError = (err, message) => {
-  const errWrapper = new Error(message)
-  errWrapper.stack += `\nCaused by: ${err.stack || 'unknown'}`
-  const result = {
-    err: {
-      package: 'asciidoctor-kroki',
-      message,
-      stack: errWrapper.stack,
-    },
+/**
+ * Build an auto-formatting log message describing a skipped diagram block.
+ *
+ * Delegates to the document's `messageWithContext` (Logger.AutoFormattingMessage)
+ * so the message carries a structured `source_location` — recorded as-is by a
+ * MemoryLogger — while still rendering the location inline through
+ * `inspect()`/`toString()` when a stderr Logger formats the line.
+ *
+ * @param {Object} doc - Asciidoctor document.
+ * @param {Error} err - The error that caused the block to be skipped.
+ * @param {string} diagramType - The diagram type (e.g. "plantuml").
+ * @param {Object} [sourceLocation] - Reader cursor pointing at the block, if any.
+ * @returns {Object|string} An auto-formatting log message.
+ */
+const skipDiagramMessage = (doc, err, diagramType, sourceLocation) => {
+  const text = `Skipping ${diagramType} block: ${err.message || err}`
+  if (typeof doc.messageWithContext === 'function') {
+    return doc.messageWithContext(text, { source_location: sourceLocation })
   }
-  result.$inspect = function () {
-    return JSON.stringify(this.err)
+  // Fallback for Asciidoctor versions without the logging mixin on Document.
+  if (!sourceLocation) {
+    return text
   }
-  return result
+  const message = { text, source_location: sourceLocation }
+  message.inspect = message.toString = () => `${sourceLocation}: ${text}`
+  return message
 }
 
 const createImageSrc = async (
@@ -218,6 +230,8 @@ function diagramBlock(context) {
     this.process(async (parent, reader, attrs) => {
       const diagramType = this.name.toString()
       const role = attrs.role
+      // Capture the cursor at the block start before read() advances it.
+      const sourceLocation = reader?.cursor
       const diagramText = await reader.read()
       const logger = parent.getDocument().getLogger()
       try {
@@ -231,8 +245,8 @@ function diagramBlock(context) {
           context,
         )
       } catch (err) {
-        const errorMessage = wrapError(err, `Skipping ${diagramType} block.`)
-        logger.warn(errorMessage)
+        const doc = parent.getDocument()
+        logger.warn(skipDiagramMessage(doc, err, diagramType, sourceLocation))
         attrs.role = role ? `${role} kroki-error` : 'kroki-error'
         return this.createBlock(
           parent,
@@ -309,8 +323,8 @@ function diagramBlockMacro(name, context) {
           resource,
         )
       } catch (err) {
-        const errorMessage = wrapError(err, `Skipping ${diagramType} block.`)
-        parent.getDocument().getLogger().warn(errorMessage)
+        const doc = parent.getDocument()
+        doc.getLogger().warn(skipDiagramMessage(doc, err, diagramType))
         attrs.role = role ? `${role} kroki-error` : 'kroki-error'
         return this.createBlock(
           parent,
