@@ -49,12 +49,32 @@ const wrapError = (err, message) => {
   return result
 }
 
-const createImageSrc = async (doc, krokiDiagram, target, vfs, krokiClient) => {
+const createImageSrc = async (
+  doc,
+  krokiDiagram,
+  target,
+  vfs,
+  krokiClient,
+  inline,
+) => {
   if (
     doc.isAttribute('kroki-fetch-diagram') &&
     doc.getSafe() < SAFE_MODE_SECURE
   ) {
     return fetch.save(krokiDiagram, doc, target, vfs, krokiClient)
+  }
+  // The `inline` option asks the converter to embed the diagram (e.g. inline
+  // SVG). The converter can fetch the content itself from the server URL when
+  // `allow-uri-read` is set; otherwise it has no way to obtain it, so resolve the
+  // diagram to a data-URI here. We still only set the image target — the
+  // converter decides how to render it — so DocBook, PDF and other backends keep
+  // working from the same data-URI image.
+  if (
+    inline &&
+    !doc.isAttribute('allow-uri-read') &&
+    doc.getSafe() < SAFE_MODE_SECURE
+  ) {
+    return fetch.toDataUri(krokiDiagram, krokiClient)
   }
   return krokiDiagram.getDiagramUri(krokiClient.getServerUrl())
 }
@@ -179,6 +199,7 @@ const processKroki = async (
       attrs.target,
       context.vfs,
       krokiClient,
+      option === 'inline',
     )
     blockAttrs.alt = alt
     block = processor.createImageBlock(parent, blockAttrs)

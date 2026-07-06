@@ -11,6 +11,7 @@ import {
   convertFile,
   Extensions,
   LoggerManager,
+  load,
   loadFile,
   MemoryLogger,
 } from '@asciidoctor/core'
@@ -1601,6 +1602,46 @@ ${svg}
 </div>
 </div>`,
           )
+        })
+        test('resolves the inline option to a data URI when allow-uri-read is not set', async () => {
+          const registry = Extensions.create()
+          asciidoctorKroki.register(registry)
+          const doc = await load(
+            'plantuml::test/fixtures/alice.puml[svg,opts=inline]',
+            {
+              safe: 'safe',
+              extension_registry: registry,
+              attributes: { 'kroki-server-url': krokiServerUrl },
+            },
+          )
+          const image = doc.findBy({ context: 'image' })[0]
+          assert.ok(image, 'expected an image block')
+          // The converter has no way to read the diagram itself, so the diagram
+          // is embedded as a data-URI image target it can inline directly.
+          assert.match(
+            image.getAttribute('target'),
+            /^data:image\/svg\+xml;base64,/,
+          )
+        })
+        test('keeps the server URL target for the inline option when allow-uri-read is set', async () => {
+          const registry = Extensions.create()
+          asciidoctorKroki.register(registry)
+          const doc = await load(
+            'plantuml::test/fixtures/alice.puml[svg,opts=inline]',
+            {
+              safe: 'safe',
+              extension_registry: registry,
+              attributes: {
+                'allow-uri-read': '',
+                'kroki-server-url': krokiServerUrl,
+              },
+            },
+          )
+          const image = doc.findBy({ context: 'image' })[0]
+          assert.ok(image, 'expected an image block')
+          // With allow-uri-read the converter fetches the URL itself, so we keep
+          // the server URL rather than embedding the content.
+          assert.ok(image.getAttribute('target').startsWith(krokiServerUrl))
         })
       })
 
