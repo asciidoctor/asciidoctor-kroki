@@ -28,13 +28,16 @@ async function fetchGet(uri, encoding = 'utf8') {
   return text
 }
 
+// Buffer-free encoding: a real browser (vscode.dev) has no `Buffer` global, and the
+// browser test setup no longer polyfills it, so this must rely on TextEncoder/btoa.
 function encodeText(text) {
-  const data = Buffer.from(text, 'utf8')
-  const compressed = pako.deflate(data, { level: 9 })
-  return Buffer.from(compressed)
-    .toString('base64')
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
+  const bytes = new TextEncoder().encode(text)
+  const compressed = pako.deflate(bytes, { level: 9 })
+  let binary = ''
+  for (let i = 0; i < compressed.length; i++) {
+    binary += String.fromCharCode(compressed[i])
+  }
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_')
 }
 
 // In Vitest browser mode, the dev server root is the `test/` directory.

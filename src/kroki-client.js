@@ -21,6 +21,23 @@ const MIME_TYPES = {
 const REFERER = `asciidoctor/kroki.js/${packageJson.version}`
 
 /**
+ * Encodes a byte array to a standard (RFC 4648) base64 string.
+ * Uses `btoa`, which is a global in both Node.js (>=16) and browsers, so the
+ * result is identical to the Node-only base64 encoding of the same bytes
+ * without relying on the global that browser bundlers do not provide.
+ *
+ * @param {Uint8Array} bytes - Bytes to encode.
+ * @returns {string} Base64-encoded representation.
+ */
+function toBase64(bytes) {
+  let binary = ''
+  for (let i = 0; i < bytes.length; i++) {
+    binary += String.fromCharCode(bytes[i])
+  }
+  return btoa(binary)
+}
+
+/**
  * Represents a Kroki diagram, holding its type, output format, source text, and rendering options.
  */
 export class KrokiDiagram {
@@ -61,12 +78,9 @@ export class KrokiDiagram {
    * @returns {string} Base64url-encoded deflated representation of the diagram text.
    */
   encode() {
-    const data = Buffer.from(this.text, 'utf8')
-    const compressed = pako.deflate(data, { level: 9 })
-    return Buffer.from(compressed)
-      .toString('base64')
-      .replace(/\+/g, '-')
-      .replace(/\//g, '_')
+    const bytes = new TextEncoder().encode(this.text)
+    const compressed = pako.deflate(bytes, { level: 9 })
+    return toBase64(compressed).replace(/\+/g, '-').replace(/\//g, '_')
   }
 }
 
