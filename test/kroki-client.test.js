@@ -5,8 +5,28 @@ import { describe, mock, test } from 'node:test'
 import { load } from '@asciidoctor/core'
 import httpClient from '../src/http-client.js'
 import { KrokiClient, KrokiDiagram } from '../src/kroki-client.js'
+import { referenceEncode } from './reference-encode.js'
 
 describe('KrokiDiagram', () => {
+  // KrokiDiagram#encode must be isomorphic: it cannot rely on the Node-only `Buffer`
+  // because a real browser (VS Code for the Web / vscode.dev) has none. The browser
+  // test setup no longer polyfills Buffer, so this suite runs Buffer-free there. The
+  // expected value is derived from the diagram text by an independent, Buffer-free
+  // reference (see reference-encode.js).
+  describe('encode', () => {
+    for (const [label, text] of [
+      ['ASCII diagram source', 'alice -> bob'],
+      ['empty source', ''],
+      ['accented characters', 'Café -> Système: déjà'],
+      ['multi-byte emoji', 'Alice 🚀 -> Bob 🐛: héllo'],
+    ]) {
+      test(`encodes ${label}`, () => {
+        const diagram = new KrokiDiagram('plantuml', 'svg', text, {})
+        assert.strictEqual(diagram.encode(), referenceEncode(text))
+      })
+    }
+  })
+
   describe('getDiagramUri', () => {
     test('URL-encodes both key and value of diagram options', () => {
       const diagram = new KrokiDiagram('plantuml', 'svg', 'alice -> bob', {
