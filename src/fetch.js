@@ -56,6 +56,23 @@ const mediaTypeAndEncoding = (format) => {
 }
 
 /**
+ * Fetches a rendered diagram from Kroki and returns it as a `data:` URI,
+ * embedding the content directly without writing any file. Shared by data-URI
+ * mode and by the `inline` option, which both need the content carried in the
+ * node (as a standard data-URI image target) rather than referenced by URL or
+ * file path — keeping the extension converter-agnostic.
+ *
+ * @param {import('./kroki-client.js').KrokiDiagram} krokiDiagram - Diagram to render.
+ * @param {import('./kroki-client.js').KrokiClient} krokiClient - Client used to fetch the diagram.
+ * @returns {Promise<string>} A `data:` URI embedding the rendered diagram.
+ */
+const toDataUri = async (krokiDiagram, krokiClient) => {
+  const { mediaType, encoding } = mediaTypeAndEncoding(krokiDiagram.format)
+  const contents = await krokiClient.getImage(krokiDiagram, encoding)
+  return `data:${mediaType};base64,${Buffer.from(contents, encoding).toString('base64')}`
+}
+
+/**
  * Per-document registry of file names generated from an explicit diagram name,
  * mapped to the diagram URI they were generated from. Used to detect when the
  * same name is reused for diagrams with different content within one conversion.
@@ -65,6 +82,7 @@ const mediaTypeAndEncoding = (format) => {
 const generatedNamesByDocument = new WeakMap()
 
 export default {
+  toDataUri,
   /**
    * Fetches a rendered diagram from Kroki (or from the local cache) and either
    * saves it to the virtual filesystem or returns it as a `data:` URI.
@@ -95,8 +113,7 @@ export default {
 
     // In data-URI mode no file is written, so the file name is irrelevant: embed the diagram inline.
     if (dataUri) {
-      const contents = await krokiClient.getImage(krokiDiagram, encoding)
-      return `data:${mediaType};base64,${Buffer.from(contents, encoding).toString('base64')}`
+      return toDataUri(krokiDiagram, krokiClient)
     }
 
     // An explicit name is used verbatim so links stay stable; otherwise the name is
