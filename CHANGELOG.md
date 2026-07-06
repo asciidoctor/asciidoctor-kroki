@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0-beta.2] - 2026-07-06
+
 First stable release. It includes every change from the `1.0.0-beta.*` prereleases.
 
 This version requires [Asciidoctor.js 4.0](https://github.com/asciidoctor/asciidoctor.js) (`@asciidoctor/core` `>=4.0.0 <5.0.0`).
