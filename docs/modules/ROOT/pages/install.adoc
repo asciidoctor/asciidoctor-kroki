@@ -35,7 +35,7 @@ If you are using the https://github.com/asciidoctor/asciidoctor.js[Asciidoctor.j
 
 [IMPORTANT]
 ====
-Unlike the Ruby CLI, the `--require` (or `-r`) option only loads a library, it does not register extensions.
+Unlike the Ruby CLI, the `--require` (or `-r`) option only loads a library; it does not register extensions.
 With the Asciidoctor.js CLI, you must use `--extension`.
 ====
 
@@ -116,7 +116,7 @@ Create a file named `kroki.html` with the following content and open it in your 
       import { convert, Extensions } from '@asciidoctor/core'
       import asciidoctorKroki from 'asciidoctor-kroki'
 
-      const input = `Let's take an example with a _GraphViz_ "Hello World":
+      const input = `Here is a _GraphViz_ "Hello World" example:
 
 [graphviz]
 ....
@@ -137,7 +137,7 @@ digraph G {
 
 [TIP]
 ====
-If you want to reference a diagram file in a browser environment, you will need to define the base directory using the `base_dir` option.
+To reference a diagram file in a browser environment, define the base directory using the `base_dir` option.
 The extension will automatically use the https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API[Fetch API] to read files:
 
 [source,js]
@@ -183,8 +183,6 @@ asciidoc:
   extensions:
     - asciidoctor-kroki
 ----
-
-. Enjoy!
 
 [TIP]
 ====

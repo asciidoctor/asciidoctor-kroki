@@ -12,7 +12,7 @@
 |`https://kroki.io`
 
 |`kroki-data-uri`
-|Embed images as data-URI elements in HTML so the file is completely self-contained.
+|Embed images as data-URI elements in HTML so the file is completely self-contained. Only applies when `kroki-fetch-diagram` is enabled. The standard Asciidoctor `data-uri` attribute has the same effect. _JavaScript only_ (see xref:_feature_parity[]).
 |`false`
 
 |`kroki-fetch-diagram`
@@ -25,6 +25,8 @@ a|How to retrieve images from the Kroki server:
 * `get` — always use GET requests
 * `post` — always use POST requests
 * `adaptive` — use POST if the URI exceeds `kroki-max-uri-length` characters, otherwise use GET
+
+This attribute only applies when the extension downloads the diagram content itself: when `kroki-fetch-diagram` is enabled, when the image is embedded (data-URI mode or `inline` option), or when a text format is requested. Otherwise, the generated HTML references the image with a GET URL regardless of this attribute. An invalid value falls back to `adaptive` with a warning.
 |`adaptive`
 
 |`kroki-plantuml-include`
@@ -36,7 +38,7 @@ a|How to retrieve images from the Kroki server:
 |
 
 |`kroki-max-uri-length`
-|Maximum URI length before switching to POST when using the `adaptive` HTTP method.
+|Maximum URI length before switching to POST when using the `adaptive` HTTP method. With the `get` method, a warning is logged when the limit is exceeded.
 |`4000`
 |===
 
@@ -93,6 +95,8 @@ Unset it with `:kroki-default-options: none`, `:kroki-default-options!:`, or ove
 == Generated file names
 
 When `kroki-fetch-diagram` is set, diagrams are downloaded and saved to disk.
+Images are saved to the directory defined by the `imagesoutdir` attribute when set; otherwise to the output directory (the `outdir` attribute or the converter `to_dir` option, falling back to the base directory) combined with `imagesdir`.
+
 The generated file name depends on whether you give the diagram a name:
 
 * *Named diagram* — the name is used as-is, so the link stays stable even when the diagram content changes:
@@ -108,6 +112,7 @@ alice -> bob
 generates `my-diagram.svg`.
 
 * *Anonymous diagram* — a content-addressed name such as `diag-<checksum>.svg` is generated so anonymous diagrams never collide.
+If a file with this name already exists on disk, it necessarily has the same content, so the diagram is not downloaded again.
 
 [WARNING]
 ====
@@ -118,11 +123,12 @@ Use unique names to keep links stable.
 == Preprocessing
 
 Some diagram libraries support referencing external entities by URL or accessing filesystem resources.
-For example, PlantUML supports the `!import` directive, and Vega-Lite can load data from a URL.
+For example, PlantUML supports the `!include` directive, and Vega-Lite can load data from a URL.
 
 By default, the Kroki server runs in `SECURE` mode, which restricts access to the local file system and external network resources.
 
 To work around this, Asciidoctor Kroki resolves and loads external resources *before* sending the request to the Kroki server.
+For PlantUML, the whole `!include` family is supported: `!include`, `!include_many`, `!include_once`, `!includeurl`, and `!includesub`.
 This feature is only available when Asciidoctor safe mode is `server` or lower.
 
 [IMPORTANT]
@@ -158,8 +164,12 @@ The JavaScript/Node.js extension and the Ruby gem share the same version and are
 |No
 
 |`kroki-plantuml-include` (single shared file)
+|Yes (`plantuml` and `c4plantuml`)
+|Yes (`plantuml` only)
+
+|`kroki-data-uri`
 |Yes
-|Yes
+|No
 
 |`kroki-default-options`
 |Yes

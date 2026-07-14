@@ -22,6 +22,13 @@ To resolve this issue, choose one of the following approaches:
 
 [NOTE]
 ====
+Setting `kroki-http-method` alone is not enough: without `kroki-fetch-diagram`, the generated HTML references the image with a GET URL, and the request sent by the browser would still be too long.
 When using POST requests, the extension downloads images from the server and stores them locally.
 The images are then referenced using a relative path rather than a direct link to the Kroki server.
 ====
+
+== Diagram rendering failures
+
+When a diagram cannot be converted — for example, the Kroki server is unreachable or a referenced diagram file does not exist — the document conversion does not fail.
+Instead, the extension logs a warning (`Skipping <type> block: <reason>`) and renders the diagram source as-is.
+The `kroki-error` CSS class is added to the resulting block so failed diagrams can be styled or located in the output.
