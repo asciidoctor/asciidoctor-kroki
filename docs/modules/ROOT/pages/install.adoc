@@ -26,6 +26,19 @@ console.log(await convert(input, { safe: 'safe', extension_registry: registry })
 <1> Register the extension in the global registry.
 <2> Register the extension in a dedicated registry.
 
+=== CLI
+
+If you are using the https://github.com/asciidoctor/asciidoctor.js[Asciidoctor.js CLI] (the `asciidoctor` package), register the extension using the `--extension` option:
+
+ npm i asciidoctor asciidoctor-kroki
+ npx asciidoctor --extension asciidoctor-kroki doc.adoc
+
+[IMPORTANT]
+====
+Unlike the Ruby CLI, the `--require` (or `-r`) option only loads a library, it does not register extensions.
+With the Asciidoctor.js CLI, you must use `--extension`.
+====
+
 === Custom VFS
 
 By default, the extension reads diagram files from the local file system.
