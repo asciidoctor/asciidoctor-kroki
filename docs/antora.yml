@@ -1,5 +1,5 @@
 name: kroki-extension
-version: 1.0
+version: '1.0'
 title: Asciidoctor Kroki
 nav:
   - modules/ROOT/nav.adoc
