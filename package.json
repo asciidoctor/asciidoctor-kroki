@@ -5,8 +5,10 @@
   "type": "module",
   "main": "build/node/index.cjs",
   "module": "src/asciidoctor-kroki.js",
+  "types": "build/types/src/asciidoctor-kroki.d.ts",
   "exports": {
     ".": {
+      "types": "./build/types/src/asciidoctor-kroki.d.ts",
       "browser": "./build/browser/index.js",
       "require": "./build/node/index.cjs",
       "import": "./src/asciidoctor-kroki.js"
@@ -25,9 +27,10 @@
     "format": "biome format --write src/ test/ scripts/",
     "format:check": "biome format src/ test/ scripts/",
     "clean": "node -e \"require('fs').rmSync('build', {recursive: true, force: true})\"",
-    "build": "npm run clean && rollup -c",
+    "build": "npm run clean && rollup -c && npm run build:types",
     "build:browser": "BUILD_TARGET=browser rollup -c",
-    "build:node": "BUILD_TARGET=node rollup -c"
+    "build:node": "BUILD_TARGET=node rollup -c",
+    "build:types": "tsc"
   },
   "dependencies": {
     "json5": "2.2.3",
@@ -39,11 +42,13 @@
     "@rollup/plugin-commonjs": "~29.0",
     "@rollup/plugin-json": "~6.1",
     "@rollup/plugin-node-resolve": "~16.0",
+    "@types/node": "^26.1.1",
     "@vitest/browser": "~4.1",
     "@vitest/browser-playwright": "~4.1",
     "rollup": "~4.62",
     "sinon": "~22.0",
-    "testcontainers": "~12.0"
+    "testcontainers": "~12.0",
+    "typescript": "^7.0.2"
   },
   "peerDependencies": {
     "@asciidoctor/core": ">=4.0.0 <5.0.0"

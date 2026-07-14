@@ -337,7 +337,25 @@ function diagramBlockMacro(name, context) {
   }
 }
 
+/**
+ * Extension context shared across diagram processing.
+ *
+ * @typedef {Object} KrokiContext
+ * @property {Partial<import('./node-fs.js').Vfs>} [vfs] - Custom virtual filesystem used to read
+ *   diagram sources and write generated images. Missing methods fall back to the Node.js
+ *   implementation (or to a `fetch`-based implementation in the browser).
+ * @property {Object} [logger] - Asciidoctor logger; set by the extension while processing.
+ */
+
 export default {
+  /**
+   * Registers the Kroki extension — a block and a block macro for every supported
+   * diagram type — into the given Asciidoctor extensions registry.
+   *
+   * @param {import('@asciidoctor/core').Registry} registry - Asciidoctor extensions registry.
+   * @param {KrokiContext} [context={}] - Extension context (e.g. a custom virtual filesystem).
+   * @returns {import('@asciidoctor/core').Registry} The registry, for chaining.
+   */
   register: (registry, context = {}) => {
     const names = [
       'actdiag',
