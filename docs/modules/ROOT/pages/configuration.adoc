@@ -74,7 +74,7 @@ The `@` suffix allows the value to be overridden in individual documents.
 
 References:
 
-* https://docs.asciidoctor.org/asciidoctor/latest/attributes/document-attributes-ref/[Asciidoctor document attributes]
+* xref:asciidoc:attributes:document-attributes-ref.adoc[Asciidoctor document attributes]
 * https://docs.antora.org/antora/2.3/page/attributes/#custom-attributes[Antora custom attributes]
 ====
 
