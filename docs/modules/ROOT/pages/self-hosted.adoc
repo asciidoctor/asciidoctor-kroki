@@ -1,7 +1,7 @@
 = Self-Hosted Kroki
 :description: How to use Asciidoctor Kroki with your own self-hosted Kroki server.
 
-By default, this extension sends diagrams to https://kroki.io and receives images back.
+By default, the extension sends diagrams to https://kroki.io and receives images back.
 
 You may prefer to use your own server for any of the following reasons:
 

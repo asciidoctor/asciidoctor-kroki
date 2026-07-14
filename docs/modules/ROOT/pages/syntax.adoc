@@ -1,5 +1,5 @@
 = Syntax
-:description: Syntax reference for the Asciidoctor Kroki extension: positional attributes, named attributes, options, and supported diagram types.
+:description: Syntax reference for the Asciidoctor Kroki extension: positional attributes, named attributes, options, substitutions, output formats, and supported diagram types.
 
 You can declare positional and named attributes when using the block or macro form.
 
@@ -94,11 +94,16 @@ The following attributes are used by the built-in HTML 5 converter:
 |Image alignment
 
 |`role`
-|CSS class(es) to apply to the image
+|CSS class(es) to apply to the image, in addition to the `kroki` and `kroki-format-<format>` classes that are always added
 
 |`title`
-|Alternative text description of the diagram
+|Block title, displayed as the figure caption
+
+|`caption`
+|Caption prefix displayed before the block title, replacing the automatic `Figure N.` label
 |===
+
+NOTE: The image alt text is derived from `title` when set, then from `target`, and falls back to `Diagram`.
 
 == Options
 
@@ -132,6 +137,34 @@ blockdiag {
 }
 ----
 ....
+
+[NOTE]
+====
+To inline an SVG, the converter must be able to read its content.
+When the `allow-uri-read` attribute is set, the converter fetches the content from the Kroki server URL.
+Otherwise, the extension embeds the diagram as a data-URI (requires safe mode `server` or lower).
+====
+
+== Substitutions
+
+Use the `subs` attribute to apply AsciiDoc substitutions to the diagram source before it is sent to the Kroki server.
+For example, `subs=attributes` substitutes document attributes:
+
+[source,asciidoc]
+....
+:node-color: greenyellow
+
+[blockdiag,subs=attributes]
+----
+blockdiag {
+  Kroki -> generates -> "Block diagrams";
+
+  Kroki [color = "{node-color}"];
+}
+----
+....
+
+WARNING: Do not include the `specialcharacters` substitution: it replaces `<`, `>`, and `&` with HTML entities, which would make the diagram source invalid.
 
 == Diagram-specific options
 
@@ -238,6 +271,9 @@ Kroki currently supports the following diagram libraries:
 |https://github.com/zebreus/symbolator[Symbolator]
 |`symbolator`
 
+|https://github.com/pgf-tikz/pgf[TikZ]
+|`tikz`
+
 |https://github.com/umlet/umlet[UMLet]
 |`umlet`
 
@@ -250,6 +286,9 @@ Kroki currently supports the following diagram libraries:
 |https://github.com/wavedrom/wavedrom[WaveDrom]
 |`wavedrom`
 
+|https://github.com/wireviz/WireViz[WireViz]
+|`wireviz`
+
 |https://github.com/structurizr/dsl[Structurizr]
 |`structurizr`
 
@@ -257,5 +296,18 @@ Kroki currently supports the following diagram libraries:
 |`diagramsnet`
 |===
 
-Each diagram library supports one or more output formats.
+[#output-formats]
+== Output formats
+
+Each diagram library supports one or more output formats: `svg`, `png`, `jpeg`, `pdf`, `base64`, and the text formats `txt`, `atxt`, and `utxt`.
 Consult the https://kroki.io/#support[Kroki documentation] for the supported formats per library.
+
+When a text format is requested, the diagram is rendered as a literal block containing its textual representation (e.g., ASCII art for a PlantUML sequence diagram) instead of an image:
+
+[source,asciidoc]
+....
+[plantuml,format=txt]
+----
+alice -> bob
+----
+....
