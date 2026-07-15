@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-07-15
+
 ### Added
 
 - Publish TypeScript type declarations, generated from the JSDoc annotations (`tsc --emitDeclarationOnly` into `build/types`). The package now declares a `types` entry point so TypeScript consumers get typed `register`, `KrokiContext` and `Vfs` APIs.
