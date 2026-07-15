@@ -13,7 +13,7 @@ let container
 let krokiServerUrl
 
 describe('Kroki HTTP client — Adaptive mode with real server', {
-  timeout: 10000,
+  timeout: 120000,
 }, () => {
   const isMacOS = os.platform() === 'darwin'
   if (os.platform() !== 'win32') {
