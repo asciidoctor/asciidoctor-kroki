@@ -70,6 +70,11 @@ jobs:
       run: |
         npm ci
         npx playwright install chromium
+    - name: Pull Kroki images used by Testcontainers
+      # pulling ahead of time keeps slow registry downloads out of the
+      # test hook timeouts (container tests only run on Linux)
+      if: runner.os == 'Linux'
+      run: grep -rhoE 'yuzutech/kroki:[0-9.]+' test/node/*.test.js | sort -u | xargs -n1 docker pull
     - name: Test
       run: npm t
       env:

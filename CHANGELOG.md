@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Increase the test suite timeout from 10 to 120 seconds for the Node.js tests that start a Kroki server with Testcontainers. The 10-second suite timeout also covered the container startup, so on slow CI runners the whole suite was cancelled (`test did not finish before its parent and was cancelled`) before the tests could run.
+- Fix intermittent CI failures (`test did not finish before its parent and was cancelled`) in the Node.js tests that start a Kroki server with Testcontainers. The 10-second suite timeout also covered the container startup and the 60-second `before` hook timeout was shorter than a slow image pull (both test files pull their own Kroki image in parallel, which can take more than a minute on CI runners). The suite timeout is raised to 120 seconds, the `before` hook timeout to 180 seconds, and the CI workflow now pulls the Kroki images before running the tests so registry downloads no longer count against test timeouts.
 
 ## [1.0.1] - 2026-07-15
 

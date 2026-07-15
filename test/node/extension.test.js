@@ -71,7 +71,8 @@ describe('Conversion', () => {
             .start()
           krokiServerUrl = `http://${container.getHost()}:${container.getMappedPort(8000)}`
         },
-        { timeout: 60000 },
+        // pulling the Kroki image alone can take more than a minute on CI runners
+        { timeout: 180000 },
       )
 
       after(
