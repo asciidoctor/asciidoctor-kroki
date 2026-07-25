@@ -24,8 +24,9 @@ Register and use the extension:
 import { convert, Extensions } from '@asciidoctor/core'
 import asciidoctorKroki from 'asciidoctor-kroki'
 
-asciidoctorKroki.register(Extensions)
-console.log(await convert('[graphviz]\n....\ndigraph G { Hello->World }\n....'))
+const registry = Extensions.create()
+asciidoctorKroki.register(registry)
+console.log(await convert('[graphviz]\n....\ndigraph G { Hello->World }\n....', { extension_registry: registry }))
 ```
 
 For installation instructions for Node.js, Browser, Ruby, and Antora, as well as the full configuration reference, see the [documentation](https://docs.asciidoctor.org/kroki-extension/latest).
