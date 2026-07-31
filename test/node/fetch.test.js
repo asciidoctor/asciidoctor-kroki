@@ -146,3 +146,39 @@ describe('fetch.save', () => {
     assert.strictEqual(warnings.length, 0)
   })
 })
+
+describe('fetch.toDataUri', () => {
+  test('embeds an svg diagram as a base64 data URI, without relying on Buffer', async () => {
+    const client = createKrokiClient(async () => '<svg>éÿ</svg>')
+    const uri = await fetch.toDataUri(
+      createDiagram('svg', 'https://kroki.io/x'),
+      client,
+    )
+    assert.match(uri, /^data:image\/svg\+xml;base64,/)
+    const [, base64] = uri.split(',')
+    const decoded = Buffer.from(base64, 'base64').toString('binary')
+    assert.strictEqual(decoded, '<svg>éÿ</svg>')
+  })
+
+  test('embeds a png diagram as a base64 data URI', async () => {
+    const client = createKrokiClient(async () => '\x89PNG\r\n\x1a\n')
+    const uri = await fetch.toDataUri(
+      createDiagram('png', 'https://kroki.io/x'),
+      client,
+    )
+    assert.match(uri, /^data:image\/png;base64,/)
+  })
+
+  test('encodes non-ASCII utf8 content correctly (txt/atxt/utxt formats)', async () => {
+    const text = 'Ferry: file d’attente distribuée — café ☃'
+    const client = createKrokiClient(async () => text)
+    const uri = await fetch.toDataUri(
+      createDiagram('txt', 'https://kroki.io/x'),
+      client,
+    )
+    assert.match(uri, /^data:text\/plain; charset=utf-8;base64,/)
+    const [, base64] = uri.split(',')
+    const decoded = Buffer.from(base64, 'base64').toString('utf8')
+    assert.strictEqual(decoded, text)
+  })
+})

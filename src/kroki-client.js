@@ -1,5 +1,6 @@
 import pako from 'pako'
 import packageJson from '../package.json' with { type: 'json' }
+import { toBase64 } from './base64.js'
 
 /** @type {number} Default maximum URI length before switching to POST. */
 const MAX_URI_DEFAULT_VALUE = 4000
@@ -19,23 +20,6 @@ const MIME_TYPES = {
 
 /** @type {string} Referer header value sent with every request. */
 const REFERER = `asciidoctor/kroki.js/${packageJson.version}`
-
-/**
- * Encodes a byte array to a standard (RFC 4648) base64 string.
- * Uses `btoa`, which is a global in both Node.js (>=16) and browsers, so the
- * result is identical to the Node-only base64 encoding of the same bytes
- * without relying on the global that browser bundlers do not provide.
- *
- * @param {Uint8Array} bytes - Bytes to encode.
- * @returns {string} Base64-encoded representation.
- */
-function toBase64(bytes) {
-  let binary = ''
-  for (let i = 0; i < bytes.length; i++) {
-    binary += String.fromCharCode(bytes[i])
-  }
-  return btoa(binary)
-}
 
 /**
  * Represents a Kroki diagram, holding its type, output format, source text, and rendering options.

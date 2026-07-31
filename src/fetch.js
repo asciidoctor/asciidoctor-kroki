@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto'
 import { posix as path } from 'node:path'
+import { toBase64 } from './base64.js'
 import { resolveVfs } from './node-fs.js'
 
 /**
@@ -69,7 +70,14 @@ const mediaTypeAndEncoding = (format) => {
 const toDataUri = async (krokiDiagram, krokiClient) => {
   const { mediaType, encoding } = mediaTypeAndEncoding(krokiDiagram.format)
   const contents = await krokiClient.getImage(krokiDiagram, encoding)
-  return `data:${mediaType};base64,${Buffer.from(contents, encoding).toString('base64')}`
+  // `contents` is either a byte-per-char "binary" string (svg/png/...) or a
+  // real UTF-8 string (txt/atxt/utxt); convert either to bytes without
+  // `Buffer`, which browser bundlers do not provide.
+  const bytes =
+    encoding === 'utf8'
+      ? new TextEncoder().encode(contents)
+      : Uint8Array.from(contents, (char) => char.charCodeAt(0))
+  return `data:${mediaType};base64,${toBase64(bytes)}`
 }
 
 /**

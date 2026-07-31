@@ -1,6 +1,6 @@
 import assert from 'node:assert'
 import { describe, test } from 'node:test'
-import { convert, Extensions } from '@asciidoctor/core'
+import { convert, Extensions, load } from '@asciidoctor/core'
 import pako from 'pako'
 import asciidoctorKroki from '../../src/asciidoctor-kroki.js'
 
@@ -157,6 +157,41 @@ alice -> bob
           `<img src="https://kroki.io/plantuml/svg/${encodeText(expectedDiagramText)}" alt="Diagram">`,
         ),
         `Expected relative !include to be inlined in the Kroki URL.\nGot:\n${html}`,
+      )
+    }, 5000)
+
+    test('resolves the inline option to a base64 SVG data URI without Buffer (real browser, no polyfill)', async () => {
+      // Without allow-uri-read, the converter can't fetch the diagram itself, so
+      // it's embedded as a data URI (see fetch.toDataUri). This is checked on
+      // the loaded document rather than the rendered HTML: the core HTML5
+      // converter only decodes a data: URI into literal <svg> markup if
+      // allow-uri-read is also set (it gates reading any URI, including data:
+      // ones), and setting that would bypass fetch.toDataUri entirely by
+      // letting the converter fetch the diagram straight from the Kroki
+      // server. Checking the target attribute still exercises the base64
+      // encoding path end to end in an actual browser with no Buffer global
+      // available.
+      const input = `
+[plantuml,opts=inline]
+....
+alice -> bob
+....
+`
+      const registry = Extensions.create()
+      asciidoctorKroki.register(registry)
+      // The data-URI path is only taken below `secure` safe mode (the
+      // Asciidoctor default), same as the `allow-uri-read` fetch path.
+      const doc = await load(input, {
+        extension_registry: registry,
+        safe: 'safe',
+      })
+      const [image] = doc.findBy({ context: 'image' })
+      const target = image?.getAttribute('target')
+      assert.match(target, /^data:image\/svg\+xml;base64,/)
+      const decoded = atob(target.split(',')[1])
+      assert.ok(
+        decoded.startsWith('<svg'),
+        `Expected the decoded data URI to be an <svg> document, got:\n${decoded}`,
       )
     }, 5000)
   })
