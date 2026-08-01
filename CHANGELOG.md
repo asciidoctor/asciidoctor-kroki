@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix the README Quick start example, which called `register` on the `Extensions` namespace directly instead of on a registry instance.
 - Fix intermittent CI failures where slow Kroki image pulls exceeded the Testcontainers-backed tests' timeouts.
 - Fix `ReferenceError: Buffer is not defined` when building a `data:` URI diagram in a real browser.
+- Fix the converter not finding a fetched diagram when `imagesoutdir` differs from `imagesdir`, by setting an `imagesdir` override on the generated image node instead of relying on the document-wide attribute ([#373](https://github.com/asciidoctor/asciidoctor-kroki/issues/373)). Effective now in the JavaScript/Node.js extension (Asciidoctor.js 4.0+); the Ruby gem carries the same fix but it stays inert until Asciidoctor Ruby ships node-level `imagesdir` support (merged upstream, not yet released).
 
 ## [1.0.1] - 2026-07-15
 

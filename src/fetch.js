@@ -106,12 +106,15 @@ export default {
    * @param {string|undefined} target - Explicit base name for the output file; when omitted a content-addressed name is used.
    * @param {Object|undefined} vfs - Virtual filesystem implementation; resolved via {@link resolveVfs}.
    * @param {import('./kroki-client.js').KrokiClient} krokiClient - Client used to fetch the diagram when not cached.
-   * @returns {Promise<string>} The diagram file name (relative to the images output directory)
-   *   or a `data:` URI when data-URI mode is active.
+   * @returns {Promise<{target: string, imagesdir?: string}>} `target` is the diagram
+   *   file name (relative to the images output directory) or a `data:` URI when data-URI mode
+   *   is active; `imagesdir`, when set, must be applied to the image node (not the document) so
+   *   the converter locates the file where it was actually written.
    */
   save: async (krokiDiagram, doc, target, vfs, krokiClient) => {
     const { exists, read, add } = resolveVfs(vfs)
 
+    const outputDirectory = getOutputDirectory(doc)
     const imagesOutputDirectory = getImagesOutputDirectory(doc)
     const dataUri =
       doc.isAttribute('data-uri') || doc.isAttribute('kroki-data-uri')
@@ -121,7 +124,7 @@ export default {
 
     // In data-URI mode no file is written, so the file name is irrelevant: embed the diagram inline.
     if (dataUri) {
-      return toDataUri(krokiDiagram, krokiClient)
+      return { target: await toDataUri(krokiDiagram, krokiClient) }
     }
 
     // An explicit name is used verbatim so links stay stable; otherwise the name is
@@ -172,6 +175,14 @@ export default {
       mediaType,
       contents: Buffer.from(contents, encoding),
     })
-    return diagramName
+    // The converter resolves the image target against the document's `imagesdir`
+    // attribute, which only matches where we actually wrote the file when
+    // `imagesoutdir` is unset. Overriding `imagesdir` on this image node (rather
+    // than on the document) tells the converter exactly where to find this one
+    // file, without disturbing other images in the document (asciidoctor/asciidoctor#3660).
+    return {
+      target: diagramName,
+      imagesdir: path.relative(outputDirectory, imagesOutputDirectory),
+    }
   },
 }

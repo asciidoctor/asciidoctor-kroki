@@ -519,6 +519,63 @@ Hello -> World
           `<img src="../images/diag-${hash}.svg" alt="Diagram">`,
         )
       })
+      test('automatically points imagesdir at imagesoutdir without a manual imagesdir attribute (#373)', async () => {
+        const input = `
+[plantuml,"",svg,role=sequence]
+....
+Hello -> World
+....
+`
+        const registry = Extensions.create()
+        register(registry)
+        await convert(input, {
+          safe: 'safe',
+          extension_registry: registry,
+          attributes: {
+            'kroki-fetch-diagram': true,
+            'kroki-server-url': krokiServerUrl,
+            imagesoutdir: '.asciidoctor/kroki/auto-images',
+          },
+          to_dir: '.asciidoctor/kroki/auto-relative',
+          to_file: 'auto-relative.html',
+          standalone: false,
+          mkdirs: true,
+        })
+        const html = fs.readFileSync(
+          ospath.join(
+            __dirname,
+            '..',
+            '..',
+            '.asciidoctor',
+            'kroki',
+            'auto-relative',
+            'auto-relative.html',
+          ),
+          'utf8',
+        )
+        const hash = createHash('sha256')
+          .update(
+            `${krokiServerUrl}/plantuml/svg/${encodeText('Hello -> World')}`,
+          )
+          .digest('hex')
+        // No `imagesdir` attribute was set at all — the extension derives it from
+        // `imagesoutdir` relative to `to_dir`, so the HTML reference lands on the
+        // same file that was actually written to disk.
+        assertContains(
+          html,
+          `<img src="../auto-images/diag-${hash}.svg" alt="Diagram">`,
+        )
+        const imageFile = ospath.join(
+          __dirname,
+          '..',
+          '..',
+          '.asciidoctor',
+          'kroki',
+          'auto-images',
+          `diag-${hash}.svg`,
+        )
+        assert.ok(fs.existsSync(imageFile))
+      })
       test('saves the fetched image at the root of to_dir when imagesdir is not set', async () => {
         const input = `
 [plantuml,"",svg,role=sequence]

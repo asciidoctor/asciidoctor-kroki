@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'cgi'
+require 'pathname'
 require 'asciidoctor/extensions' unless RUBY_ENGINE == 'opal'
 
 # Asciidoctor extensions
@@ -190,7 +191,7 @@ module AsciidoctorExtensions
           block = processor.create_block(parent, 'literal', text_content, attrs)
         else
           attrs['alt'] = alt
-          attrs['target'] = create_image_src(doc, kroki_diagram, kroki_client, logger)
+          apply_image_src(attrs, create_image_src(doc, kroki_diagram, kroki_client, logger))
           block = processor.create_image_block(parent, attrs)
         end
         block.title = title if title
@@ -265,11 +266,26 @@ module AsciidoctorExtensions
         format
       end
 
+      def apply_image_src(attrs, image_src)
+        attrs['target'] = image_src[:target]
+        attrs['imagesdir'] = image_src[:imagesdir] if image_src[:imagesdir]
+      end
+
       def create_image_src(doc, kroki_diagram, kroki_client, logger)
         if doc.attr('kroki-fetch-diagram') && doc.safe < ::Asciidoctor::SafeMode::SECURE
-          kroki_diagram.save(output_dir_path(doc), kroki_client, generated_files(doc), logger)
+          images_output_dir = output_dir_path(doc)
+          diagram_name = kroki_diagram.save(images_output_dir, kroki_client, generated_files(doc), logger)
+          # The converter resolves the image target against the document's `imagesdir`
+          # attribute, which only matches where we actually wrote the file when
+          # `imagesoutdir` is unset. Overriding `imagesdir` on this image node (rather
+          # than on the document) tells the converter exactly where to find this one
+          # file, without disturbing other images in the document (asciidoctor/asciidoctor#3660).
+          # As of this writing that core change is merged to `main` but not yet in a
+          # released gem (still absent from 2.0.26); until it ships, Asciidoctor's
+          # `image_uri` ignores the node-level attribute and this is a harmless no-op.
+          { target: diagram_name, imagesdir: relative_images_dir(doc, images_output_dir) }
         else
-          kroki_diagram.get_diagram_uri(server_url(doc))
+          { target: kroki_diagram.get_diagram_uri(server_url(doc)) }
         end
       end
 
@@ -294,15 +310,21 @@ module AsciidoctorExtensions
       end
 
       def output_dir_path(doc)
-        images_dir = doc.attr('imagesdir', '')
-        if (images_output_dir = doc.attr('imagesoutdir'))
-          images_output_dir
-        # the nested document logic will become obsolete once https://github.com/asciidoctor/asciidoctor/commit/7edc9da023522be67b17e2a085d72e056703a438 is released
-        elsif (out_dir = doc.attr('outdir') || (doc.nested? ? doc.parent_document : doc).options[:to_dir])
-          File.join(out_dir, images_dir)
-        else
-          File.join(doc.base_dir, images_dir)
-        end
+        images_output_dir = doc.attr('imagesoutdir')
+        return images_output_dir if images_output_dir
+
+        File.join(output_dir(doc), doc.attr('imagesdir', ''))
+      end
+
+      # the nested document logic will become obsolete once https://github.com/asciidoctor/asciidoctor/commit/7edc9da023522be67b17e2a085d72e056703a438 is released
+      def output_dir(doc)
+        doc.attr('outdir') || (doc.nested? ? doc.parent_document : doc).options[:to_dir] || doc.base_dir
+      end
+
+      def relative_images_dir(doc, images_output_dir)
+        from = Pathname.new(File.expand_path(output_dir(doc)))
+        to = Pathname.new(File.expand_path(images_output_dir))
+        to.relative_path_from(from).to_s
       end
     end
   end

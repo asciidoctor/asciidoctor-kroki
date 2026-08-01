@@ -43,14 +43,15 @@ describe('fetch.save', () => {
       return '<svg/>'
     })
     const doc = createDoc({ attributes: { imagesdir: 'images' } })
-    const name = await fetch.save(
+    const result = await fetch.save(
       createDiagram('svg', 'https://kroki.io/plantuml/svg/AAA'),
       doc,
       'foo',
       vfs,
       client,
     )
-    assert.strictEqual(name, 'foo.svg')
+    assert.strictEqual(result.target, 'foo.svg')
+    assert.strictEqual(result.imagesdir, 'images')
     assert.strictEqual(writes.length, 1)
     assert.strictEqual(writes[0].basename, 'foo.svg')
     assert.strictEqual(fetched, 1)
@@ -60,7 +61,7 @@ describe('fetch.save', () => {
     const vfs = { exists: () => false, read: async () => '', add: () => {} }
     const client = createKrokiClient(async () => '<svg/>')
     const uri = 'https://kroki.io/plantuml/svg/AAA'
-    const name = await fetch.save(
+    const result = await fetch.save(
       createDiagram('svg', uri),
       createDoc(),
       undefined,
@@ -68,7 +69,7 @@ describe('fetch.save', () => {
       client,
     )
     const hash = createHash('sha256').update(uri).digest('hex')
-    assert.strictEqual(name, `diag-${hash}.svg`)
+    assert.strictEqual(result.target, `diag-${hash}.svg`)
   })
 
   test('reuses an existing content-addressed file without re-fetching', async () => {
@@ -144,6 +145,45 @@ describe('fetch.save', () => {
     await fetch.save(createDiagram('svg', uri), doc, 'shared', vfs, client)
     await fetch.save(createDiagram('svg', uri), doc, 'shared', vfs, client)
     assert.strictEqual(warnings.length, 0)
+  })
+
+  test('returns an imagesdir override pointing at imagesoutdir when it diverges from imagesdir (#373)', async () => {
+    const writes = []
+    const vfs = {
+      exists: () => false,
+      read: async () => '',
+      add: (img) => writes.push(img),
+    }
+    const client = createKrokiClient(async () => '<svg/>')
+    const doc = createDoc({
+      attributes: { imagesdir: 'images', imagesoutdir: 'build/kroki' },
+    })
+    const result = await fetch.save(
+      createDiagram('svg', 'https://kroki.io/plantuml/svg/AAA'),
+      doc,
+      'foo',
+      vfs,
+      client,
+    )
+    assert.strictEqual(result.target, 'foo.svg')
+    // Written to `imagesoutdir`, not to `outdir`/`imagesdir` — the override tells
+    // the converter to look there instead of the document's own `imagesdir`.
+    assert.strictEqual(writes[0].relative, 'build/kroki')
+    assert.strictEqual(result.imagesdir, 'build/kroki')
+  })
+
+  test('imagesdir override is a no-op when imagesoutdir is not set', async () => {
+    const vfs = { exists: () => false, read: async () => '', add: () => {} }
+    const client = createKrokiClient(async () => '<svg/>')
+    const doc = createDoc({ attributes: { imagesdir: 'images' } })
+    const result = await fetch.save(
+      createDiagram('svg', 'https://kroki.io/plantuml/svg/AAA'),
+      doc,
+      'foo',
+      vfs,
+      client,
+    )
+    assert.strictEqual(result.imagesdir, 'images')
   })
 })
 

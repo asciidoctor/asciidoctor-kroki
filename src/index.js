@@ -61,6 +61,12 @@ const skipDiagramMessage = (doc, err, diagramType, sourceLocation) => {
   return message
 }
 
+/**
+ * Resolves the image node's `target` and, when the file was written outside the
+ * document's own `imagesdir`, the `imagesdir` override to set on that node.
+ *
+ * @returns {Promise<{target: string, imagesdir?: string}>}
+ */
 const createImageSrc = async (
   doc,
   krokiDiagram,
@@ -86,9 +92,9 @@ const createImageSrc = async (
     !doc.isAttribute('allow-uri-read') &&
     doc.getSafe() < SAFE_MODE_SECURE
   ) {
-    return fetch.toDataUri(krokiDiagram, krokiClient)
+    return { target: await fetch.toDataUri(krokiDiagram, krokiClient) }
   }
-  return krokiDiagram.getDiagramUri(krokiClient.getServerUrl())
+  return { target: krokiDiagram.getDiagramUri(krokiClient.getServerUrl()) }
 }
 
 /**
@@ -205,7 +211,7 @@ const processKroki = async (
     } else {
       alt = 'Diagram'
     }
-    blockAttrs.target = await createImageSrc(
+    const imageSrc = await createImageSrc(
       doc,
       krokiDiagram,
       attrs.target,
@@ -213,6 +219,10 @@ const processKroki = async (
       krokiClient,
       option === 'inline',
     )
+    blockAttrs.target = imageSrc.target
+    if (imageSrc.imagesdir !== undefined) {
+      blockAttrs.imagesdir = imageSrc.imagesdir
+    }
     blockAttrs.alt = alt
     block = processor.createImageBlock(parent, blockAttrs)
   }

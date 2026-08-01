@@ -30,6 +30,18 @@ describe '::AsciidoctorExtensions::KrokiProcessor' do
     output_dir_path = AsciidoctorExtensions::KrokiProcessor.send(:output_dir_path, doc)
     expect(output_dir_path).to eq "#{Dir.pwd}/img"
   end
+  it 'should compute an imagesdir override pointing at imagesoutdir when it diverges from to_dir (#373)' do
+    doc = Asciidoctor.load('hello', to_dir: '.asciidoctor/kroki/relative', attributes: { 'imagesoutdir' => '.asciidoctor/kroki/images' })
+    images_output_dir = AsciidoctorExtensions::KrokiProcessor.send(:output_dir_path, doc)
+    imagesdir = AsciidoctorExtensions::KrokiProcessor.send(:relative_images_dir, doc, images_output_dir)
+    expect(imagesdir).to eq '../images'
+  end
+  it 'should compute an imagesdir override that is a no-op when imagesoutdir is not set' do
+    doc = Asciidoctor.load('hello', attributes: { 'imagesdir' => 'img' })
+    images_output_dir = AsciidoctorExtensions::KrokiProcessor.send(:output_dir_path, doc)
+    imagesdir = AsciidoctorExtensions::KrokiProcessor.send(:relative_images_dir, doc, images_output_dir)
+    expect(imagesdir).to eq 'img'
+  end
   it 'should return the option defined on the block' do
     doc = Asciidoctor.load('hello')
     option = AsciidoctorExtensions::KrokiProcessor.send(:get_option, { 'inline-option' => '' }, doc)
