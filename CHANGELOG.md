@@ -9,14 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- **Breaking:** the JavaScript/Node.js extension now exports `register` as a named export instead of a default export with a `register` method. Update `import asciidoctorKroki from 'asciidoctor-kroki'; asciidoctorKroki.register(registry)` to `import { register } from 'asciidoctor-kroki'; register(registry)`.
-- **Breaking:** the source entry point is renamed from `src/asciidoctor-kroki.js` to `src/index.js`, and the generated TypeScript declarations move from `build/types/src/asciidoctor-kroki.d.ts` to a top-level `types/` directory (`types/index.d.ts`), to align with the layout used by `asciidoctor.js` itself. The declarations are now published as a matching pair — `types/index.d.ts` for ESM/`import` consumers and `types/index.d.cts` for CJS/`require` consumers under `moduleResolution: node16`/`nodenext` — instead of a single `.d.ts` file shared through one `types` export condition. `build/node/index.cjs` and `build/browser/index.js` are unchanged. Consumers using the package's `main`/`module`/`exports`/`types` fields (the documented way to use the package) are unaffected; anyone importing `src/asciidoctor-kroki.js` or a generated `.d.ts` file by its literal path needs to update it.
+- **Breaking:** the JavaScript/Node.js extension now exports `register` as a named export instead of a default export with a `register` method. Update `asciidoctorKroki.register(registry)` to `import { register } from 'asciidoctor-kroki'; register(registry)`.
+- **Breaking:** the source entry point and generated TypeScript declarations move to `src/index.js` and a top-level `types/` directory, matching the layout used by `asciidoctor.js`. Consumers using the package's documented `exports` field are unaffected; only direct imports of internal file paths need updating.
 
 ### Fixed
 
-- Fix the Quick start example in the README. It registered the extension against the `Extensions` namespace directly (`asciidoctorKroki.register(Extensions)`), which raises `registry.block is not a function` since `register` expects a registry instance. It now creates one with `Extensions.create()`, registers against it, and passes it to `convert` as `extension_registry`.
-- Fix intermittent CI failures (`test did not finish before its parent and was cancelled`) in the Node.js tests that start a Kroki server with Testcontainers. The 10-second suite timeout also covered the container startup and the 60-second `before` hook timeout was shorter than a slow image pull (both test files pull their own Kroki image in parallel, which can take more than a minute on CI runners). The suite timeout is raised to 120 seconds, the `before` hook timeout to 180 seconds, and the CI workflow now pulls the Kroki images before running the tests so registry downloads no longer count against test timeouts.
-- Fix `ReferenceError: Buffer is not defined` when building a `data:` URI diagram (the `inline` option, or the `interactive`/`none` fallback, without `allow-uri-read`) in a real browser. `fetch.toDataUri` used the Node-only `Buffer` global directly instead of the `TextEncoder`/`btoa`-based encoding already used elsewhere; it now shares the same Buffer-free `toBase64` helper (extracted to `src/base64.js`), and the Rollup browser build's `fetch.js` stub is updated to match so `npm run test:browser` actually exercises this path instead of silently stubbing it out.
+- Fix the README Quick start example, which called `register` on the `Extensions` namespace directly instead of on a registry instance.
+- Fix intermittent CI failures where slow Kroki image pulls exceeded the Testcontainers-backed tests' timeouts.
+- Fix `ReferenceError: Buffer is not defined` when building a `data:` URI diagram in a real browser.
 
 ## [1.0.1] - 2026-07-15
 
