@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Ruby: resolve PlantUML `!include` directives (local, remote, and recursive — including `!include_many`, `!include_once`, `!includeurl`, and `!includesub`) before submitting the diagram to the Kroki server, matching the JavaScript/Node.js extension's preprocessor. The `kroki-plantuml-include-paths` attribute and `kroki-plantuml-include` for `c4plantuml` diagrams are now supported in the Ruby gem as well ([#259](https://github.com/asciidoctor/asciidoctor-kroki/issues/259)).
+- Document how to reference a Vega-Lite `data.url` and link a PlantUML diagram to another page using Antora resource IDs ([#376](https://github.com/asciidoctor/asciidoctor-kroki/issues/376), [#291](https://github.com/asciidoctor/asciidoctor-kroki/issues/291)).
 
 ### Changed
 

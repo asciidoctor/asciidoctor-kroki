@@ -105,6 +105,7 @@ The following attributes are used by the built-in HTML 5 converter:
 
 NOTE: The image alt text is derived from `title` when set, then from `target`, and falls back to `Diagram`.
 
+[#options]
 == Options
 
 The following options are available when using the SVG format:

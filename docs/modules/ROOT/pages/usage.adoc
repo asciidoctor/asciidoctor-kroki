@@ -77,3 +77,57 @@ vegalite::partial$chart.vlite[svg,role=chart,opts=interactive]
 \include::partial$alice-bob.puml[]
 ----
 ....
+
+=== Vega-Lite: loading data from a resource ID
+
+A Vega-Lite `data.url` can also reference an Antora resource ID, resolved the same way as a block macro target or an `include::` directive:
+
+[source,asciidoc]
+....
+[vegalite,ratio,svg]
+----
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+  "data": {"url": "example$lowpassfilter.csv"},
+  "mark": "point"
+}
+----
+....
+
+The resource family prefix depends on where the data file lives: `example$` for the `examples` directory, `partial$` for `partials`, or `attachment$` for `attachments`.
+
+=== Linking to other Antora pages from a PlantUML diagram
+
+To link from an element in a PlantUML diagram to another Antora page, first set `kroki-default-format: svg` and enable inline SVG (either `allow-uri-read: true`, or `kroki-fetch-diagram: true` with `kroki-default-options: inline`; see xref:syntax.adoc#options[Options]).
+Inlining the SVG is required for the link to be clickable: a diagram referenced as a plain image target has no interactive content.
+
+[source,yaml]
+----
+asciidoc:
+  attributes:
+    allow-uri-read: true
+    kroki-default-format: svg
+    kroki-default-options: inline
+  extensions:
+    - asciidoctor-kroki
+----
+
+Then use PlantUML's `[[url label]]` link syntax, building the URL from the standard Antora UI attributes (`site-url`, `page-component-name`, `page-component-version`):
+
+[source,asciidoc]
+....
+[plantuml,my-diagram,subs=attributes]
+----
+\include::partial$my-diagram.puml[]
+----
+....
+
+.partials/my-diagram.puml
+[source]
+----
+@startuml
+agent "[[{site-url}/{page-component-name}/{page-component-version}/other-module/home.html Other module]]" as other
+@enduml
+----
+
+The `subs=attributes` substitution is required: a diagram block is verbatim by default, so `{site-url}` and the other attributes would otherwise be sent to Kroki unresolved.
