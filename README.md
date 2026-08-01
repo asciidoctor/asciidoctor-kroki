@@ -22,10 +22,10 @@ Register and use the extension:
 
 ```js
 import { convert, Extensions } from '@asciidoctor/core'
-import asciidoctorKroki from 'asciidoctor-kroki'
+import { register } from 'asciidoctor-kroki'
 
 const registry = Extensions.create()
-asciidoctorKroki.register(registry)
+register(registry)
 console.log(await convert('[graphviz]\n....\ndigraph G { Hello->World }\n....', { extension_registry: registry }))
 ```
 

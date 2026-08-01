@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Breaking:** the JavaScript/Node.js extension now exports `register` as a named export instead of a default export with a `register` method. Update `import asciidoctorKroki from 'asciidoctor-kroki'; asciidoctorKroki.register(registry)` to `import { register } from 'asciidoctor-kroki'; register(registry)`.
+- **Breaking:** the source entry point is renamed from `src/asciidoctor-kroki.js` to `src/index.js`, and the generated TypeScript declarations move from `build/types/src/asciidoctor-kroki.d.ts` to a top-level `types/` directory (`types/index.d.ts`), to align with the layout used by `asciidoctor.js` itself. The declarations are now published as a matching pair — `types/index.d.ts` for ESM/`import` consumers and `types/index.d.cts` for CJS/`require` consumers under `moduleResolution: node16`/`nodenext` — instead of a single `.d.ts` file shared through one `types` export condition. `build/node/index.cjs` and `build/browser/index.js` are unchanged. Consumers using the package's `main`/`module`/`exports`/`types` fields (the documented way to use the package) are unaffected; anyone importing `src/asciidoctor-kroki.js` or a generated `.d.ts` file by its literal path needs to update it.
+
 ### Fixed
 
 - Fix the Quick start example in the README. It registered the extension against the `Extensions` namespace directly (`asciidoctorKroki.register(Extensions)`), which raises `registry.block is not a function` since `register` expects a registry instance. It now creates one with `Extensions.create()`, registers against it, and passes it to `convert` as `extension_registry`.

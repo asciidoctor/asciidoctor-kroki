@@ -1,7 +1,7 @@
 import assert from 'node:assert'
 import { describe, test } from 'node:test'
 import { convert, Extensions } from '@asciidoctor/core'
-import asciidoctorKroki from '../src/asciidoctor-kroki.js'
+import { register } from '../src/index.js'
 
 describe('Block attributes', { timeout: 30000 }, () => {
   describe('When extension is registered', () => {
@@ -13,7 +13,7 @@ alice -> bob
 ....
 `
       const registry = Extensions.create()
-      asciidoctorKroki.register(registry)
+      register(registry)
       const html = await convert(input, { extension_registry: registry })
       assert.strictEqual(
         html,
@@ -33,7 +33,7 @@ alice -> bob
 ....
 `
       const registry = Extensions.create()
-      asciidoctorKroki.register(registry)
+      register(registry)
       const html = await convert(input, { extension_registry: registry })
       assert.strictEqual(
         html,
@@ -54,7 +54,7 @@ alice -> bob
 ....
 `
       const registry = Extensions.create()
-      asciidoctorKroki.register(registry)
+      register(registry)
       const html = await convert(input, { extension_registry: registry })
       assert.strictEqual(
         html,
@@ -74,7 +74,7 @@ alice -> bob
 ....
 `
       const registry = Extensions.create()
-      asciidoctorKroki.register(registry)
+      register(registry)
       const html = await convert(input, { extension_registry: registry })
       assert.strictEqual(
         html,
@@ -100,7 +100,7 @@ dan -> andre
 ....
 `
       const registry = Extensions.create()
-      asciidoctorKroki.register(registry)
+      register(registry)
       const html = await convert(input, { extension_registry: registry })
       assert.strictEqual(
         html,

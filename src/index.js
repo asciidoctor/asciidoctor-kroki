@@ -347,52 +347,50 @@ function diagramBlockMacro(name, context) {
  * @property {Object} [logger] - Asciidoctor logger; set by the extension while processing.
  */
 
-export default {
-  /**
-   * Registers the Kroki extension — a block and a block macro for every supported
-   * diagram type — into the given Asciidoctor extensions registry.
-   *
-   * @param {import('@asciidoctor/core').Registry} registry - Asciidoctor extensions registry.
-   * @param {KrokiContext} [context={}] - Extension context (e.g. a custom virtual filesystem).
-   * @returns {import('@asciidoctor/core').Registry} The registry, for chaining.
-   */
-  register: (registry, context = {}) => {
-    const names = [
-      'actdiag',
-      'blockdiag',
-      'bpmn',
-      'bytefield',
-      'c4plantuml',
-      'd2',
-      'dbml',
-      'ditaa',
-      'erd',
-      'excalidraw',
-      'goat',
-      'graphviz',
-      'mermaid',
-      'nomnoml',
-      'nwdiag',
-      'packetdiag',
-      'pikchr',
-      'plantuml',
-      'rackdiag',
-      'seqdiag',
-      'svgbob',
-      'symbolator',
-      'tikz',
-      'umlet',
-      'vega',
-      'vegalite',
-      'wavedrom',
-      'structurizr',
-      'diagramsnet',
-      'wireviz',
-    ]
-    for (const name of names) {
-      registry.block(name, diagramBlock(context))
-      registry.blockMacro(diagramBlockMacro(name, context))
-    }
-    return registry
-  },
+/**
+ * Registers the Kroki extension — a block and a block macro for every supported
+ * diagram type — into the given Asciidoctor extensions registry.
+ *
+ * @param {import('@asciidoctor/core').Registry} registry - Asciidoctor extensions registry.
+ * @param {KrokiContext} [context={}] - Extension context (e.g. a custom virtual filesystem).
+ * @returns {import('@asciidoctor/core').Registry} The registry, for chaining.
+ */
+export function register(registry, context = {}) {
+  const names = [
+    'actdiag',
+    'blockdiag',
+    'bpmn',
+    'bytefield',
+    'c4plantuml',
+    'd2',
+    'dbml',
+    'ditaa',
+    'erd',
+    'excalidraw',
+    'goat',
+    'graphviz',
+    'mermaid',
+    'nomnoml',
+    'nwdiag',
+    'packetdiag',
+    'pikchr',
+    'plantuml',
+    'rackdiag',
+    'seqdiag',
+    'svgbob',
+    'symbolator',
+    'tikz',
+    'umlet',
+    'vega',
+    'vegalite',
+    'wavedrom',
+    'structurizr',
+    'diagramsnet',
+    'wireviz',
+  ]
+  for (const name of names) {
+    registry.block(name, diagramBlock(context))
+    registry.blockMacro(diagramBlockMacro(name, context))
+  }
+  return registry
 }

@@ -68,7 +68,7 @@ function browserStubs() {
 const target = process.env.BUILD_TARGET
 
 const browserConfig = {
-  input: 'src/asciidoctor-kroki.js',
+  input: 'src/index.js',
   output: {
     file: 'build/browser/index.js',
     format: 'esm',
@@ -82,11 +82,11 @@ const browserConfig = {
 }
 
 const nodeConfig = {
-  input: 'src/asciidoctor-kroki.js',
+  input: 'src/index.js',
   output: {
     file: 'build/node/index.cjs',
     format: 'cjs',
-    exports: 'auto',
+    exports: 'named',
   },
   external: [
     /^node:/,

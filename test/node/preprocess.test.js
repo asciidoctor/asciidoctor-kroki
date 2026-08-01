@@ -8,7 +8,7 @@ import path, { dirname } from 'node:path'
 import { describe, test } from 'node:test'
 import url, { fileURLToPath } from 'node:url'
 import { convertFile, Extensions, MemoryLogger } from '@asciidoctor/core'
-import asciidoctorKroki from '../../src/asciidoctor-kroki.js'
+import { register } from '../../src/index.js'
 import {
   preprocessPlantUML,
   preprocessStructurizr,
@@ -797,7 +797,7 @@ skinparam BackgroundColor black
 
   test('resolves !include relative to the diagram file directory when baseDir is not set', async () => {
     const registry = Extensions.create()
-    asciidoctorKroki.register(registry)
+    register(registry)
     const file = path.join(__dirname, '..', 'fixtures', 'docs', 'hello.adoc')
     const html = await convertFile(file, {
       safe: 'safe',

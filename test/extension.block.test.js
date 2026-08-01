@@ -1,7 +1,7 @@
 import assert from 'node:assert'
 import { describe, test } from 'node:test'
 import { convert, Extensions, MemoryLogger } from '@asciidoctor/core'
-import asciidoctorKroki from '../src/asciidoctor-kroki.js'
+import { register } from '../src/index.js'
 import { assertContains } from './node/utils.js'
 
 const krokiServerUrl = 'https://my-kroki-server.example.com'
@@ -15,7 +15,7 @@ alice -> bob
 ....
 `
     const registry = Extensions.create()
-    asciidoctorKroki.register(registry)
+    register(registry)
     const html = await convert(input, { extension_registry: registry })
     assert.ok(
       html.includes(
@@ -36,7 +36,7 @@ alice -> bob
 ....
 `
     const registry = Extensions.create()
-    asciidoctorKroki.register(registry)
+    register(registry)
     const html = await convert(input, {
       extension_registry: registry,
       attributes: {
@@ -61,7 +61,7 @@ alice -> bob
 ....
 `
     const registry = Extensions.create()
-    asciidoctorKroki.register(registry)
+    register(registry)
     const memoryLogger = MemoryLogger.create()
     const html = await convert(input, {
       extension_registry: registry,

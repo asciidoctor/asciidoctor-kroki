@@ -2,7 +2,7 @@ import assert from 'node:assert'
 import { describe, test } from 'node:test'
 import { convert, Extensions, load } from '@asciidoctor/core'
 import pako from 'pako'
-import asciidoctorKroki from '../../src/asciidoctor-kroki.js'
+import { register } from '../../src/index.js'
 
 async function fetchGet(uri, encoding = 'utf8') {
   const response = await fetch(uri)
@@ -54,7 +54,7 @@ alice -> bob
 ....
 `
       const registry = Extensions.create()
-      asciidoctorKroki.register(registry)
+      register(registry)
       const html = await convert(input, { extension_registry: registry })
       assert.ok(
         html.includes(
@@ -74,7 +74,7 @@ alice -> bob
       const fixtureUrl = `${fixturesBaseUrl}/fixtures/alice.puml`
       const input = `plantuml::${fixtureUrl}[svg,role=sequence]`
       const registry = Extensions.create()
-      asciidoctorKroki.register(registry, {
+      register(registry, {
         vfs: {
           read: (path, encoding = 'utf8') => fetchGet(path, encoding),
           exists: () => false,
@@ -98,7 +98,7 @@ alice -> bob
     test('resolves a block macro relative URL using the custom VFS', async () => {
       const input = 'plantuml::../fixtures/alice.puml[svg,role=sequence]'
       const registry = Extensions.create()
-      asciidoctorKroki.register(registry, {
+      register(registry, {
         vfs: {
           read: (path, encoding = 'utf8') => fetchGet(path, encoding),
           exists: () => false,
@@ -126,7 +126,7 @@ alice -> bob
       const fixtureUrl = `${fixturesBaseUrl}/fixtures/alice.puml`
       const input = `plantuml::${fixtureUrl}[svg,role=sequence]`
       const registry = Extensions.create()
-      asciidoctorKroki.register(registry)
+      register(registry)
       const text = await fetchGet(fixtureUrl, 'utf8')
       const html = await convert(input, { extension_registry: registry })
       assert.ok(
@@ -143,7 +143,7 @@ alice -> bob
       const parentUrl = `${fixturesBaseUrl}/fixtures/plantuml/alice-with-styles.puml`
       const input = `plantuml::${parentUrl}[svg,role=sequence]`
       const registry = Extensions.create()
-      asciidoctorKroki.register(registry)
+      register(registry)
       const stylesText = await fetchGet(
         `${fixturesBaseUrl}/fixtures/plantuml/styles/general.iuml`,
       )
@@ -178,7 +178,7 @@ alice -> bob
 ....
 `
       const registry = Extensions.create()
-      asciidoctorKroki.register(registry)
+      register(registry)
       // The data-URI path is only taken below `secure` safe mode (the
       // Asciidoctor default), same as the `allow-uri-read` fetch path.
       const doc = await load(input, {

@@ -1,13 +1,13 @@
 import assert from 'node:assert'
 import { describe, test } from 'node:test'
 import { Extensions } from '@asciidoctor/core'
-import asciidoctorKroki from '../src/asciidoctor-kroki.js'
+import { register } from '../src/index.js'
 
 describe('Registration', () => {
   test('registers block macros for all supported diagram types', () => {
     const registry = Extensions.create()
     assert.strictEqual(registry.hasBlockMacros(), false)
-    asciidoctorKroki.register(registry)
+    register(registry)
     assert.strictEqual(registry.hasBlockMacros(), true)
     assert.ok(registry.registeredForBlockMacro('plantuml'))
     assert.ok(registry.registeredForBlockMacro('vega'))

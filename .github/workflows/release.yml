@@ -88,10 +88,8 @@ jobs:
         run: npm run build
       - name: Package
         run: |
-          mkdir dist
-          cd build
-          zip -r ../dist/asciidoctor-kroki.dist.zip .
-          tar -zcvf ../dist/asciidoctor-kroki.dist.tar.gz .
+          zip -r asciidoctor-kroki.dist.zip build types
+          tar -zcvf asciidoctor-kroki.dist.tar.gz build types
       - name: Publish to npm
         run: |
           NPM_TAG=latest
@@ -103,7 +101,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: js-dist
-          path: dist/
+          path: |
+            asciidoctor-kroki.dist.zip
+            asciidoctor-kroki.dist.tar.gz
 
   publish-ruby:
     needs: [prepare, build-ruby]

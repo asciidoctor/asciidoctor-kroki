@@ -4,19 +4,25 @@
   "description": "Asciidoctor extension to convert diagrams to images using Kroki",
   "type": "module",
   "main": "build/node/index.cjs",
-  "module": "src/asciidoctor-kroki.js",
-  "types": "build/types/src/asciidoctor-kroki.d.ts",
+  "module": "src/index.js",
+  "types": "types/index.d.ts",
   "exports": {
     ".": {
-      "types": "./build/types/src/asciidoctor-kroki.d.ts",
       "browser": "./build/browser/index.js",
-      "require": "./build/node/index.cjs",
-      "import": "./src/asciidoctor-kroki.js"
+      "require": {
+        "types": "./types/index.d.cts",
+        "default": "./build/node/index.cjs"
+      },
+      "import": {
+        "types": "./types/index.d.ts",
+        "default": "./src/index.js"
+      }
     }
   },
   "files": [
     "src",
-    "build"
+    "build",
+    "types"
   ],
   "scripts": {
     "test": "npm run test:node && npm run test:browser",
@@ -26,11 +32,11 @@
     "lint:check": "biome check src/ test/ scripts/",
     "format": "biome format --write src/ test/ scripts/",
     "format:check": "biome format src/ test/ scripts/",
-    "clean": "node -e \"require('fs').rmSync('build', {recursive: true, force: true})\"",
+    "clean": "node -e \"require('fs').rmSync('build', {recursive: true, force: true}); require('fs').rmSync('types', {recursive: true, force: true})\"",
     "build": "npm run clean && rollup -c && npm run build:types",
     "build:browser": "BUILD_TARGET=browser rollup -c",
     "build:node": "BUILD_TARGET=node rollup -c",
-    "build:types": "tsc"
+    "build:types": "tsc && node scripts/generate-cjs-types.js"
   },
   "dependencies": {
     "json5": "2.2.3",

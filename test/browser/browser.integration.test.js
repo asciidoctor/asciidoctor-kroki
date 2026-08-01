@@ -2,7 +2,7 @@ import assert from 'node:assert'
 import { describe, test } from 'node:test'
 import { convert, Extensions } from '@asciidoctor/core'
 import { inject } from 'vitest'
-import asciidoctorKroki from '../../src/asciidoctor-kroki.js'
+import { register } from '../../src/index.js'
 
 const krokiUrl = inject('krokiUrl')
 
@@ -15,7 +15,7 @@ alice -> bob
 ....
 `
     const registry = Extensions.create()
-    asciidoctorKroki.register(registry)
+    register(registry)
     const html = await convert(input, {
       extension_registry: registry,
       attributes: { 'kroki-server-url': krokiUrl },
@@ -46,7 +46,7 @@ digraph G { A -> B }
 ....
 `
     const registry = Extensions.create()
-    asciidoctorKroki.register(registry)
+    register(registry)
     const html = await convert(input, {
       extension_registry: registry,
       attributes: { 'kroki-server-url': krokiUrl },

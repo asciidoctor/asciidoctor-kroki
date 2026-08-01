@@ -18,8 +18,8 @@ import {
 import pako from 'pako'
 import sinon from 'sinon'
 import { GenericContainer } from 'testcontainers'
-import asciidoctorKroki from '../../src/asciidoctor-kroki.js'
 import http from '../../src/http-client.js'
+import { register } from '../../src/index.js'
 import {
   assertContains,
   deleteDirWithFiles,
@@ -89,7 +89,7 @@ alice -> bob
 ....
 `
         const registry = Extensions.create()
-        asciidoctorKroki.register(registry)
+        register(registry)
         const html = await convert(input, {
           extension_registry: registry,
           attributes: {
@@ -113,7 +113,7 @@ alice -> bob: hello
 ....
 `
         const registry = Extensions.create()
-        asciidoctorKroki.register(registry)
+        register(registry)
         const html = await convert(input, {
           extension_registry: registry,
           attributes: { 'kroki-server-url': krokiServerUrl },
@@ -131,7 +131,7 @@ alice -> bob: hello
         const file = fixturePath('alice.puml')
         const input = `plantuml::${file}[svg,role=sequence]`
         const registry = Extensions.create()
-        asciidoctorKroki.register(registry)
+        register(registry)
         const html = await convert(input, {
           extension_registry: registry,
           attributes: { 'kroki-server-url': krokiServerUrl },
@@ -155,7 +155,7 @@ alice -> bob: hello
           )
         const input = `plantuml::${file}[svg,role=sequence]`
         const registry = Extensions.create()
-        asciidoctorKroki.register(registry)
+        register(registry)
         const html = await convert(input, {
           safe: 'safe',
           extension_registry: registry,
@@ -186,7 +186,7 @@ alice -> bob: hello
           )
         const input = `plantuml::${file}[svg,role=sequence]`
         const registry = Extensions.create()
-        asciidoctorKroki.register(registry)
+        register(registry)
         const html = await convert(input, {
           safe: 'safe',
           extension_registry: registry,
@@ -232,7 +232,7 @@ alice -> bob: hello
           )
         const input = `plantuml::${file}[svg,role=sequence]`
         const registry = Extensions.create()
-        asciidoctorKroki.register(registry)
+        register(registry)
         const html = await convert(input, {
           safe: 'safe',
           extension_registry: registry,
@@ -275,7 +275,7 @@ alice -> bob: hello
           )
         const input = `plantuml::${file}[svg,role=sequence]`
         const registry = Extensions.create()
-        asciidoctorKroki.register(registry)
+        register(registry)
         const html = await convert(input, {
           safe: 'safe',
           extension_registry: registry,
@@ -302,7 +302,7 @@ alice -> bob: hello
 plantuml::test/fixtures/alice.puml[png,role=sequence]
 `
         const registry = Extensions.create()
-        asciidoctorKroki.register(registry)
+        register(registry)
         const html = await convert(input, {
           safe: 'safe',
           extension_registry: registry,
@@ -325,7 +325,7 @@ plantuml::test/fixtures/alice.puml[png,role=sequence]
         const config = fixturePath('plantuml', 'include', 'base.iuml')
         const input = `plantuml::${file}[svg,role=sequence]`
         const registry = Extensions.create()
-        asciidoctorKroki.register(registry)
+        register(registry)
         const html = await convert(input, {
           safe: 'safe',
           extension_registry: registry,
@@ -344,7 +344,7 @@ plantuml::test/fixtures/alice.puml[png,role=sequence]
       })
       test('resolves a block macro relative path in a document loaded from disk', async () => {
         const registry = Extensions.create()
-        asciidoctorKroki.register(registry)
+        register(registry)
         const macroFile = fixturePath('alice.puml')
         const html = await (
           await loadFile(fixturePath('macro', 'doc.adoc'), {
@@ -366,7 +366,7 @@ plantuml::test/fixtures/alice.puml[png,role=sequence]
       })
       test('embeds the fetched SVG as a base64 data URI when kroki-data-uri is set', async () => {
         const registry = Extensions.create()
-        asciidoctorKroki.register(registry)
+        register(registry)
         const html = await convert(
           fs.readFileSync(fixturePath('fetch', 'doc.adoc')),
           {
@@ -385,7 +385,7 @@ plantuml::test/fixtures/alice.puml[png,role=sequence]
       })
       test('writes fetched images to imagesdir when kroki-fetch-diagram is set', async () => {
         const registry = Extensions.create()
-        asciidoctorKroki.register(registry)
+        register(registry)
         const doc = await convertFile(fixturePath('fetch', 'doc.adoc'), {
           extension_registry: registry,
           safe: 'unsafe',
@@ -415,7 +415,7 @@ Hello -> World
 ....
 `
         const registry = Extensions.create()
-        asciidoctorKroki.register(registry)
+        register(registry)
         const html = await convert(input, {
           safe: 'secure', // default value
           extension_registry: registry,
@@ -439,7 +439,7 @@ Hello -> World
 ....
 `
         const registry = Extensions.create()
-        asciidoctorKroki.register(registry)
+        register(registry)
         const html = await convert(input, {
           safe: 'safe',
           extension_registry: registry,
@@ -463,7 +463,7 @@ Hello -> World
 ....
 `
         const registry = Extensions.create()
-        asciidoctorKroki.register(registry)
+        register(registry)
         const html = await convert(input, {
           safe: 'safe',
           extension_registry: registry,
@@ -482,7 +482,7 @@ Hello -> World
 ....
 `
         const registry = Extensions.create()
-        asciidoctorKroki.register(registry)
+        register(registry)
         await convert(input, {
           safe: 'safe',
           extension_registry: registry,
@@ -527,7 +527,7 @@ Hello -> World
 ....
 `
         const registry = Extensions.create()
-        asciidoctorKroki.register(registry)
+        register(registry)
         await convert(input, {
           safe: 'safe',
           extension_registry: registry,
@@ -567,7 +567,7 @@ Hello -> World
 ....
 `
         const registry = Extensions.create()
-        asciidoctorKroki.register(registry)
+        register(registry)
         await convert(input, {
           safe: 'safe',
           extension_registry: registry,
@@ -617,7 +617,7 @@ blockdiag {
 ----
 `
         const registry = Extensions.create()
-        asciidoctorKroki.register(registry)
+        register(registry)
         const html = await convert(input, {
           extension_registry: registry,
           attributes: {
@@ -637,7 +637,7 @@ blockdiag {
 plantuml::{fixtures-dir}/alice.puml[svg,role=sequence]
 `
         const registry = Extensions.create()
-        asciidoctorKroki.register(registry)
+        register(registry)
         const html = await convert(input, {
           safe: 'safe',
           extension_registry: registry,
@@ -667,7 +667,7 @@ AsciiDoc -> HTML5: convert
         sinon.spy(http, 'get')
         try {
           const registry = Extensions.create()
-          asciidoctorKroki.register(registry)
+          register(registry)
           const html = await convert(input, {
             safe: 'safe',
             extension_registry: registry,
@@ -703,7 +703,7 @@ Bob->Alice : hello
         sinon.spy(http, 'get')
         try {
           const registry = Extensions.create()
-          asciidoctorKroki.register(registry)
+          register(registry)
           const html = await convert(input, {
             extension_registry: registry,
             attributes: {
@@ -733,7 +733,7 @@ Bob->Alice : hello
 vegalite::test/fixtures/chart.vlite[svg,role=chart]
 `
         const registry = Extensions.create()
-        asciidoctorKroki.register(registry)
+        register(registry)
         const html = await convert(input, {
           safe: 'safe',
           extension_registry: registry,
@@ -777,7 +777,7 @@ packetdiag {
 ....
 `
         const registry = Extensions.create()
-        asciidoctorKroki.register(registry)
+        register(registry)
         const html = await convert(input, {
           extension_registry: registry,
           attributes: {
@@ -807,7 +807,7 @@ rackdiag {
 ....
 `
         const registry = Extensions.create()
-        asciidoctorKroki.register(registry)
+        register(registry)
         const html = await convert(input, {
           extension_registry: registry,
           attributes: {
@@ -922,7 +922,7 @@ rackdiag {
 ....
 `
         const registry = Extensions.create()
-        asciidoctorKroki.register(registry)
+        register(registry)
         const html = await convert(input, {
           extension_registry: registry,
           attributes: {
@@ -1071,7 +1071,7 @@ rackdiag {
 ....
 `
         const registry = Extensions.create()
-        asciidoctorKroki.register(registry)
+        register(registry)
         const html = await convert(input, {
           extension_registry: registry,
           attributes: {
@@ -1112,7 +1112,7 @@ rackdiag {
 ....
 `
         const registry = Extensions.create()
-        asciidoctorKroki.register(registry)
+        register(registry)
         const html = await convert(input, {
           safe: 'safe',
           extension_registry: registry,
@@ -1165,7 +1165,7 @@ rackdiag {
 ....
 `
         const registry = Extensions.create()
-        asciidoctorKroki.register(registry)
+        register(registry)
         const html = await convert(input, {
           extension_registry: registry,
           attributes: {
@@ -1327,7 +1327,7 @@ rackdiag {
 ....
 `
         const registry = Extensions.create()
-        asciidoctorKroki.register(registry)
+        register(registry)
         const html = await convert(input, {
           extension_registry: registry,
           attributes: {
@@ -1353,7 +1353,7 @@ rackdiag {
 ....
 `
         const registry = Extensions.create()
-        asciidoctorKroki.register(registry)
+        register(registry)
         const html = await convert(input, {
           extension_registry: registry,
           attributes: {
@@ -1409,7 +1409,7 @@ line up $r*0.45 right $r*0.45 then right
 ....
 `
         const registry = Extensions.create()
-        asciidoctorKroki.register(registry)
+        register(registry)
         const html = await convert(input, {
           extension_registry: registry,
           attributes: {
@@ -1446,7 +1446,7 @@ line up $r*0.45 right $r*0.45 then right
 ....
 `
         const registry = Extensions.create()
-        asciidoctorKroki.register(registry)
+        register(registry)
         const html = await convert(input, {
           extension_registry: registry,
           attributes: {
@@ -1461,7 +1461,7 @@ line up $r*0.45 right $r*0.45 then right
       })
       test('inlines a data.url CSV resolved relative to the document file when loaded from disk', async () => {
         const registry = Extensions.create()
-        asciidoctorKroki.register(registry)
+        register(registry)
         const html = await convertFile(fixturePath('docs', 'data.adoc'), {
           to_file: false,
           extension_registry: registry,
@@ -1524,7 +1524,7 @@ connections:
 ....
 `
         const registry = Extensions.create()
-        asciidoctorKroki.register(registry)
+        register(registry)
         const html = await convert(input, {
           extension_registry: registry,
           attributes: { 'kroki-server-url': krokiServerUrl },
@@ -1542,7 +1542,7 @@ connections:
 plantuml::test/fixtures/alice.puml[svg,opts=inline,theme=bluegray]
 `
           const registry = Extensions.create()
-          asciidoctorKroki.register(registry)
+          register(registry)
           const html = await convert(input, {
             safe: 'safe',
             extension_registry: registry,
@@ -1575,7 +1575,7 @@ ${svg}
 plantuml::test/fixtures/alice.puml[svg,opts=inline,theme=bluegray]
 `
           const registry = Extensions.create()
-          asciidoctorKroki.register(registry)
+          register(registry)
           const html = await convert(input, {
             safe: 'safe',
             extension_registry: registry,
@@ -1606,7 +1606,7 @@ ${svg}
         })
         test('resolves the inline option to a data URI when allow-uri-read is not set', async () => {
           const registry = Extensions.create()
-          asciidoctorKroki.register(registry)
+          register(registry)
           const doc = await load(
             'plantuml::test/fixtures/alice.puml[svg,opts=inline]',
             {
@@ -1626,7 +1626,7 @@ ${svg}
         })
         test('keeps the server URL target for the inline option when allow-uri-read is set', async () => {
           const registry = Extensions.create()
-          asciidoctorKroki.register(registry)
+          register(registry)
           const doc = await load(
             'plantuml::test/fixtures/alice.puml[svg,opts=inline]',
             {
@@ -1725,7 +1725,7 @@ paragraph
             try {
               LoggerManager.setLogger(memoryLogger)
               const registry = Extensions.create()
-              asciidoctorKroki.register(registry)
+              register(registry)
               const krokiBaseUrl = `http://${container.getHost()}:${container.getMappedPort(8000)}`
               const html = await convert(input, {
                 safe: 'safe',
@@ -1771,7 +1771,7 @@ ${pageAttr}
 plantuml::test/fixtures/alice.puml[svg,role=sequence${blockAttr}]
 `
             const registry = Extensions.create()
-            asciidoctorKroki.register(registry)
+            register(registry)
             const html = await convert(input, {
               safe: 'safe',
               extension_registry: registry,
@@ -1801,7 +1801,7 @@ ${pageAttr}
 bytefield::test/fixtures/simple.bytefield[svg,role=bytefield${blockAttr}]
 `
             const registry = Extensions.create()
-            asciidoctorKroki.register(registry)
+            register(registry)
             const html = await convert(input, {
               safe: 'safe',
               extension_registry: registry,
@@ -1854,7 +1854,7 @@ ${pageAttr}
 vegalite::test/fixtures/chart.vlite[svg,role=chart${blockAttr}]
 `
             const registry = Extensions.create()
-            asciidoctorKroki.register(registry)
+            register(registry)
             const html = await convert(input, {
               safe: 'safe',
               extension_registry: registry,
@@ -1877,7 +1877,7 @@ ${pageAttr}
 plantuml::test/fixtures/alice.puml[svg,role=sequence${blockAttr}]
 `
             const registry = Extensions.create()
-            asciidoctorKroki.register(registry)
+            register(registry)
             const html = await convert(input, {
               safe: 'safe',
               extension_registry: registry,

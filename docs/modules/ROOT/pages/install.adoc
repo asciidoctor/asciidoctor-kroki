@@ -12,15 +12,15 @@ Create a file named `kroki.js` with the following content and run it:
 [source,js]
 ----
 import { convert, Extensions } from '@asciidoctor/core'
-import asciidoctorKroki from 'asciidoctor-kroki'
+import { register } from 'asciidoctor-kroki'
 
 const input = 'plantuml::hello.puml[svg,role=sequence]'
 
-asciidoctorKroki.register(Extensions) // <1>
+register(Extensions) // <1>
 console.log(await convert(input, { safe: 'safe' }))
 
 const registry = Extensions.create()
-asciidoctorKroki.register(registry) // <2>
+register(registry) // <2>
 console.log(await convert(input, { safe: 'safe', extension_registry: registry }))
 ----
 <1> Register the extension in the global registry.
@@ -68,7 +68,7 @@ Any method not provided falls back to the default Node.js file system implementa
 [source,js]
 ----
 import { convert, Extensions } from '@asciidoctor/core'
-import asciidoctorKroki from 'asciidoctor-kroki'
+import { register } from 'asciidoctor-kroki'
 
 const vfs = {
   read: async (path, encoding = 'utf8') => { // <1>
@@ -80,7 +80,7 @@ const vfs = {
 }
 
 const registry = Extensions.create()
-asciidoctorKroki.register(registry, { vfs }) // <3>
+register(registry, { vfs }) // <3>
 console.log(await convert('plantuml::hello.puml[svg]', { safe: 'safe', extension_registry: registry }))
 ----
 <1> Override file reading to load content from a custom source.
@@ -114,7 +114,7 @@ Create a file named `kroki.html` with the following content and open it in your 
     <div id="content"></div>
     <script type="module">
       import { convert, Extensions } from '@asciidoctor/core'
-      import asciidoctorKroki from 'asciidoctor-kroki'
+      import { register } from 'asciidoctor-kroki'
 
       const input = `Here is a _GraphViz_ "Hello World" example:
 
@@ -126,7 +126,7 @@ digraph G {
 ....`
 
       const registry = Extensions.create()
-      asciidoctorKroki.register(registry) // <1>
+      register(registry) // <1>
       const result = await convert(input, { safe: 'safe', extension_registry: registry })
       document.getElementById('content').innerHTML = result
     </script>
@@ -143,7 +143,7 @@ The extension will automatically use the https://developer.mozilla.org/en-US/doc
 [source,js]
 ----
 const registry = Extensions.create()
-asciidoctorKroki.register(registry)
+register(registry)
 const input = 'plantuml::hello.puml[svg,role=sequence]'
 await convert(input, { safe: 'safe', base_dir: window.location.origin, extension_registry: registry })
 ----
