@@ -61,6 +61,13 @@ describe AsciidoctorExtensions::PlantUmlPreprocessor do
     expect(preprocess(text, logger: logger)).to eq "\n#{included}\n      alice -> bob"
   end
 
+  it 'inlines a local file via !include when the diagram uses Windows line endings' do
+    style_path = File.expand_path('../../test/fixtures/docs/diagrams/style.puml', __dir__)
+    included = File.read(style_path)
+    text = "!include #{style_path} \r\n\r\nBob->Alice: Hello\r\n"
+    expect(preprocess(text, logger: logger)).to eq "#{included}\n\r\nBob->Alice: Hello\r\n"
+  end
+
   it 'inlines only the first @startuml...@enduml block from the included file' do
     included = File.read("#{fixtures_dir}/styles/general.iuml")
     text = "\n      !include #{fixtures_dir}/styles/general.puml\n      alice -> bob"

@@ -192,6 +192,49 @@ describe AsciidoctorExtensions::KrokiBlockProcessor do
       encoded = [Zlib::Deflate.deflate(diagram_text, 9)].pack('m0').tr('+/', '-_')
       (expect output).to include(%(<img src="https://kroki.io/plantuml/svg/#{encoded}" alt="Diagram">))
     end
+    it 'should resolve !include from kroki-plantuml-include-paths in a plain block (no macro, no file context)' do
+      input = <<~ADOC
+        [plantuml]
+        ....
+        !include general.iuml
+        alice -> bob: hello
+        ....
+      ADOC
+      styles_dir = File.expand_path('../../test/fixtures/plantuml/styles', __dir__)
+      included = File.read(File.join(styles_dir, 'general.iuml'))
+      diagram_text = "#{included}\nalice -> bob: hello"
+      output = Asciidoctor.convert(input, attributes: { 'kroki-plantuml-include-paths' => styles_dir }, standalone: false, safe: :safe)
+      encoded = [Zlib::Deflate.deflate(diagram_text, 9)].pack('m0').tr('+/', '-_')
+      (expect output).to include(%(<img src="https://kroki.io/plantuml/svg/#{encoded}" alt="Diagram">))
+    end
+    it 'should resolve !include written directly in a c4plantuml block body, not just via kroki-plantuml-include' do
+      input = <<~ADOC
+        [c4plantuml]
+        ....
+        !include spec/fixtures/config.puml
+        alice -> bob: hello
+        ....
+      ADOC
+      config = File.read('spec/fixtures/config.puml')
+      diagram_text = "#{config}\nalice -> bob: hello"
+      output = Asciidoctor.convert(input, standalone: false, safe: :safe)
+      encoded = [Zlib::Deflate.deflate(diagram_text, 9)].pack('m0').tr('+/', '-_')
+      (expect output).to include(%(<img src="https://kroki.io/c4plantuml/svg/#{encoded}" alt="Diagram">))
+    end
+    it 'should not resolve a plain !include written in the diagram body when safe mode is secure' do
+      input = <<~ADOC
+        [plantuml]
+        ....
+        !include spec/fixtures/config.puml
+        alice -> bob: hello
+        ....
+      ADOC
+      # Unresolved: the literal !include line is sent to Kroki as-is, unlike the safe/unsafe/server case.
+      unresolved_diagram_text = "!include spec/fixtures/config.puml\nalice -> bob: hello"
+      output = Asciidoctor.convert(input, standalone: false, safe: :secure)
+      encoded = [Zlib::Deflate.deflate(unresolved_diagram_text, 9)].pack('m0').tr('+/', '-_')
+      (expect output).to include(%(<img src="https://kroki.io/plantuml/svg/#{encoded}" alt="Diagram">))
+    end
     it 'should create SVG diagram in imagesdir if kroki-fetch-diagram is set' do
       input = <<~ADOC
         :imagesdir: .asciidoctor/kroki
