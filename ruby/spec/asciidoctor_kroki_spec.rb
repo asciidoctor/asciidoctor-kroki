@@ -2,6 +2,7 @@
 
 require 'rspec_helper'
 require 'asciidoctor'
+require 'zlib'
 require_relative '../lib/asciidoctor/extensions/asciidoctor_kroki'
 
 describe AsciidoctorExtensions::KrokiBlockProcessor do
@@ -137,6 +138,59 @@ describe AsciidoctorExtensions::KrokiBlockProcessor do
 <img src="https://kroki.io/plantuml/svg/eNpLzMlMTlXQtVNIyk-yUshIzcnJBwA9iwZL" alt="Diagram">
 </div>
 </div>)
+    end
+    it 'should also apply kroki-plantuml-include to c4plantuml diagrams' do
+      input = <<~ADOC
+        [c4plantuml]
+        ....
+        alice -> bob: hello
+        ....
+      ADOC
+      output = Asciidoctor.convert(input,
+                                   attributes: { 'kroki-plantuml-include' => 'spec/fixtures/config.puml' },
+                                   standalone: false, safe: :safe)
+      (expect output).to eql %(<div class="imageblock kroki">
+<div class="content">
+<img src="https://kroki.io/c4plantuml/svg/eNorzs7MK0gsSsxVyM3Py0_OKMrPTVUoKSpN5eJKzMlMTlXQtVNIyk-yUshIzcnJBwCT9xBc" alt="Diagram">
+</div>
+</div>)
+    end
+    it 'should resolve !include from a single directory in kroki-plantuml-include-paths' do
+      fixtures_dir = File.expand_path('../../test/fixtures', __dir__)
+      styles_dir = File.join(fixtures_dir, 'plantuml/styles')
+      general = File.read(File.join(styles_dir, 'general.iuml'))
+      note = File.read(File.join(styles_dir, 'note.iuml'))
+      sequence = File.read(File.join(styles_dir, 'sequence.iuml'))
+      diagram_text = "#{general}\n#{note}\n#{sequence}\nBob->Alice: Hello"
+      file = File.join(fixtures_dir, 'plantuml/diagrams/hello-with-style.puml')
+      input = "plantuml::#{file}[svg,role=sequence]"
+      output = Asciidoctor.convert(input, attributes: { 'kroki-plantuml-include-paths' => styles_dir }, standalone: false, safe: :safe, base_dir: fixtures_dir)
+      encoded = [Zlib::Deflate.deflate(diagram_text, 9)].pack('m0').tr('+/', '-_')
+      (expect output).to include(%(<img src="https://kroki.io/plantuml/svg/#{encoded}" alt="Diagram">))
+    end
+    it 'should resolve !include from multiple directories in kroki-plantuml-include-paths' do
+      fixtures_dir = File.expand_path('../../test/fixtures', __dir__)
+      styles_dir = File.join(fixtures_dir, 'plantuml/styles')
+      include_dir = File.join(fixtures_dir, 'plantuml/include')
+      base = File.read(File.join(include_dir, 'base.iuml'))
+      note = File.read(File.join(styles_dir, 'note.iuml'))
+      diagram_text = "#{base}\n#{note}\nBob->Alice: Hello"
+      file = File.join(fixtures_dir, 'plantuml/diagrams/hello-with-base-and-note.puml')
+      input = "plantuml::#{file}[svg,role=sequence]"
+      output = Asciidoctor.convert(input, attributes: { 'kroki-plantuml-include-paths' => [styles_dir, include_dir].join(File::PATH_SEPARATOR) }, standalone: false, safe: :safe,
+                                          base_dir: fixtures_dir)
+      encoded = [Zlib::Deflate.deflate(diagram_text, 9)].pack('m0').tr('+/', '-_')
+      (expect output).to include(%(<img src="https://kroki.io/plantuml/svg/#{encoded}" alt="Diagram">))
+    end
+    it 'should resolve !include relative to the target file directory for a block macro, without kroki-plantuml-include-paths' do
+      fixtures_dir = File.expand_path('../../test/fixtures', __dir__)
+      style = File.read(File.join(fixtures_dir, 'docs/diagrams/style.puml'))
+      diagram_text = "#{style}\n\nBob->Alice: Hello"
+      file = File.join(fixtures_dir, 'docs/diagrams/hello.puml')
+      input = "plantuml::#{file}[svg,role=sequence]"
+      output = Asciidoctor.convert(input, standalone: false, safe: :safe, base_dir: fixtures_dir)
+      encoded = [Zlib::Deflate.deflate(diagram_text, 9)].pack('m0').tr('+/', '-_')
+      (expect output).to include(%(<img src="https://kroki.io/plantuml/svg/#{encoded}" alt="Diagram">))
     end
     it 'should create SVG diagram in imagesdir if kroki-fetch-diagram is set' do
       input = <<~ADOC

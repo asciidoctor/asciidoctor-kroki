@@ -3,6 +3,7 @@
 require 'cgi'
 require 'pathname'
 require 'asciidoctor/extensions' unless RUBY_ENGINE == 'opal'
+require_relative 'preprocess'
 
 # Asciidoctor extensions
 #
@@ -80,7 +81,7 @@ module AsciidoctorExtensions
         logger.error message_with_context "Failed to read #{diagram_type} file: #{path}. #{e}.", source_location: parent.document.reader.cursor_at_mark
         return create_block(parent, 'paragraph', unresolved_block_macro_message(diagram_type, path), {})
       end
-      KrokiProcessor.process(self, parent, attrs, diagram_type, diagram_text, @logger)
+      KrokiProcessor.process(self, parent, attrs, diagram_type, diagram_text, @logger, resource_path: path)
     end
 
     protected
@@ -155,12 +156,14 @@ module AsciidoctorExtensions
 
     TEXT_FORMATS = %w[txt atxt utxt].freeze
     BUILTIN_ATTRIBUTES = %w[target width height format fallback link float align role caption title cloaked-context subs].freeze
+    PLANTUML_TYPES = %i[plantuml c4plantuml].freeze
 
     class << self
       # rubocop:disable Metrics/AbcSize, Metrics/PerceivedComplexity
-      def process(processor, parent, attrs, diagram_type, diagram_text, logger)
+      def process(processor, parent, attrs, diagram_type, diagram_text, logger, resource_path: nil)
         doc = parent.document
         diagram_text = prepend_plantuml_config(diagram_text, diagram_type, doc, logger)
+        diagram_text = preprocess_plantuml_includes(diagram_text, diagram_type, doc, resource_path, logger)
         # If "subs" attribute is specified, substitute accordingly.
         # Be careful not to specify "specialcharacters" or your diagram code won't be valid anymore!
         if (subs = attrs['subs'])
@@ -202,10 +205,13 @@ module AsciidoctorExtensions
 
       private
 
+      # Prepends the kroki-plantuml-include file content to the diagram text. Unlike the
+      # !include directives resolved by preprocess_plantuml_includes below, this path is jailed
+      # to the document's safe-mode boundaries via normalize_system_path, since the attribute
+      # value (unlike an !include target written by the diagram's author) may come from outside
+      # the diagram itself (e.g. a document-wide default set by a build script).
       def prepend_plantuml_config(diagram_text, diagram_type, doc, logger)
-        if diagram_type == :plantuml && doc.safe < ::Asciidoctor::SafeMode::SECURE && doc.attr?('kroki-plantuml-include')
-          # REMIND: this behaves different than the JS version
-          # Once we have a preprocessor for Ruby, the value should be added in the diagram source as "!include #{plantuml_include}"
+        if PLANTUML_TYPES.include?(diagram_type) && doc.safe < ::Asciidoctor::SafeMode::SECURE && doc.attr?('kroki-plantuml-include')
           plantuml_include_path = doc.normalize_system_path(doc.attr('kroki-plantuml-include'))
           if ::File.readable? plantuml_include_path
             config = File.read(plantuml_include_path)
@@ -216,6 +222,18 @@ module AsciidoctorExtensions
           end
         end
         diagram_text
+      end
+
+      # Resolves !include/!include_once/!include_many/!includeurl/!includesub directives found in
+      # PlantUML/C4-PlantUML diagram text (including text prepended above), searching resource_path's
+      # own directory and then each directory in kroki-plantuml-include-paths, in order. Unlike
+      # kroki-plantuml-include above, this mirrors the JavaScript extension's preprocessor and is
+      # not jailed to the safe-mode boundary (see src/preprocess.js) — only gated by safe mode itself.
+      def preprocess_plantuml_includes(diagram_text, diagram_type, doc, resource_path, logger)
+        return diagram_text unless PLANTUML_TYPES.include?(diagram_type) && doc.safe < ::Asciidoctor::SafeMode::SECURE
+
+        include_paths = doc.attr('kroki-plantuml-include-paths')
+        PlantUmlPreprocessor.preprocess(diagram_text, resource_path, include_paths, logger)
       end
 
       def get_alt(attrs)

@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Ruby: resolve PlantUML `!include` directives (local, remote, and recursive — including `!include_many`, `!include_once`, `!includeurl`, and `!includesub`) before submitting the diagram to the Kroki server, matching the JavaScript/Node.js extension's preprocessor. The `kroki-plantuml-include-paths` attribute and `kroki-plantuml-include` for `c4plantuml` diagrams are now supported in the Ruby gem as well ([#259](https://github.com/asciidoctor/asciidoctor-kroki/issues/259)).
+
 ### Changed
 
 - **Breaking:** the JavaScript/Node.js extension now exports `register` as a named export instead of a default export with a `register` method. Update `asciidoctorKroki.register(registry)` to `import { register } from 'asciidoctor-kroki'; register(registry)`.

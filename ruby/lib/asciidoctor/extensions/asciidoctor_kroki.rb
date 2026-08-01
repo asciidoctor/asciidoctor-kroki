@@ -2,6 +2,7 @@
 
 require 'asciidoctor/extensions' unless RUBY_ENGINE == 'opal'
 require_relative 'asciidoctor_kroki/version'
+require_relative 'asciidoctor_kroki/preprocess'
 require_relative 'asciidoctor_kroki/extension'
 
 Asciidoctor::Extensions.register do

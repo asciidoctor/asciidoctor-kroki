@@ -34,7 +34,7 @@ This attribute only applies when the extension downloads the diagram content its
 |
 
 |`kroki-plantuml-include-paths`
-|Additional search paths for resolving `!include file`, similar to https://plantuml.com/de/preprocessing[PlantUML's `plantuml.include.path`]. Use `;` (Windows) or `:` (Unix) to separate multiple paths. _JavaScript only_ (see xref:_feature_parity[]).
+|Additional search paths for resolving `!include file`, similar to https://plantuml.com/de/preprocessing[PlantUML's `plantuml.include.path`]. Use `;` (Windows) or `:` (Unix) to separate multiple paths.
 |
 
 |`kroki-max-uri-length`
@@ -44,7 +44,7 @@ This attribute only applies when the extension downloads the diagram content its
 
 [IMPORTANT]
 ====
-`kroki-fetch-diagram` and `kroki-plantuml-include` are only available when safe mode is `server` or lower.
+`kroki-fetch-diagram`, `kroki-plantuml-include`, and `kroki-plantuml-include-paths` are only available when safe mode is `server` or lower.
 See https://docs.asciidoctor.org/asciidoctor/latest/safe-modes/[Asciidoctor safe modes].
 ====
 
@@ -133,8 +133,8 @@ This feature is only available when Asciidoctor safe mode is `server` or lower.
 
 [IMPORTANT]
 ====
-Preprocessing is implemented in the *JavaScript/Node.js* extension only.
-The Ruby gem does not resolve includes locally and instead relies on the Kroki server to resolve them (for example by running the server with `KROKI_PLANTUML_ALLOW_INCLUDE=true`).
+PlantUML `!include` preprocessing is implemented in both the JavaScript/Node.js extension and the Ruby gem.
+Structurizr `!include` and Vega-Lite `data.url` preprocessing are implemented in the *JavaScript/Node.js* extension only; the Ruby gem relies on the Kroki server to resolve those (for example by running the server with `KROKI_PLANTUML_ALLOW_INCLUDE=true` for PlantUML-family diagrams it doesn't preprocess itself).
 See xref:_feature_parity[].
 ====
 
@@ -149,7 +149,7 @@ The JavaScript/Node.js extension and the Ruby gem share the same version and are
 
 |Preprocessing of PlantUML `!include` (local, remote and recursive)
 |Yes
-|No (resolved by the Kroki server)
+|Yes
 
 |Preprocessing of Structurizr `!include`
 |Yes
@@ -161,11 +161,11 @@ The JavaScript/Node.js extension and the Ruby gem share the same version and are
 
 |`kroki-plantuml-include-paths`
 |Yes
-|No
+|Yes
 
 |`kroki-plantuml-include` (single shared file)
 |Yes (`plantuml` and `c4plantuml`)
-|Yes (`plantuml` only)
+|Yes (`plantuml` and `c4plantuml`)
 
 |`kroki-data-uri`
 |Yes
