@@ -19,6 +19,20 @@
 |Download images from the Kroki server and save them to disk. Not available in the browser.
 |`false`
 
+|`kroki-cache`
+a|Whether fetched diagrams are kept in a persistent cache (see xref:_persistent_cache[]):
+
+* `true` (or set with no value) — enabled
+* `false` — disabled, always re-fetch
+* `refresh` — enabled, but bypass a cached read and re-fetch + update the cache
+
+An invalid value falls back to `true` with a warning.
+|`true`
+
+|`kroki-cache-dir`
+|Directory used by the persistent cache (see xref:_persistent_cache[]).
+|XDG cache directory
+
 |`kroki-http-method`
 a|How to retrieve images from the Kroki server:
 
@@ -112,12 +126,61 @@ alice -> bob
 generates `my-diagram.svg`.
 
 * *Anonymous diagram* — a content-addressed name such as `diag-<checksum>.svg` is generated so anonymous diagrams never collide.
-If a file with this name already exists on disk, it necessarily has the same content, so the diagram is not downloaded again.
+If a file with this name already exists in the output directory, it necessarily has the same content, so the diagram is not downloaded again.
 
 [WARNING]
 ====
 If the same name is used for two diagrams with different content in the same document, the file is overwritten and a warning is logged.
 Use unique names to keep links stable.
+====
+
+A named diagram's output file, unlike an anonymous one's, cannot be trusted by name alone — the same name may exist from an earlier build with different (stale) content.
+The persistent cache described below is what lets a named diagram skip the download when its content hasn't actually changed.
+
+[#_persistent_cache]
+== Persistent cache
+
+Downloaded diagrams are also kept in a persistent cache, independent of the output directory.
+The cache key is derived from the actual request (server URL, diagram type, format, source, and options), not from the output file name, so:
+
+* A named diagram whose content hasn't changed is served from the cache instead of being re-downloaded, even though its output file name stays the same across content changes.
+* The cache survives a clean or rebuilt output directory — useful for tools that wipe their output between runs, such as Antora.
+
+By default, the cache lives in the platform's https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html[XDG cache directory] (`$XDG_CACHE_HOME/kroki`, or `~/.cache/kroki` when `XDG_CACHE_HOME` is unset).
+Set `kroki-cache-dir` to use a different location — for example, to point it at a directory your CI pipeline already persists between runs:
+
+[source,asciidoc]
+----
+:kroki-cache-dir: .cache/kroki
+----
+
+This is particularly useful for an Antora site: a full rebuild typically touches only a handful of pages, so most diagrams elsewhere in the site are unchanged, but Antora clears the output directory before every build.
+Pointing `kroki-cache-dir` at a directory your pipeline keeps between builds (a persisted CI cache, or a local directory outside `build/` in a dev loop) avoids re-downloading those unchanged diagrams on every run:
+
+[source,yaml]
+----
+asciidoc:
+  attributes:
+    kroki-fetch-diagram: true
+    kroki-cache-dir: .cache/kroki
+----
+
+Disable the cache entirely with `kroki-cache: false`, or force a refresh (re-fetch and update the cache, bypassing any cached read) with `kroki-cache: refresh`:
+
+[source,asciidoc]
+----
+:kroki-cache: refresh
+----
+
+[NOTE]
+====
+The cache key includes the Kroki server URL (see `kroki-server-url`): the same diagram source fetched from two different servers is cached separately, since different servers are not guaranteed to run the same version of the underlying diagram libraries and so may not render identically.
+For the same reason, the cache does not know when a diagram library is upgraded on the server you use — if you rely on a self-hosted server and upgrade a diagram library, set `kroki-cache: refresh` (or clear `kroki-cache-dir`) to pick up the change.
+====
+
+[IMPORTANT]
+====
+The persistent cache is only used by the JavaScript/Node.js extension and the Ruby gem when `kroki-fetch-diagram` is set; it is not available in the browser.
 ====
 
 == Preprocessing

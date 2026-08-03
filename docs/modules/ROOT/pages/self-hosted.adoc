@@ -40,3 +40,9 @@ asciidoctor.convertFile('file.adoc', {
   attributes: { 'kroki-server-url': 'http://my-server-url:port' }
 })
 ----
+
+[NOTE]
+====
+When `kroki-fetch-diagram` is enabled, downloaded diagrams are kept in a persistent cache keyed in part on `kroki-server-url` — switching servers does not reuse cache entries from a previous server.
+See xref:configuration.adoc#_persistent_cache[].
+====

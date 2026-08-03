@@ -4,6 +4,7 @@ require 'cgi'
 require 'pathname'
 require 'asciidoctor/extensions' unless RUBY_ENGINE == 'opal'
 require_relative 'preprocess'
+require_relative 'cache'
 
 # Asciidoctor extensions
 #
@@ -292,7 +293,8 @@ module AsciidoctorExtensions
       def create_image_src(doc, kroki_diagram, kroki_client, logger)
         if doc.attr('kroki-fetch-diagram') && doc.safe < ::Asciidoctor::SafeMode::SECURE
           images_output_dir = output_dir_path(doc)
-          diagram_name = kroki_diagram.save(images_output_dir, kroki_client, generated_files(doc), logger)
+          diagram_name = kroki_diagram.save(images_output_dir, kroki_client, generated_files(doc), logger,
+                                            cache_dir: Cache.resolve_cache_dir(doc), cache_mode: Cache.resolve_cache_mode(doc, logger))
           # The converter resolves the image target against the document's `imagesdir`
           # attribute, which only matches where we actually wrote the file when
           # `imagesoutdir` is unset. Overriding `imagesdir` on this image node (rather
@@ -373,7 +375,10 @@ module AsciidoctorExtensions
       ([Zlib::Deflate.deflate(@text, 9)].pack 'm0').tr '+/', '-_'
     end
 
-    def save(output_dir_path, kroki_client, generated_files = nil, logger = nil)
+    # @param cache_dir [String, nil] persistent cache directory (see Cache.resolve_cache_dir); required when cache_mode[:enabled]
+    # @param cache_mode [Hash] {enabled:, refresh:} (see Cache.resolve_cache_mode); disabled by default so callers that
+    #   don't pass it (e.g. specs exercising #save directly) keep the pre-cache behaviour
+    def save(output_dir_path, kroki_client, generated_files = nil, logger = nil, cache_dir: nil, cache_mode: { enabled: false, refresh: false })
       diagram_url = get_diagram_uri(kroki_client.server_url)
       # An explicit name is used verbatim so links stay stable across content changes;
       # otherwise the name is content-addressed so anonymous diagrams don't collide (see #451).
@@ -381,24 +386,41 @@ module AsciidoctorExtensions
       diagram_name = named ? "#{@target}.#{@format}" : "diag-#{Digest::SHA256.hexdigest diagram_url}.#{@format}"
       file_path = File.join(output_dir_path, diagram_name)
       if named
-        # A stable file may exist from a previous build with stale content, so always
-        # re-fetch and overwrite. Warn when the same name is reused for a different diagram.
+        # A stable file may exist from a previous build with stale content, so it cannot be
+        # trusted by name alone: go through fetch_diagram, which re-fetches only when the
+        # persistent cache doesn't already have this exact content (see #90). Warn when the
+        # same name is reused for a diagram with different content.
         warn_on_name_clash(generated_files, diagram_name, diagram_url, logger)
         generated_files[diagram_name] = diagram_url if generated_files
-        fetch_and_write(output_dir_path, file_path, kroki_client)
+        fetch_and_write(output_dir_path, file_path, kroki_client, cache_dir, cache_mode)
       elsif !File.exist?(file_path)
-        # Content-addressed name: an existing file necessarily has identical content.
-        fetch_and_write(output_dir_path, file_path, kroki_client)
+        # Content-addressed name: an existing output file necessarily has identical content.
+        fetch_and_write(output_dir_path, file_path, kroki_client, cache_dir, cache_mode)
       end
       diagram_name
     end
 
     private
 
-    def fetch_and_write(output_dir_path, file_path, kroki_client)
-      contents = kroki_client.get_image(self, image_encoding)
+    def fetch_and_write(output_dir_path, file_path, kroki_client, cache_dir, cache_mode)
+      contents = fetch_diagram(kroki_client, cache_dir, cache_mode)
       FileUtils.mkdir_p(output_dir_path)
       File.write(file_path, contents, mode: 'wb')
+    end
+
+    # Fetches from Kroki, going through the persistent cache (see cache.rb) when enabled. The
+    # cache is keyed on the diagram's actual content, not on the output file name, so it also
+    # survives builds that wipe the output directory (e.g. Antora) and correctly detects
+    # unchanged content for named diagrams (see #90, #113).
+    def fetch_diagram(kroki_client, cache_dir, cache_mode)
+      return kroki_client.get_image(self, image_encoding) unless cache_mode[:enabled]
+
+      key = Cache.content_key(self, kroki_client.server_url)
+      return Cache.read_from_cache(cache_dir, key, @format) if !cache_mode[:refresh] && Cache.exists_in_cache?(cache_dir, key, @format)
+
+      fetched = kroki_client.get_image(self, image_encoding)
+      Cache.write_to_cache(cache_dir, key, @format, fetched)
+      fetched
     end
 
     def warn_on_name_clash(generated_files, diagram_name, diagram_url, logger)

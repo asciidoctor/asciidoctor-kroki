@@ -1,12 +1,20 @@
 import assert from 'node:assert'
 import { createHash } from 'node:crypto'
-import { describe, test } from 'node:test'
+import fs from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
+import { after, before, describe, test } from 'node:test'
 import fetch from '../../src/fetch.js'
 
+// The persistent cache (see cache.js) is enabled by default, but these tests are
+// about the output-directory/naming logic that predates it, not the cache itself
+// (which has its own dedicated describe block below) — so it's disabled by default
+// here to avoid touching the real filesystem, and can still be overridden per test.
 function createDoc({ attributes = {} } = {}, logger) {
+  const merged = { 'kroki-cache': 'false', ...attributes }
   return {
-    isAttribute: (name) => Boolean(attributes[name]),
-    getAttribute: (name) => attributes[name],
+    isAttribute: (name) => Boolean(merged[name]),
+    getAttribute: (name) => merged[name],
     isNested: () => false,
     getParentDocument: () => undefined,
     getOptions: () => ({}),
@@ -22,9 +30,16 @@ function createKrokiClient(getImage, serverUrl = 'https://kroki.io') {
   }
 }
 
-function createDiagram(format, uri) {
+function createDiagram(
+  format,
+  uri,
+  { type = 'plantuml', opts = {}, encode = () => uri } = {},
+) {
   return {
     format,
+    type,
+    opts,
+    encode,
     getDiagramUri: () => uri,
   }
 }
@@ -184,6 +199,225 @@ describe('fetch.save', () => {
       client,
     )
     assert.strictEqual(result.imagesdir, 'images')
+  })
+})
+
+describe('fetch.save persistent cache', () => {
+  let cacheDir
+
+  before(() => {
+    cacheDir = fs.mkdtempSync(path.join(os.tmpdir(), 'kroki-fetch-cache-test-'))
+  })
+
+  after(() => {
+    fs.rmSync(cacheDir, { recursive: true, force: true })
+  })
+
+  // createDoc defaults kroki-cache to 'false' (see above); these tests are about the
+  // cache itself, so re-enable it by default here and point it at the temp cache dir.
+  const createCacheDoc = (attributes = {}) =>
+    createDoc({
+      attributes: {
+        'kroki-cache': 'true',
+        'kroki-cache-dir': cacheDir,
+        ...attributes,
+      },
+    })
+
+  // A missing output file (`exists: () => false`) simulates a build that wipes the
+  // output directory between runs, e.g. Antora (#113): the persistent cache is the
+  // only thing that can still avoid a re-fetch in that case.
+  const wipedOutputVfs = () => ({
+    exists: () => false,
+    read: async () => {
+      throw new Error('should not be read: output was wiped')
+    },
+    add: () => {},
+  })
+
+  test('an anonymous diagram is fetched once and served from the persistent cache on a later build', async () => {
+    let fetched = 0
+    const client = createKrokiClient(async () => {
+      fetched++
+      return '<svg/>'
+    })
+    const doc = createCacheDoc()
+    const diagram = createDiagram(
+      'svg',
+      'https://kroki.io/plantuml/svg/CACHE1',
+      {
+        encode: () => 'CACHE1',
+      },
+    )
+
+    await fetch.save(diagram, doc, undefined, wipedOutputVfs(), client)
+    await fetch.save(diagram, doc, undefined, wipedOutputVfs(), client)
+
+    assert.strictEqual(fetched, 1)
+  })
+
+  test('a named diagram is fetched once and served from the persistent cache on a later build (#90)', async () => {
+    let fetched = 0
+    const client = createKrokiClient(async () => {
+      fetched++
+      return '<svg/>'
+    })
+    const diagram = createDiagram(
+      'svg',
+      'https://kroki.io/plantuml/svg/CACHE2',
+      {
+        encode: () => 'CACHE2',
+      },
+    )
+
+    // A fresh doc each time: the in-run `generatedNamesByDocument` reuse only kicks
+    // in within a single conversion, so this isolates the persistent cache's effect.
+    await fetch.save(diagram, createCacheDoc(), 'foo', wipedOutputVfs(), client)
+    await fetch.save(diagram, createCacheDoc(), 'foo', wipedOutputVfs(), client)
+
+    assert.strictEqual(fetched, 1)
+  })
+
+  test('a named diagram whose content changed is re-fetched even with a persistent cache hit for the old content', async () => {
+    let fetched = 0
+    const client = createKrokiClient(async () => {
+      fetched++
+      return '<svg/>'
+    })
+    const doc = createCacheDoc()
+    const original = createDiagram(
+      'svg',
+      'https://kroki.io/plantuml/svg/CACHE3A',
+      {
+        encode: () => 'CACHE3-BEFORE',
+      },
+    )
+    const changed = createDiagram(
+      'svg',
+      'https://kroki.io/plantuml/svg/CACHE3B',
+      {
+        encode: () => 'CACHE3-AFTER',
+      },
+    )
+
+    await fetch.save(original, doc, 'foo', wipedOutputVfs(), client)
+    await fetch.save(changed, createCacheDoc(), 'foo', wipedOutputVfs(), client)
+
+    assert.strictEqual(fetched, 2)
+  })
+
+  test('kroki-cache: false re-fetches every time even when the same content was cached before', async () => {
+    let fetched = 0
+    const client = createKrokiClient(async () => {
+      fetched++
+      return '<svg/>'
+    })
+    const diagram = createDiagram(
+      'svg',
+      'https://kroki.io/plantuml/svg/CACHE4',
+      {
+        encode: () => 'CACHE4',
+      },
+    )
+
+    await fetch.save(
+      diagram,
+      createCacheDoc(),
+      undefined,
+      wipedOutputVfs(),
+      client,
+    )
+    await fetch.save(
+      diagram,
+      createCacheDoc({ 'kroki-cache': 'false' }),
+      undefined,
+      wipedOutputVfs(),
+      client,
+    )
+
+    assert.strictEqual(fetched, 2)
+  })
+
+  test('kroki-cache: refresh bypasses the cached read but still updates the cache', async () => {
+    let fetched = 0
+    const client = createKrokiClient(async () => {
+      fetched++
+      return `<svg>${fetched}</svg>`
+    })
+    const diagram = createDiagram(
+      'svg',
+      'https://kroki.io/plantuml/svg/CACHE5',
+      {
+        encode: () => 'CACHE5',
+      },
+    )
+
+    await fetch.save(
+      diagram,
+      createCacheDoc(),
+      undefined,
+      wipedOutputVfs(),
+      client,
+    )
+    await fetch.save(
+      diagram,
+      createCacheDoc({ 'kroki-cache': 'refresh' }),
+      undefined,
+      wipedOutputVfs(),
+      client,
+    )
+    // A third, plain read should now see the refreshed content without fetching again.
+    let readBackFetched = 0
+    const readBackClient = createKrokiClient(async () => {
+      readBackFetched++
+      return '<svg>should not be fetched</svg>'
+    })
+    await fetch.save(
+      diagram,
+      createCacheDoc(),
+      undefined,
+      wipedOutputVfs(),
+      readBackClient,
+    )
+
+    assert.strictEqual(fetched, 2)
+    assert.strictEqual(readBackFetched, 0)
+  })
+
+  test('the cache is host-dependent: the same content on a different server is fetched again', async () => {
+    let fetched = 0
+    const client = createKrokiClient(async () => {
+      fetched++
+      return '<svg/>'
+    }, 'https://kroki.io')
+    const otherServerClient = createKrokiClient(async () => {
+      fetched++
+      return '<svg/>'
+    }, 'https://localhost:8000')
+    const diagram = createDiagram(
+      'svg',
+      'https://kroki.io/plantuml/svg/CACHE6',
+      {
+        encode: () => 'CACHE6',
+      },
+    )
+
+    await fetch.save(
+      diagram,
+      createCacheDoc(),
+      undefined,
+      wipedOutputVfs(),
+      client,
+    )
+    await fetch.save(
+      diagram,
+      createCacheDoc(),
+      undefined,
+      wipedOutputVfs(),
+      otherServerClient,
+    )
+
+    assert.strictEqual(fetched, 2)
   })
 })
 

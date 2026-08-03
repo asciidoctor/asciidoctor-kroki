@@ -2,6 +2,7 @@
 
 require 'rspec_helper'
 require 'asciidoctor'
+require 'tmpdir'
 require_relative '../lib/asciidoctor/extensions/asciidoctor_kroki'
 
 describe AsciidoctorExtensions::KrokiDiagram do
@@ -121,5 +122,101 @@ describe AsciidoctorExtensions::KrokiDiagram do
       AsciidoctorExtensions::KrokiDiagram.new('plantuml', 'svg', 'alice -> bob', 'shared').save(output_dir_path, kroki_client, generated_files, logger)
     end
     expect(logger).not_to have_received(:warn)
+  end
+
+  describe 'persistent cache' do
+    let(:cache_dir) { Dir.mktmpdir('kroki-diagram-cache-spec-') }
+
+    after do
+      FileUtils.rm_rf(cache_dir)
+    end
+
+    # Each call gets its own fresh, empty output dir: simulates a build that wipes the output
+    # directory between runs, e.g. Antora (#113). The persistent cache is the only thing that
+    # can still avoid a re-fetch in that case.
+    def wiped_output_dir
+      Dir.mktmpdir('kroki-diagram-output-spec-')
+    end
+
+    def counting_client(server_url = 'https://kroki.io')
+      calls = 0
+      client = double('kroki_client', server_url: server_url)
+      allow(client).to receive(:get_image) do
+        calls += 1
+        '<svg/>'
+      end
+      [client, -> { calls }]
+    end
+
+    it 'fetches an anonymous diagram once and serves it from the persistent cache on a later build' do
+      client, fetched = counting_client
+      diagram = AsciidoctorExtensions::KrokiDiagram.new('plantuml', 'svg', 'CACHE1 alice -> bob')
+      cache_mode = { enabled: true, refresh: false }
+
+      diagram.save(wiped_output_dir, client, nil, nil, cache_dir: cache_dir, cache_mode: cache_mode)
+      diagram.save(wiped_output_dir, client, nil, nil, cache_dir: cache_dir, cache_mode: cache_mode)
+
+      expect(fetched.call).to eq(1)
+    end
+
+    it 'fetches a named diagram once and serves it from the persistent cache on a later build (#90)' do
+      client, fetched = counting_client
+      diagram = AsciidoctorExtensions::KrokiDiagram.new('plantuml', 'svg', 'CACHE2 alice -> bob', 'foo')
+      cache_mode = { enabled: true, refresh: false }
+
+      diagram.save(wiped_output_dir, client, nil, nil, cache_dir: cache_dir, cache_mode: cache_mode)
+      diagram.save(wiped_output_dir, client, nil, nil, cache_dir: cache_dir, cache_mode: cache_mode)
+
+      expect(fetched.call).to eq(1)
+    end
+
+    it 're-fetches a named diagram whose content changed even with a persistent cache hit for the old content' do
+      client, fetched = counting_client
+      cache_mode = { enabled: true, refresh: false }
+      original = AsciidoctorExtensions::KrokiDiagram.new('plantuml', 'svg', 'CACHE3-BEFORE', 'foo')
+      changed = AsciidoctorExtensions::KrokiDiagram.new('plantuml', 'svg', 'CACHE3-AFTER', 'foo')
+
+      original.save(wiped_output_dir, client, nil, nil, cache_dir: cache_dir, cache_mode: cache_mode)
+      changed.save(wiped_output_dir, client, nil, nil, cache_dir: cache_dir, cache_mode: cache_mode)
+
+      expect(fetched.call).to eq(2)
+    end
+
+    it 'kroki-cache disabled re-fetches every time even when the same content was cached before' do
+      client, fetched = counting_client
+      diagram = AsciidoctorExtensions::KrokiDiagram.new('plantuml', 'svg', 'CACHE4 alice -> bob')
+
+      diagram.save(wiped_output_dir, client, nil, nil, cache_dir: cache_dir, cache_mode: { enabled: true, refresh: false })
+      diagram.save(wiped_output_dir, client, nil, nil, cache_dir: cache_dir, cache_mode: { enabled: false, refresh: false })
+
+      expect(fetched.call).to eq(2)
+    end
+
+    it 'refresh mode bypasses the cached read but still updates the cache' do
+      client, fetched = counting_client
+      diagram = AsciidoctorExtensions::KrokiDiagram.new('plantuml', 'svg', 'CACHE5 alice -> bob')
+
+      diagram.save(wiped_output_dir, client, nil, nil, cache_dir: cache_dir, cache_mode: { enabled: true, refresh: false })
+      diagram.save(wiped_output_dir, client, nil, nil, cache_dir: cache_dir, cache_mode: { enabled: true, refresh: true })
+
+      # A third, plain read should now see the refreshed content without fetching again.
+      read_back_client, read_back_fetched = counting_client
+      diagram.save(wiped_output_dir, read_back_client, nil, nil, cache_dir: cache_dir, cache_mode: { enabled: true, refresh: false })
+
+      expect(fetched.call).to eq(2)
+      expect(read_back_fetched.call).to eq(0)
+    end
+
+    it 'is host-dependent: the same content on a different server is fetched again' do
+      client, fetched = counting_client('https://kroki.io')
+      other_server_client, other_server_fetched = counting_client('https://localhost:8000')
+      diagram = AsciidoctorExtensions::KrokiDiagram.new('plantuml', 'svg', 'CACHE6 alice -> bob')
+      cache_mode = { enabled: true, refresh: false }
+
+      diagram.save(wiped_output_dir, client, nil, nil, cache_dir: cache_dir, cache_mode: cache_mode)
+      diagram.save(wiped_output_dir, other_server_client, nil, nil, cache_dir: cache_dir, cache_mode: cache_mode)
+
+      expect(fetched.call + other_server_fetched.call).to eq(2)
+    end
   end
 end

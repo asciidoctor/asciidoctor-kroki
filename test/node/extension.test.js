@@ -57,6 +57,9 @@ describe('Conversion', () => {
 
   describe('When extension is registered', { timeout: 120000 }, () => {
     if (os.platform() !== 'win32') {
+      let originalXdgCacheHome
+      let tempCacheDir
+
       before(
         async () => {
           fs.rmSync(
@@ -70,6 +73,14 @@ describe('Conversion', () => {
             .withExposedPorts(8000)
             .start()
           krokiServerUrl = `http://${container.getHost()}:${container.getMappedPort(8000)}`
+          // The persistent cache (see cache.js) defaults to $XDG_CACHE_HOME/kroki
+          // (or ~/.cache/kroki); point it at a throwaway directory here so this real
+          // end-to-end conversion suite never touches the developer's actual cache.
+          originalXdgCacheHome = process.env.XDG_CACHE_HOME
+          tempCacheDir = fs.mkdtempSync(
+            ospath.join(os.tmpdir(), 'kroki-extension-test-cache-'),
+          )
+          process.env.XDG_CACHE_HOME = tempCacheDir
         },
         // pulling the Kroki image alone can take more than a minute on CI runners
         { timeout: 180000 },
@@ -78,6 +89,12 @@ describe('Conversion', () => {
       after(
         async () => {
           await container.stop()
+          if (originalXdgCacheHome === undefined) {
+            delete process.env.XDG_CACHE_HOME
+          } else {
+            process.env.XDG_CACHE_HOME = originalXdgCacheHome
+          }
+          fs.rmSync(tempCacheDir, { recursive: true, force: true })
         },
         { timeout: 60000 },
       )

@@ -3,6 +3,7 @@
 require 'rspec_helper'
 require 'asciidoctor'
 require 'zlib'
+require 'tmpdir'
 require_relative '../lib/asciidoctor/extensions/asciidoctor_kroki'
 
 describe AsciidoctorExtensions::KrokiBlockProcessor do
@@ -235,44 +236,62 @@ describe AsciidoctorExtensions::KrokiBlockProcessor do
       encoded = [Zlib::Deflate.deflate(unresolved_diagram_text, 9)].pack('m0').tr('+/', '-_')
       (expect output).to include(%(<img src="https://kroki.io/plantuml/svg/#{encoded}" alt="Diagram">))
     end
-    it 'should create SVG diagram in imagesdir if kroki-fetch-diagram is set' do
-      input = <<~ADOC
-        :imagesdir: .asciidoctor/kroki
+    context 'with kroki-fetch-diagram writing to disk' do
+      # The persistent cache (see cache.rb) defaults to $XDG_CACHE_HOME/kroki (or ~/.cache/kroki);
+      # point it at a throwaway directory here so this real end-to-end conversion spec never
+      # touches the developer's actual cache.
+      around do |example|
+        original_xdg_cache_home = ENV.fetch('XDG_CACHE_HOME', nil)
+        temp_cache_dir = Dir.mktmpdir('kroki-spec-cache-')
+        ENV['XDG_CACHE_HOME'] = temp_cache_dir
+        example.run
+        if original_xdg_cache_home.nil?
+          ENV.delete('XDG_CACHE_HOME')
+        else
+          ENV['XDG_CACHE_HOME'] = original_xdg_cache_home
+        end
+        FileUtils.rm_rf(temp_cache_dir)
+      end
 
-        plantuml::spec/fixtures/alice.puml[svg,role=sequence]
-      ADOC
-      output = Asciidoctor.convert(input, attributes: { 'kroki-fetch-diagram' => '' }, standalone: false, safe: :safe)
-      (expect output).to eql %(<div class="imageblock sequence kroki-format-svg kroki">
+      it 'should create SVG diagram in imagesdir if kroki-fetch-diagram is set' do
+        input = <<~ADOC
+          :imagesdir: .asciidoctor/kroki
+
+          plantuml::spec/fixtures/alice.puml[svg,role=sequence]
+        ADOC
+        output = Asciidoctor.convert(input, attributes: { 'kroki-fetch-diagram' => '' }, standalone: false, safe: :safe)
+        (expect output).to eql %(<div class="imageblock sequence kroki-format-svg kroki">
 <div class="content">
 <img src=".asciidoctor/kroki/diag-f6acdc206506b6ca7badd3fe722f252af992871426e580c8361ff4d47c2c7d9b.svg" alt="Diagram">
 </div>
 </div>)
-    end
-    it 'should not fetch diagram when safe mode is secure' do
-      input = <<~ADOC
-        :imagesdir: .asciidoctor/kroki
+      end
+      it 'should not fetch diagram when safe mode is secure' do
+        input = <<~ADOC
+          :imagesdir: .asciidoctor/kroki
 
-        plantuml::spec/fixtures/alice.puml[svg,role=sequence]
-      ADOC
-      output = Asciidoctor.convert(input, attributes: { 'kroki-fetch-diagram' => '' }, standalone: false)
-      (expect output).to eql %(<div class="imageblock sequence kroki-format-svg kroki">
+          plantuml::spec/fixtures/alice.puml[svg,role=sequence]
+        ADOC
+        output = Asciidoctor.convert(input, attributes: { 'kroki-fetch-diagram' => '' }, standalone: false)
+        (expect output).to eql %(<div class="imageblock sequence kroki-format-svg kroki">
 <div class="content">
 <img src="https://kroki.io/plantuml/svg/eNpLzMlMTlXQtVNIyk-yUshIzcnJ5wIAQ-AGVQ==" alt="Diagram">
 </div>
 </div>)
-    end
-    it 'should create PNG diagram in imagesdir if kroki-fetch-diagram is set' do
-      input = <<~ADOC
-        :imagesdir: .asciidoctor/kroki
+      end
+      it 'should create PNG diagram in imagesdir if kroki-fetch-diagram is set' do
+        input = <<~ADOC
+          :imagesdir: .asciidoctor/kroki
 
-        plantuml::spec/fixtures/alice.puml[png,role=sequence]
-      ADOC
-      output = Asciidoctor.convert(input, attributes: { 'kroki-fetch-diagram' => '' }, standalone: false, safe: :safe)
-      (expect output).to eql %(<div class="imageblock sequence kroki-format-png kroki">
+          plantuml::spec/fixtures/alice.puml[png,role=sequence]
+        ADOC
+        output = Asciidoctor.convert(input, attributes: { 'kroki-fetch-diagram' => '' }, standalone: false, safe: :safe)
+        (expect output).to eql %(<div class="imageblock sequence kroki-format-png kroki">
 <div class="content">
 <img src=".asciidoctor/kroki/diag-d4f314b2d4e75cc08aa4f8c2c944f7bf78321895d8ec5f665b42476d4e67e610.png" alt="Diagram">
 </div>
 </div>)
+      end
     end
   end
   context 'instantiate' do
