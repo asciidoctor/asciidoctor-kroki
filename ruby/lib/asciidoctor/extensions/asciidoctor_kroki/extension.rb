@@ -294,7 +294,7 @@ module AsciidoctorExtensions
         if doc.attr('kroki-fetch-diagram') && doc.safe < ::Asciidoctor::SafeMode::SECURE
           images_output_dir = output_dir_path(doc)
           diagram_name = kroki_diagram.save(images_output_dir, kroki_client, generated_files(doc), logger,
-                                            cache_dir: Cache.resolve_cache_dir(doc), cache_mode: Cache.resolve_cache_mode(doc, logger))
+                                            cache_dir: KrokiCache.resolve_cache_dir(doc), cache_mode: KrokiCache.resolve_cache_mode(doc, logger))
           # The converter resolves the image target against the document's `imagesdir`
           # attribute, which only matches where we actually wrote the file when
           # `imagesoutdir` is unset. Overriding `imagesdir` on this image node (rather
@@ -375,8 +375,8 @@ module AsciidoctorExtensions
       ([Zlib::Deflate.deflate(@text, 9)].pack 'm0').tr '+/', '-_'
     end
 
-    # @param cache_dir [String, nil] persistent cache directory (see Cache.resolve_cache_dir); required when cache_mode[:enabled]
-    # @param cache_mode [Hash] {enabled:, refresh:} (see Cache.resolve_cache_mode); disabled by default so callers that
+    # @param cache_dir [String, nil] persistent cache directory (see KrokiCache.resolve_cache_dir); required when cache_mode[:enabled]
+    # @param cache_mode [Hash] {enabled:, refresh:} (see KrokiCache.resolve_cache_mode); disabled by default so callers that
     #   don't pass it (e.g. specs exercising #save directly) keep the pre-cache behaviour
     def save(output_dir_path, kroki_client, generated_files = nil, logger = nil, cache_dir: nil, cache_mode: { enabled: false, refresh: false })
       diagram_url = get_diagram_uri(kroki_client.server_url)
@@ -415,11 +415,11 @@ module AsciidoctorExtensions
     def fetch_diagram(kroki_client, cache_dir, cache_mode)
       return kroki_client.get_image(self, image_encoding) unless cache_mode[:enabled]
 
-      key = Cache.content_key(self, kroki_client.server_url)
-      return Cache.read_from_cache(cache_dir, key, @format) if !cache_mode[:refresh] && Cache.exists_in_cache?(cache_dir, key, @format)
+      key = KrokiCache.content_key(self, kroki_client.server_url)
+      return KrokiCache.read_from_cache(cache_dir, key, @format) if !cache_mode[:refresh] && KrokiCache.exists_in_cache?(cache_dir, key, @format)
 
       fetched = kroki_client.get_image(self, image_encoding)
-      Cache.write_to_cache(cache_dir, key, @format, fetched)
+      KrokiCache.write_to_cache(cache_dir, key, @format, fetched)
       fetched
     end
 

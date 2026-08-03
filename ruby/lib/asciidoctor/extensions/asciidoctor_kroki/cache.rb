@@ -11,7 +11,7 @@ module AsciidoctorExtensions
   # options), not from the output file name, so it also survives builds that wipe the output
   # directory between runs (e.g. Antora) and correctly detects unchanged content for diagrams
   # with a stable, user-defined name (see #90, #113).
-  module Cache
+  module KrokiCache
     VALID_CACHE_MODES = ['', 'true', 'false', 'refresh'].freeze
 
     class << self

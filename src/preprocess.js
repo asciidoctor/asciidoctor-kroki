@@ -223,9 +223,9 @@ async function preprocessPlantUmlIncludes(
  * @param {{[key: string]: string}} resource
  * @param {string[]} includePaths - array with include paths
  * @param {any} vfs
- * @returns {string} the found file or include file path
+ * @returns {Promise<string>} the found file or include file path
  */
-function resolveIncludeFile(includeFile, resource, includePaths, vfs) {
+async function resolveIncludeFile(includeFile, resource, includePaths, vfs) {
   const { exists } = resolveVfs(vfs)
   if (resource.module) {
     // antora resource id
@@ -241,7 +241,7 @@ function resolveIncludeFile(includeFile, resource, includePaths, vfs) {
   let filePath = includeFile
   for (const includePath of [resource.dir, ...includePaths]) {
     const localFilePath = path.join(includePath, includeFile)
-    if (exists(localFilePath)) {
+    if (await exists(localFilePath)) {
       filePath = localFilePath
       break
     }
@@ -314,7 +314,7 @@ async function readStructurizrInclude(
         skip = true
       }
     } else {
-      filePath = resolveIncludeFile(url, resource, includePaths, vfs)
+      filePath = await resolveIncludeFile(url, resource, includePaths, vfs)
       if (includeStack.includes(filePath)) {
         const message = `Preprocessing of Structurizr include failed, because recursive reading already included referenced file '${filePath}'`
         throw new Error(message)
@@ -376,7 +376,7 @@ async function readPlantUmlInclude(
         skip = true
       }
     } else {
-      filePath = resolveIncludeFile(url, resource, includePaths, vfs)
+      filePath = await resolveIncludeFile(url, resource, includePaths, vfs)
       if (includeStack.includes(filePath)) {
         const message = `Preprocessing of PlantUML include failed, because recursive reading already included referenced file '${filePath}'`
         throw new Error(message)

@@ -23,7 +23,7 @@ const PATH_STUBS = new Map([
 // Stub code indexed by bare module specifier
 const ID_STUBS = new Map([
   ['node:crypto', 'export const createHash = () => ({ update: () => ({ digest: () => "" }) }); export default {}'],
-  ['node:fs', 'export default {}'],
+  ['node:fs/promises', 'export default {}'],
   ['node:os', 'export default {}'],
   ['node:url', 'export const fileURLToPath = (u) => u; export const pathToFileURL = (p) => p; export default {}'],
 ])

@@ -300,9 +300,9 @@ function diagramBlockMacro(name, context) {
               }
               return response.text()
             },
-            exists: (path) =>
+            exists: async (path) =>
               path.startsWith('http://') || path.startsWith('https://'),
-            add: (_) => {},
+            add: async (_) => {},
             parse: (path) => ({
               dir: path.substring(0, path.lastIndexOf('/')),
               path,

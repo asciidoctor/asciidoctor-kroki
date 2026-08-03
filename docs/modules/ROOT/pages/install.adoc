@@ -44,20 +44,21 @@ With the Asciidoctor.js CLI, you must use `--extension`.
 By default, the extension reads diagram files from the local file system.
 You can override this behavior by providing a custom Virtual File System (VFS) via the `context` parameter of the `register` function.
 
-A VFS object can implement any combination of the following methods:
+A VFS object can implement any combination of the following methods.
+Every method is asynchronous (returns a promise), whether or not the implementation actually needs to await anything:
 
 [cols="1,3",options="header"]
 |===
 |Method|Description
 
 |`read(path, encoding)`
-|Reads a file at `path` and returns its content as a string. `encoding` defaults to `utf8`; use `binary` for binary files.
+|Reads a file at `path` and resolves to its content as a string. `encoding` defaults to `utf8`; use `binary` for binary files.
 
 |`exists(path)`
-|Returns `true` if the file at `path` exists.
+|Resolves to `true` if the file at `path` exists.
 
 |`parse(resourceId)`
-|Parses a resource identifier and returns an object with `dir` and `path` properties.
+|Parses a resource identifier and returns an object with `dir` and `path` properties. The only synchronous method: it's pure string manipulation, no I/O.
 
 |`add(image)`
 |Saves a diagram image. Called when `kroki-fetch-diagram` is enabled. Receives an object with `relative`, `basename`, and `contents` properties.
@@ -74,7 +75,7 @@ const vfs = {
   read: async (path, encoding = 'utf8') => { // <1>
     // load from a custom source (e.g. a database, a ZIP archive, an S3 bucket...)
   },
-  exists: (path) => { // <2>
+  exists: async (path) => { // <2>
     // check if the file exists in your custom source
   },
 }

@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto'
-import fs from 'node:fs'
+import { access, mkdir, readFile, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 
@@ -95,10 +95,16 @@ const cacheFilePath = (cacheDir, key, format) =>
  * @param {string} cacheDir - Cache directory.
  * @param {string} key - Content key.
  * @param {string} format - Diagram output format.
- * @returns {boolean}
+ * @returns {Promise<boolean>}
  */
-export const existsInCache = (cacheDir, key, format) =>
-  fs.existsSync(cacheFilePath(cacheDir, key, format))
+export const existsInCache = async (cacheDir, key, format) => {
+  try {
+    await access(cacheFilePath(cacheDir, key, format))
+    return true
+  } catch {
+    return false
+  }
+}
 
 /**
  * Reads a cached diagram.
@@ -107,10 +113,10 @@ export const existsInCache = (cacheDir, key, format) =>
  * @param {string} key - Content key.
  * @param {string} format - Diagram output format.
  * @param {BufferEncoding} encoding - Encoding used to read the cached content back as a string.
- * @returns {string} Cached diagram content.
+ * @returns {Promise<string>} Cached diagram content.
  */
 export const readFromCache = (cacheDir, key, format, encoding) =>
-  fs.readFileSync(cacheFilePath(cacheDir, key, format), encoding)
+  readFile(cacheFilePath(cacheDir, key, format), encoding)
 
 /**
  * Writes a diagram to the cache, creating the cache directory if needed.
@@ -120,8 +126,15 @@ export const readFromCache = (cacheDir, key, format, encoding) =>
  * @param {string} format - Diagram output format.
  * @param {string} contents - Diagram content to cache.
  * @param {BufferEncoding} encoding - Encoding used to write the content.
+ * @returns {Promise<void>}
  */
-export const writeToCache = (cacheDir, key, format, contents, encoding) => {
-  fs.mkdirSync(cacheDir, { recursive: true })
-  fs.writeFileSync(cacheFilePath(cacheDir, key, format), contents, encoding)
+export const writeToCache = async (
+  cacheDir,
+  key,
+  format,
+  contents,
+  encoding,
+) => {
+  await mkdir(cacheDir, { recursive: true })
+  await writeFile(cacheFilePath(cacheDir, key, format), contents, encoding)
 }

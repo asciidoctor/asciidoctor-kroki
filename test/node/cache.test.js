@@ -160,34 +160,34 @@ describe('existsInCache / readFromCache / writeToCache', () => {
     fs.rmSync(cacheDir, { recursive: true, force: true })
   })
 
-  test('a key that was never written does not exist', () => {
-    assert.strictEqual(existsInCache(cacheDir, 'missing', 'svg'), false)
+  test('a key that was never written does not exist', async () => {
+    assert.strictEqual(await existsInCache(cacheDir, 'missing', 'svg'), false)
   })
 
-  test('round-trips a written diagram', () => {
-    writeToCache(cacheDir, 'abc123', 'svg', '<svg/>', 'binary')
-    assert.strictEqual(existsInCache(cacheDir, 'abc123', 'svg'), true)
+  test('round-trips a written diagram', async () => {
+    await writeToCache(cacheDir, 'abc123', 'svg', '<svg/>', 'binary')
+    assert.strictEqual(await existsInCache(cacheDir, 'abc123', 'svg'), true)
     assert.strictEqual(
-      readFromCache(cacheDir, 'abc123', 'svg', 'binary'),
+      await readFromCache(cacheDir, 'abc123', 'svg', 'binary'),
       '<svg/>',
     )
   })
 
-  test('creates the cache directory when it does not exist yet', () => {
+  test('creates the cache directory when it does not exist yet', async () => {
     const nested = path.join(cacheDir, 'nested', 'dir')
-    writeToCache(nested, 'def456', 'png', 'PNGDATA', 'binary')
-    assert.strictEqual(existsInCache(nested, 'def456', 'png'), true)
+    await writeToCache(nested, 'def456', 'png', 'PNGDATA', 'binary')
+    assert.strictEqual(await existsInCache(nested, 'def456', 'png'), true)
   })
 
-  test('the same key with a different format is a different cache entry', () => {
-    writeToCache(cacheDir, 'shared-key', 'svg', 'SVG', 'binary')
-    writeToCache(cacheDir, 'shared-key', 'png', 'PNG', 'binary')
+  test('the same key with a different format is a different cache entry', async () => {
+    await writeToCache(cacheDir, 'shared-key', 'svg', 'SVG', 'binary')
+    await writeToCache(cacheDir, 'shared-key', 'png', 'PNG', 'binary')
     assert.strictEqual(
-      readFromCache(cacheDir, 'shared-key', 'svg', 'binary'),
+      await readFromCache(cacheDir, 'shared-key', 'svg', 'binary'),
       'SVG',
     )
     assert.strictEqual(
-      readFromCache(cacheDir, 'shared-key', 'png', 'binary'),
+      await readFromCache(cacheDir, 'shared-key', 'png', 'binary'),
       'PNG',
     )
   })

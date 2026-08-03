@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Breaking:** the JavaScript/Node.js extension now exports `register` as a named export instead of a default export with a `register` method. Update `asciidoctorKroki.register(registry)` to `import { register } from 'asciidoctor-kroki'; register(registry)`.
 - **Breaking:** the source entry point and generated TypeScript declarations move to `src/index.js` and a top-level `types/` directory, matching the layout used by `asciidoctor.js`. Consumers using the package's documented `exports` field are unaffected; only direct imports of internal file paths need updating.
+- **Breaking:** the JavaScript/Node.js custom VFS `exists` and `add` methods are now expected to be asynchronous (return a promise), matching `read`. A synchronous implementation still works (the extension always awaits the result), but update any implementation relying on synchronous completion.
 
 ### Fixed
 

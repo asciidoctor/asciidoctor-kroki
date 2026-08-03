@@ -30,7 +30,6 @@ export default defineConfig({
       { find: 'node:path', replacement: shim('node-path') },
       { find: 'node:crypto', replacement: shim('node-crypto') },
       { find: 'node:fs/promises', replacement: shim('node-fs-promises') },
-      { find: 'node:fs', replacement: shim('node-fs') },
     ],
   },
 })

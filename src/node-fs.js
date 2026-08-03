@@ -1,4 +1,4 @@
-import fs from 'node:fs'
+import { access, mkdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import url from 'node:url'
 
@@ -19,13 +19,15 @@ import http from './http-client.js'
  * Pass a custom implementation to the Asciidoctor extension to redirect reads and writes
  * (e.g. to an in-memory store or a bundler's asset pipeline).
  * Any method that is omitted falls back to the Node.js implementation provided by {@link nodefs}.
+ * Every method is asynchronous, whether or not the underlying implementation actually needs to
+ * await anything, so custom implementations and callers can rely on a single, consistent contract.
  *
  * @typedef {Object} Vfs
- * @property {(image: VfsImage) => void} add
+ * @property {(image: VfsImage) => Promise<void>} add
  *   Persists a rendered diagram image. The Node.js default creates the target directory
- *   recursively and writes the file synchronously.
- * @property {(path: string) => boolean} exists
- *   Returns `true` when the file at the given path already exists, allowing the extension
+ *   recursively and writes the file.
+ * @property {(path: string) => Promise<boolean>} exists
+ *   Resolves to `true` when the file at the given path already exists, allowing the extension
  *   to skip a Kroki network request for previously generated diagrams.
  * @property {(path: string, encoding?: BufferEncoding, resource?: {[key: string]: string}) => Promise<string>} read
  *   Reads a file and returns its contents. Accepts local filesystem paths, `file://` URIs,
@@ -35,34 +37,40 @@ import http from './http-client.js'
  * @property {(resourceId: string, resource?: {[key: string]: string}) => {dir: string, path: string}} parse
  *   Parses a resource identifier into its directory and full path components.
  *   Backslashes are normalised to forward slashes so that path.posix operations
- *   work correctly on Windows.
+ *   work correctly on Windows. Synchronous: it's pure string manipulation, no I/O.
  */
 
 /**
- * Default Node.js virtual filesystem implementation backed by `node:fs`.
+ * Default Node.js virtual filesystem implementation backed by `node:fs/promises`.
  *
  * @type {Vfs}
  */
 const nodefs = {
   /**
-   * Creates the target directory (recursively) and writes the image file synchronously.
+   * Creates the target directory (recursively) and writes the image file.
    *
    * @param {VfsImage} image - Image descriptor.
+   * @returns {Promise<void>}
    */
-  add: (image) => {
-    fs.mkdirSync(image.relative, { recursive: true })
+  add: async (image) => {
+    await mkdir(image.relative, { recursive: true })
     const filePath = path.format({ dir: image.relative, base: image.basename })
-    fs.writeFileSync(filePath, image.contents, 'binary')
+    await writeFile(filePath, image.contents, 'binary')
   },
 
   /**
-   * Returns `true` when the file at `path` exists on the local filesystem.
+   * Resolves to `true` when the file at `path` exists on the local filesystem.
    *
    * @param {string} path - Local filesystem path to check.
-   * @returns {boolean}
+   * @returns {Promise<boolean>}
    */
-  exists: (path) => {
-    return fs.existsSync(path)
+  exists: async (path) => {
+    try {
+      await access(path)
+      return true
+    } catch {
+      return false
+    }
   },
 
   /**
@@ -79,9 +87,9 @@ const nodefs = {
       return http.get(path, {}, encoding)
     }
     if (path.startsWith('file://')) {
-      return fs.readFileSync(url.fileURLToPath(path), encoding)
+      return readFile(url.fileURLToPath(path), encoding)
     }
-    return fs.readFileSync(path, encoding)
+    return readFile(path, encoding)
   },
 
   /**

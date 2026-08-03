@@ -160,11 +160,11 @@ export default {
       }
       const cacheDir = resolveCacheDir(doc)
       const key = contentKey(krokiDiagram, serverUrl)
-      if (!cacheRefresh && existsInCache(cacheDir, key, format)) {
+      if (!cacheRefresh && (await existsInCache(cacheDir, key, format))) {
         return readFromCache(cacheDir, key, format, encoding)
       }
       const fetched = await krokiClient.getImage(krokiDiagram, encoding)
-      writeToCache(cacheDir, key, format, fetched, encoding)
+      await writeToCache(cacheDir, key, format, fetched, encoding)
       return fetched
     }
 
@@ -181,7 +181,7 @@ export default {
         generatedNamesByDocument.set(doc, generated)
       }
       const previousUrl = generated.get(diagramName)
-      if (previousUrl === diagramUrl && exists(filePath)) {
+      if (previousUrl === diagramUrl && (await exists(filePath))) {
         contents = await read(filePath, encoding)
       } else {
         if (previousUrl !== undefined && previousUrl !== diagramUrl) {
@@ -196,12 +196,12 @@ export default {
       generated.set(diagramName, diagramUrl)
     } else {
       // Content-addressed name: an existing output file necessarily has identical content.
-      contents = exists(filePath)
+      contents = (await exists(filePath))
         ? await read(filePath, encoding)
         : await fetchDiagram()
     }
 
-    add({
+    await add({
       relative: imagesOutputDirectory,
       basename: diagramName,
       mediaType,

@@ -10,7 +10,7 @@ def doc_with(attributes = {})
   end
 end
 
-describe AsciidoctorExtensions::Cache do
+describe AsciidoctorExtensions::KrokiCache do
   describe '.resolve_cache_dir' do
     around do |example|
       original = ENV.fetch('XDG_CACHE_HOME', nil)
