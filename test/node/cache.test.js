@@ -40,8 +40,12 @@ describe('resolveCacheDir', () => {
   })
 
   test('defaults to $XDG_CACHE_HOME/kroki when set', () => {
-    process.env.XDG_CACHE_HOME = '/tmp/xdg-cache'
-    assert.strictEqual(resolveCacheDir(createDoc()), '/tmp/xdg-cache/kroki')
+    const xdgCacheHome = path.join(path.sep, 'tmp', 'xdg-cache')
+    process.env.XDG_CACHE_HOME = xdgCacheHome
+    assert.strictEqual(
+      resolveCacheDir(createDoc()),
+      path.join(xdgCacheHome, 'kroki'),
+    )
   })
 
   test('defaults to ~/.cache/kroki when XDG_CACHE_HOME is unset', () => {
