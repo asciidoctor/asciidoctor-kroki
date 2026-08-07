@@ -108,6 +108,8 @@ jobs:
   publish-ruby:
     needs: [prepare, build-ruby]
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
     steps:
       - uses: actions/checkout@v6
         with:
@@ -117,14 +119,8 @@ jobs:
           ruby-version: '3.4'
           bundler-cache: true
           working-directory: ./ruby
-      - name: Configure credentials
-        run: |
-          mkdir -p $HOME/.gem
-          touch $HOME/.gem/credentials
-          chmod 0600 $HOME/.gem/credentials
-          printf -- "---\n:rubygems_api_key: ${RUBYGEMS_API_KEY}" > $HOME/.gem/credentials
-        env:
-          RUBYGEMS_API_KEY: ${{ secrets.RUBYGEMS_API_KEY }}
+      - name: Configure RubyGems credentials
+        uses: rubygems/configure-rubygems-credentials@v2.1.0
       - name: Build and publish gem
         run: |
           bundle exec rake build

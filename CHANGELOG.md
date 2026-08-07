@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- CI: switch the Ruby gem release step to RubyGems Trusted Publishing (OIDC) instead of a static API key, which had gone stale and caused the `2.0.0-rc.1` gem publish to fail.
+
 ## [2.0.0-rc.1] - 2026-08-07
 
 ### Added
