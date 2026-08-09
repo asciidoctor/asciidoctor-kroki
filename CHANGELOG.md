@@ -11,6 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Ruby: support the `kroki-data-uri` (and standard `data-uri`) attribute to embed fetched diagrams as base64 data URIs instead of writing them to disk, matching the JavaScript/Node.js extension.
 
+### Fixed
+
+- Ruby: a failure talking to the Kroki server (network error, non-2xx response, unexpected content-type) no longer aborts the whole document conversion or silently embeds the server's error message as if it were the diagram. It's now degraded to a warning and a `kroki-error`-styled block showing the raw diagram source, matching the JavaScript/Node.js extension. **Possibly breaking:** a custom `:http_client` now receives an additional `expected_content_type` argument on `get`/`post`.
+- Ruby: log the missing warning when `kroki-http-method` is `get` and the diagram URI exceeds `kroki-max-uri-length`, and fall back to the 4000 default instead of silently treating an invalid `kroki-max-uri-length` value as `0`. Both already matched the JavaScript/Node.js extension's intent but weren't implemented.
+
 ## [2.0.0-rc.2] - 2026-08-07
 
 ### Fixed
