@@ -316,6 +316,42 @@ describe AsciidoctorExtensions::KrokiBlockProcessor do
         (expect output).to include('<img src="https://kroki.io/plantuml/svg/')
       end
     end
+    context 'when the Kroki server round-trip fails' do
+      it 'should render a kroki-error block instead of aborting the conversion when the server is unreachable' do
+        input = <<~ADOC
+          [plantuml,,txt]
+          ....
+          alice -> bob: hello
+          ....
+
+          following text
+        ADOC
+        output = Asciidoctor.convert(input, standalone: false, safe: :safe, attributes: { 'kroki-server-url' => 'http://127.0.0.1:1' })
+        (expect output).to eql %(<div class="literalblock kroki-error">
+<div class="content">
+<pre>alice -&gt; bob: hello</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>following text</p>
+</div>)
+      end
+      it 'should render a kroki-error block instead of a broken image when the Kroki server rejects the diagram (real end-to-end request)' do
+        input = <<~ADOC
+          [plantuml]
+          ....
+          this is not valid plantuml syntax !!! ###
+          ....
+
+          following text
+        ADOC
+        attrs = { 'kroki-fetch-diagram' => '', 'kroki-cache' => 'false', 'kroki-server-url' => 'https://kroki.io' }
+        output = Asciidoctor.convert(input, standalone: false, safe: :safe, attributes: attrs)
+        (expect output).to include('class="literalblock kroki-error"')
+        (expect output).to include('this is not valid plantuml syntax !!! ###')
+        (expect output).to include('following text')
+      end
+    end
   end
   context 'instantiate' do
     it 'should instantiate block processor without warning' do

@@ -165,5 +165,18 @@ describe AsciidoctorExtensions::KrokiBlockMacroProcessor do
       end
     end
   end
+  context 'when the Kroki server round-trip fails' do
+    it 'should render a kroki-error paragraph instead of aborting the conversion when the server is unreachable' do
+      input = <<~ADOC
+        plantuml::spec/fixtures/alice.puml[txt]
+
+        following text
+      ADOC
+      output = Asciidoctor.convert(input, standalone: false, safe: :safe, attributes: { 'kroki-server-url' => 'http://127.0.0.1:1' })
+      (expect output).to include('class="paragraph kroki-error"')
+      (expect output).to include('plantuml::spec/fixtures/alice.puml[]')
+      (expect output).to include('following text')
+    end
+  end
 end
 # rubocop:enable Lint/ConstantDefinitionInBlock

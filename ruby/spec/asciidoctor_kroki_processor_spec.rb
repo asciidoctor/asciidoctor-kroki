@@ -62,4 +62,16 @@ describe '::AsciidoctorExtensions::KrokiProcessor' do
     option = AsciidoctorExtensions::KrokiProcessor.send(:get_option, {}, doc)
     expect(option).to be_nil
   end
+  it 'should use 4000 as the default max URI length' do
+    doc = Asciidoctor.load('hello')
+    expect(AsciidoctorExtensions::KrokiProcessor.send(:max_uri_length, doc)).to eq 4000
+  end
+  it 'should use a custom max URI length' do
+    doc = Asciidoctor.load('hello', attributes: { 'kroki-max-uri-length' => '8000' })
+    expect(AsciidoctorExtensions::KrokiProcessor.send(:max_uri_length, doc)).to eq 8000
+  end
+  it 'should fall back to 4000 when kroki-max-uri-length is not a number' do
+    doc = Asciidoctor.load('hello', attributes: { 'kroki-max-uri-length' => 'not-a-number' })
+    expect(AsciidoctorExtensions::KrokiProcessor.send(:max_uri_length, doc)).to eq 4000
+  end
 end
