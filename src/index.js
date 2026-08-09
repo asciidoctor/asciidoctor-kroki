@@ -125,6 +125,32 @@ function isNumeric(value) {
   return /^\d+$/.test(value)
 }
 
+/** @type {Set<string>} Diagram types Kroki can only render as SVG (no PNG output). */
+const SVG_ONLY_DIAGRAM_TYPES = new Set([
+  'goat',
+  'nomnoml',
+  'svgbob',
+  'wavedrom',
+])
+
+/**
+ * Resolves the diagram's output format, redirecting `png` to `svg` for diagram types
+ * Kroki can only render as SVG — useful when `kroki-default-format` is set to `png`
+ * document-wide. Matches the Ruby gem's equivalent redirect.
+ *
+ * @param {Object} doc - Asciidoctor document.
+ * @param {Object} attrs - Block or macro attributes.
+ * @param {string} diagramType - Diagram type (e.g. `plantuml`, `goat`).
+ * @returns {string} Resolved output format.
+ */
+function getFormat(doc, attrs, diagramType) {
+  const format =
+    attrs.format || doc.getAttribute('kroki-default-format') || 'svg'
+  return format === 'png' && SVG_ONLY_DIAGRAM_TYPES.has(diagramType)
+    ? 'svg'
+    : format
+}
+
 const processKroki = async (
   processor,
   parent,
@@ -167,8 +193,7 @@ const processKroki = async (
     }
   }
   const blockId = attrs.id
-  const format =
-    attrs.format || doc.getAttribute('kroki-default-format') || 'svg'
+  const format = getFormat(doc, attrs, diagramType)
   const caption = attrs.caption
   const title = attrs.title
   const role = attrs.role

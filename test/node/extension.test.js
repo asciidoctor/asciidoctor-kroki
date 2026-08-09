@@ -1819,6 +1819,24 @@ paragraph
             }
           })
         }
+        test('redirects png to svg when kroki-default-format is png and the diagram type only supports svg', async () => {
+          const input = `
+[nomnoml]
+....
+[Pirate|eyeCount: Int|raid();pillage()|
+  [beard]--[parrot]
+  [beard]-:>[foul mouth]
+]
+....
+`
+          const registry = Extensions.create()
+          register(registry)
+          const html = await convert(input, {
+            extension_registry: registry,
+            attributes: { 'kroki-default-format': 'png' },
+          })
+          assertContains(html, 'https://kroki.io/nomnoml/svg/')
+        })
         const inlineOptionsFixtures = [
           {
             location: 'page attr',

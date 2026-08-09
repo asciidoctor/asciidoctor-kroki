@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Ruby: support the `kroki-data-uri` (and standard `data-uri`) attribute to embed fetched diagrams as base64 data URIs instead of writing them to disk, matching the JavaScript/Node.js extension.
+- JavaScript/Node.js: redirect `png` to `svg` for diagram types Kroki can only render as SVG (`goat`, `nomnoml`, `svgbob`, `wavedrom`) when `kroki-default-format` is set to `png`, matching the Ruby gem's existing behavior.
 
 ## [2.0.0-rc.2] - 2026-08-07
 
