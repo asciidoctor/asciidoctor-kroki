@@ -216,7 +216,7 @@ module AsciidoctorExtensions
           block = processor.create_block(parent, 'literal', text_content, attrs)
         else
           attrs['alt'] = alt
-          apply_image_src(attrs, create_image_src(doc, kroki_diagram, kroki_client, logger))
+          apply_image_src(attrs, create_image_src(doc, kroki_diagram, kroki_client, logger, inline: option == 'inline'))
           block = processor.create_image_block(parent, attrs)
         end
         block.title = title if title
@@ -311,7 +311,7 @@ module AsciidoctorExtensions
         attrs['imagesdir'] = image_src[:imagesdir] if image_src[:imagesdir]
       end
 
-      def create_image_src(doc, kroki_diagram, kroki_client, logger)
+      def create_image_src(doc, kroki_diagram, kroki_client, logger, inline: false)
         if doc.attr('kroki-fetch-diagram') && doc.safe < ::Asciidoctor::SafeMode::SECURE
           # In data-URI mode no file is written, so the file name is irrelevant: embed the diagram inline.
           return { target: kroki_diagram.to_data_uri(kroki_client) } if doc.attr?('data-uri') || doc.attr?('kroki-data-uri')
@@ -328,6 +328,23 @@ module AsciidoctorExtensions
           # released gem (still absent from 2.0.26); until it ships, Asciidoctor's
           # `image_uri` ignores the node-level attribute and this is a harmless no-op.
           { target: diagram_name, imagesdir: relative_images_dir(doc, images_output_dir) }
+        elsif inline && !doc.attr?('allow-uri-read') && doc.safe < ::Asciidoctor::SafeMode::SECURE
+          # The `inline` option asks the converter to embed the diagram itself (e.g. inline SVG).
+          # When `allow-uri-read` is set, core fetches the target itself, so we hand back the plain
+          # server URL below and let it do so. When it's unset, core can't read a remote target at
+          # all, so without help here it would silently render a blank placeholder instead of the
+          # diagram — so we fetch it ourselves, narrowly, from the already-configured Kroki server
+          # (never an arbitrary document-supplied URI), and hand back a data URI instead.
+          #
+          # NOTE: as of this writing, Asciidoctor core's HTML5 converter treats a `data:` URI target
+          # the same as any other remote URI and still refuses to read it without `allow-uri-read`
+          # (https://github.com/asciidoctor/asciidoctor/issues/3791) — so today this still renders a
+          # blank placeholder, only later than before. A fix decoding `data:` targets directly is
+          # proposed upstream (https://github.com/asciidoctor/asciidoctor/pull/4865, not yet merged);
+          # this branch is aligned with it ahead of time, matching the JavaScript/Node.js extension
+          # (already correct against Asciidoctor.js >= 4.0.2, which carries the equivalent fix), so
+          # it starts working here too as soon as a released gem picks it up — no code change needed.
+          { target: kroki_diagram.to_data_uri(kroki_client) }
         else
           { target: kroki_diagram.get_diagram_uri(server_url(doc)) }
         end

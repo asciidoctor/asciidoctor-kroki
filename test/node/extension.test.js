@@ -1718,6 +1718,26 @@ ${svg}
           // the server URL rather than embedding the content.
           assert.ok(image.getAttribute('target').startsWith(krokiServerUrl))
         })
+        test('actually inlines the SVG for the inline option when allow-uri-read is not set', async () => {
+          // Regression test for the full HTML conversion, not just the resolved image
+          // target: Asciidoctor core only started decoding a data: URI target directly
+          // (rather than trying to read it as a remote resource, which requires
+          // allow-uri-read) in @asciidoctor/core 4.0.2
+          // (https://github.com/asciidoctor/asciidoctor/issues/3791); the equivalent Ruby
+          // core fix is still an open PR (asciidoctor/asciidoctor#4865).
+          const input = `
+plantuml::test/fixtures/alice.puml[svg,opts=inline]
+`
+          const registry = Extensions.create()
+          register(registry)
+          const html = await convert(input, {
+            safe: 'safe',
+            extension_registry: registry,
+            attributes: { 'kroki-server-url': krokiServerUrl },
+          })
+          assert.match(html, /<svg[\s>]/)
+          assert.doesNotMatch(html, /<span class="alt">/)
+        })
       })
 
       describe('Default options', () => {

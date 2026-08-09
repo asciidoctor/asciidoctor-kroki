@@ -16,6 +16,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Ruby: a failure talking to the Kroki server (network error, non-2xx response, unexpected content-type) no longer aborts the whole document conversion or silently embeds the server's error message as if it were the diagram. It's now degraded to a warning and a `kroki-error`-styled block showing the raw diagram source, matching the JavaScript/Node.js extension. **Possibly breaking:** a custom `:http_client` now receives an additional `expected_content_type` argument on `get`/`post`.
 - Ruby: log the missing warning when `kroki-http-method` is `get` and the diagram URI exceeds `kroki-max-uri-length`, and fall back to the 4000 default instead of silently treating an invalid `kroki-max-uri-length` value as `0`. Both already matched the JavaScript/Node.js extension's intent but weren't implemented.
+- Ruby: align the `inline` option's fallback with the JavaScript/Node.js extension by resolving to a data URI when `allow-uri-read` is not set. This stays inert until a released Asciidoctor gem picks up [asciidoctor/asciidoctor#4865](https://github.com/asciidoctor/asciidoctor/pull/4865) (already effective in the JavaScript/Node.js extension against Asciidoctor.js 4.0.2+).
+
+### Fixed
+
+- JavaScript/Node.js: the `inline` option without `allow-uri-read` now actually embeds the diagram instead of a blank placeholder, provided Asciidoctor.js 4.0.2+ is used — that version decodes a `data:` URI image target directly instead of refusing to read it without `allow-uri-read` ([asciidoctor/asciidoctor#3791](https://github.com/asciidoctor/asciidoctor/issues/3791)). No code change was needed; the test suite's `@asciidoctor/core` dependency is bumped to 4.0.8 to cover it.
 
 ## [2.0.0-rc.2] - 2026-08-07
 

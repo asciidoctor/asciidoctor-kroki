@@ -352,6 +352,28 @@ describe AsciidoctorExtensions::KrokiBlockProcessor do
         (expect output).to include('following text')
       end
     end
+    context 'with the inline option and no allow-uri-read' do
+      # NOTE: as of this writing, the inline SVG isn't actually embedded in the rendered HTML yet
+      # (see the comment on the `inline` branch of create_image_src) because Asciidoctor core
+      # still refuses to read a data: URI target without allow-uri-read
+      # (https://github.com/asciidoctor/asciidoctor/issues/3791). These specs check the resolved
+      # image target directly, like the JavaScript/Node.js extension's equivalent specs do, so
+      # they keep passing both today and once a released gem picks up the upstream fix.
+      it 'should resolve the inline option to a data URI when allow-uri-read is not set' do
+        input = 'plantuml::spec/fixtures/alice.puml[svg,opts=inline]'
+        doc = Asciidoctor.load(input, safe: :safe, attributes: { 'kroki-server-url' => 'https://kroki.io' })
+        image = doc.find_by(context: :image)[0]
+        (expect image).not_to be_nil
+        (expect image.attr('target')).to match(%r{^data:image/svg\+xml;base64,})
+      end
+      it 'should keep the server URL target for the inline option when allow-uri-read is set' do
+        input = 'plantuml::spec/fixtures/alice.puml[svg,opts=inline]'
+        doc = Asciidoctor.load(input, safe: :safe, attributes: { 'allow-uri-read' => '', 'kroki-server-url' => 'https://kroki.io' })
+        image = doc.find_by(context: :image)[0]
+        (expect image).not_to be_nil
+        (expect image.attr('target')).to start_with('https://kroki.io')
+      end
+    end
   end
   context 'instantiate' do
     it 'should instantiate block processor without warning' do
