@@ -12,7 +12,7 @@
 |`https://kroki.io`
 
 |`kroki-data-uri`
-|Embed images as data-URI elements in HTML so the file is completely self-contained. Only applies when `kroki-fetch-diagram` is enabled. The standard Asciidoctor `data-uri` attribute has the same effect. _JavaScript only_ (see xref:_feature_parity[]).
+|Embed images as data-URI elements in HTML so the file is completely self-contained. Only applies when `kroki-fetch-diagram` is enabled. The standard Asciidoctor `data-uri` attribute has the same effect.
 |`false`
 
 |`kroki-fetch-diagram`
@@ -232,7 +232,7 @@ The JavaScript/Node.js extension and the Ruby gem share the same version and are
 
 |`kroki-data-uri`
 |Yes
-|No
+|Yes
 
 |`kroki-default-options`
 |Yes

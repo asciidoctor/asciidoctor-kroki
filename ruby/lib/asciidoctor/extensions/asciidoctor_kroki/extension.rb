@@ -292,6 +292,9 @@ module AsciidoctorExtensions
 
       def create_image_src(doc, kroki_diagram, kroki_client, logger)
         if doc.attr('kroki-fetch-diagram') && doc.safe < ::Asciidoctor::SafeMode::SECURE
+          # In data-URI mode no file is written, so the file name is irrelevant: embed the diagram inline.
+          return { target: kroki_diagram.to_data_uri(kroki_client) } if doc.attr?('data-uri') || doc.attr?('kroki-data-uri')
+
           images_output_dir = output_dir_path(doc)
           diagram_name = kroki_diagram.save(images_output_dir, kroki_client, generated_files(doc), logger,
                                             cache_dir: KrokiCache.resolve_cache_dir(doc), cache_mode: KrokiCache.resolve_cache_mode(doc, logger))
@@ -400,7 +403,26 @@ module AsciidoctorExtensions
       diagram_name
     end
 
+    # Fetches this diagram from Kroki and returns it as a `data:` URI, embedding the
+    # content directly without writing any file (mirrors the JavaScript extension's
+    # fetch.js#toDataUri).
+    def to_data_uri(kroki_client)
+      contents = kroki_client.get_image(self, image_encoding)
+      "data:#{media_type};base64,#{[contents].pack 'm0'}"
+    end
+
     private
+
+    def media_type
+      case @format
+      when 'txt', 'atxt', 'utxt'
+        'text/plain; charset=utf-8'
+      when 'svg'
+        'image/svg+xml'
+      else
+        'image/png'
+      end
+    end
 
     def fetch_and_write(output_dir_path, file_path, kroki_client, cache_dir, cache_mode)
       contents = fetch_diagram(kroki_client, cache_dir, cache_mode)

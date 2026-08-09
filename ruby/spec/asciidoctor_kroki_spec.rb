@@ -293,6 +293,29 @@ describe AsciidoctorExtensions::KrokiBlockProcessor do
 </div>)
       end
     end
+    context 'with kroki-fetch-diagram embedding as a data URI' do
+      it 'should embed the fetched SVG as a base64 data URI when kroki-data-uri is set' do
+        input = <<~ADOC
+          plantuml::spec/fixtures/alice.puml[svg,role=sequence]
+        ADOC
+        output = Asciidoctor.convert(input, attributes: { 'kroki-fetch-diagram' => '', 'kroki-data-uri' => '' }, standalone: false, safe: :safe)
+        (expect output).to match(%r{<img src="data:image/svg\+xml;base64,[A-Za-z0-9+/]+=*" alt="Diagram">})
+      end
+      it 'should embed the fetched PNG as a base64 data URI when the standard data-uri attribute is set' do
+        input = <<~ADOC
+          plantuml::spec/fixtures/alice.puml[png,role=sequence]
+        ADOC
+        output = Asciidoctor.convert(input, attributes: { 'kroki-fetch-diagram' => '', 'data-uri' => '' }, standalone: false, safe: :safe)
+        (expect output).to match(%r{<img src="data:image/png;base64,[A-Za-z0-9+/]+=*" alt="Diagram">})
+      end
+      it 'should not embed as a data URI when kroki-data-uri is set but kroki-fetch-diagram is not' do
+        input = <<~ADOC
+          plantuml::spec/fixtures/alice.puml[svg,role=sequence]
+        ADOC
+        output = Asciidoctor.convert(input, attributes: { 'kroki-data-uri' => '' }, standalone: false, safe: :safe)
+        (expect output).to include('<img src="https://kroki.io/plantuml/svg/')
+      end
+    end
   end
   context 'instantiate' do
     it 'should instantiate block processor without warning' do
