@@ -14,6 +14,7 @@ module AsciidoctorExtensions
   # A block extension that converts a diagram into an image.
   #
   class KrokiBlockProcessor < Extensions::BlockProcessor
+    include Asciidoctor::Logging
     use_dsl
 
     on_context :listing, :literal
@@ -30,8 +31,17 @@ module AsciidoctorExtensions
 
     def process(parent, reader, attrs)
       diagram_type = @name
+      role = attrs['role']
+      source_location = reader.cursor
       diagram_text = reader.string
       KrokiProcessor.process(self, parent, attrs, diagram_type, diagram_text, @logger)
+    rescue => e # rubocop:disable Style/RescueStandardError
+      # Matches the JavaScript/Node.js extension: a failure talking to the Kroki server (network
+      # error, non-2xx response, unexpected content-type) shouldn't abort the whole document
+      # conversion, so it's degraded to a warning and the raw diagram source is kept visible.
+      logger.warn message_with_context "Skipping #{diagram_type} block: #{e.message}", source_location: source_location
+      attrs['role'] = role ? "#{role} kroki-error" : 'kroki-error'
+      create_block(parent, attrs['cloaked-context'], diagram_text, attrs)
     end
 
     protected
@@ -62,8 +72,10 @@ module AsciidoctorExtensions
     # @param target [String] the target value of a block macro
     # @param attrs [Hash] the attributes of the block or block macro
     # @return [Asciidoctor::AbstractBlock] a new block that replaces the original block or block macro
+    # rubocop:disable Metrics/AbcSize
     def process(parent, target, attrs)
       diagram_type = @name
+      role = attrs['role']
       target = parent.apply_subs(target, [:attributes])
 
       unless read_allowed?(target)
@@ -82,8 +94,17 @@ module AsciidoctorExtensions
         logger.error message_with_context "Failed to read #{diagram_type} file: #{path}. #{e}.", source_location: parent.document.reader.cursor_at_mark
         return create_block(parent, 'paragraph', unresolved_block_macro_message(diagram_type, path), {})
       end
-      KrokiProcessor.process(self, parent, attrs, diagram_type, diagram_text, @logger, resource_path: path)
+      begin
+        KrokiProcessor.process(self, parent, attrs, diagram_type, diagram_text, @logger, resource_path: path)
+      rescue => e # rubocop:disable Style/RescueStandardError
+        # Matches the JavaScript/Node.js extension: a failure talking to the Kroki server
+        # shouldn't abort the whole document conversion, so it's degraded to a warning instead.
+        logger.warn message_with_context "Skipping #{diagram_type} block: #{e.message}", source_location: parent.document.reader.cursor_at_mark
+        attrs['role'] = role ? "#{role} kroki-error" : 'kroki-error'
+        create_block(parent, 'paragraph', "#{e.message} - #{diagram_type}::#{target}[]", attrs)
+      end
     end
+    # rubocop:enable Metrics/AbcSize
 
     protected
 
@@ -329,7 +350,7 @@ module AsciidoctorExtensions
       end
 
       def max_uri_length(doc)
-        doc.attr('kroki-max-uri-length', '4000').to_i
+        Integer(doc.attr('kroki-max-uri-length', '4000'), exception: false) || 4000
       end
 
       def output_dir_path(doc)
@@ -491,17 +512,34 @@ module AsciidoctorExtensions
 
     SUPPORTED_HTTP_METHODS = %w[get post adaptive].freeze
 
+    # Maps a diagram output format to its expected MIME type, mirroring the JavaScript/Node.js
+    # extension's kroki-client.js. Used to detect a Kroki server response that doesn't match the
+    # requested format (e.g. a plain-text syntax error returned for what should be an SVG).
+    MIME_TYPES = {
+      'svg' => 'image/svg+xml',
+      'png' => 'image/png',
+      'jpg' => 'image/jpeg',
+      'jpeg' => 'image/jpeg',
+      'pdf' => 'application/pdf',
+      'txt' => 'text/plain',
+      'atxt' => 'text/plain',
+      'utxt' => 'text/plain',
+      'base64' => 'text/plain'
+    }.freeze
+
     def initialize(opts, logger = ::Asciidoctor::LoggerManager.logger)
       @server_url = opts[:server_url]
       @max_uri_length = opts.fetch(:max_uri_length, 4000)
       @http_client = opts[:http_client]
+      @source_location = opts[:source_location]
+      @logger = logger
       method = opts.fetch(:http_method, 'adaptive').downcase
       if SUPPORTED_HTTP_METHODS.include?(method)
         @method = method
       else
         logger.warn message_with_context "Invalid value '#{method}' for kroki-http-method attribute. The value must be either: " \
                                          "'get', 'post' or 'adaptive'. Proceeding using: 'adaptive'.",
-                                         source_location: opts[:source_location]
+                                         source_location: @source_location
         @method = 'adaptive'
       end
     end
@@ -515,22 +553,26 @@ module AsciidoctorExtensions
       format = kroki_diagram.format
       text = kroki_diagram.text
       opts = kroki_diagram.opts
+      expected_content_type = MIME_TYPES[format]
       if @method == 'adaptive' || @method == 'get'
         uri = kroki_diagram.get_diagram_uri(server_url)
         if uri.length > @max_uri_length
           # The request URI is longer than the max URI length.
           if @method == 'get'
-            # The request might be rejected by the server with a 414 Request-URI Too Large.
-            # Consider using the attribute kroki-http-method with the value 'adaptive'.
-            @http_client.get(uri, opts, encoding)
+            # The server may reject the request with a 414 (URI Too Long).
+            @logger.warn message_with_context "The diagram URI length (#{uri.length}) exceeds kroki-max-uri-length (#{@max_uri_length}). " \
+                                              'The server may reject the request with a 414 (URI Too Long). Consider using the ' \
+                                              "'kroki-http-method' attribute set to 'adaptive' or 'post'.",
+                                              source_location: @source_location
+            @http_client.get(uri, opts, encoding, expected_content_type)
           else
-            @http_client.post("#{@server_url}/#{type}/#{format}", text, opts, encoding)
+            @http_client.post("#{@server_url}/#{type}/#{format}", text, opts, encoding, expected_content_type)
           end
         else
-          @http_client.get(uri, opts, encoding)
+          @http_client.get(uri, opts, encoding, expected_content_type)
         end
       else
-        @http_client.post("#{@server_url}/#{type}/#{format}", text, opts, encoding)
+        @http_client.post("#{@server_url}/#{type}/#{format}", text, opts, encoding, expected_content_type)
       end
     end
   end
@@ -545,32 +587,60 @@ module AsciidoctorExtensions
     class << self
       REFERER = "asciidoctor/kroki.rb/#{Asciidoctor::AsciidoctorKroki::VERSION}"
 
-      def get(uri, opts, _)
-        uri = URI(uri)
+      def get(uri, opts, _encoding, expected_content_type = nil)
+        parsed_uri = URI(uri)
         headers = opts.transform_keys { |key| "Kroki-Diagram-Options-#{key}" }
                       .merge({ 'referer' => REFERER })
-        request = ::Net::HTTP::Get.new(uri, headers)
-        ::Net::HTTP.start(
-          uri.hostname,
-          uri.port,
-          use_ssl: (uri.scheme == 'https')
+        request = ::Net::HTTP::Get.new(parsed_uri, headers)
+        response = ::Net::HTTP.start(
+          parsed_uri.hostname,
+          parsed_uri.port,
+          use_ssl: (parsed_uri.scheme == 'https')
         ) do |http|
-          http.request(request).body
+          http.request(request)
         end
+        handle_response(response, 'GET', uri, expected_content_type)
       end
 
-      def post(uri, data, opts, _)
+      def post(uri, data, opts, _encoding, expected_content_type = nil)
         headers = opts.transform_keys { |key| "Kroki-Diagram-Options-#{key}" }
                       .merge({
                                'Content-Type' => 'text/plain',
                                'referer' => REFERER
                              })
-        res = ::Net::HTTP.post(
+        response = ::Net::HTTP.post(
           URI(uri),
           data,
           headers
         )
-        res.body
+        handle_response(response, 'POST', uri, expected_content_type)
+      end
+
+      private
+
+      # Mirrors the JavaScript/Node.js extension's http-client.js: unlike Net::HTTP, which
+      # returns whatever body the server sent regardless of status code, this raises a clear
+      # error for a non-2xx response, an unexpected content-type (e.g. the Kroki server
+      # returning a plain-text syntax error for what should be an SVG), or an empty body —
+      # instead of silently treating the error message as if it were the diagram itself.
+      def handle_response(response, method, uri, expected_content_type)
+        if response.is_a?(::Net::HTTPSuccess)
+          if expected_content_type
+            content_type = (response['content-type'] || '').downcase
+            unless content_type.start_with?(expected_content_type.downcase)
+              raise "#{method} #{uri} - unexpected content-type; expected: #{expected_content_type}, got: #{content_type}"
+            end
+          end
+          body = response.body
+          raise "#{method} #{uri} - server returns an empty response" if body.nil? || body.empty?
+
+          return body
+        end
+        if response.code == '414'
+          raise "#{method} #{uri} - server returns 414 (URI Too Long). The diagram URI is too long for the server. " \
+                "Consider using the 'kroki-http-method' attribute set to 'post' or 'adaptive' to send the diagram source via POST."
+        end
+        raise "#{method} #{uri} - server returns #{response.code} status code; response: #{response.body}"
       end
     end
   end

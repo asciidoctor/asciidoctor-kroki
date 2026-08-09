@@ -33,11 +33,11 @@ describe AsciidoctorExtensions::KrokiClient do
   it 'should get an image with POST request if the URI length is greater than the value configured' do
     kroki_http_client = Class.new do
       class << self
-        def get(uri, _)
+        def get(uri, _, _, _)
           "GET #{uri}"
         end
 
-        def post(uri, data, _, _)
+        def post(uri, data, _, _, _)
           "POST #{uri} - #{data}"
         end
       end
@@ -63,11 +63,11 @@ describe AsciidoctorExtensions::KrokiClient do
   it 'should get an image with GET request if the URI length is lower or equals than the value configured' do
     kroki_http_client = Class.new do
       class << self
-        def get(uri, _, _)
+        def get(uri, _, _, _)
           "GET #{uri}"
         end
 
-        def post(uri, data, _, _)
+        def post(uri, data, _, _, _)
           "POST #{uri} - #{data}"
         end
       end
