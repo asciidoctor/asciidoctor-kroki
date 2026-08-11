@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.0-rc.3] - 2026-08-11
+
 ### Added
 
 - Ruby: support the `kroki-data-uri` (and standard `data-uri`) attribute to embed fetched diagrams as base64 data URIs instead of writing them to disk, matching the JavaScript/Node.js extension.

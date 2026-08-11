@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    asciidoctor-kroki (2.0.0.rc.2)
+    asciidoctor-kroki (2.0.0.rc.3)
       asciidoctor (~> 2.0)
 
 GEM
