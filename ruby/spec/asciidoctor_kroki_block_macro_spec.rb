@@ -9,6 +9,15 @@ require_relative '../lib/asciidoctor/extensions/asciidoctor_kroki/extension'
 
 describe AsciidoctorExtensions::KrokiBlockMacroProcessor do
   context 'convert to html5' do
+    it 'should render a custom diagram type using the generic kroki block macro' do
+      input = <<~ADOC
+        kroki::spec/fixtures/alice.puml[type=custom-diagram,format=png,view=details]
+      ADOC
+      output = Asciidoctor.convert(input, standalone: false)
+      (expect output).to include('https://kroki.io/custom-diagram/png/eNpLzMlMTlXQtVNIyk-yUshIzcnJ5wIAQ-AGVQ==?view=details')
+      (expect output).not_to include('type=custom-diagram')
+    end
+
     it 'should catch exception if target is not readable' do
       class PlainResolutionKrokiMacroProcessor < AsciidoctorExtensions::KrokiBlockMacroProcessor
         def resolve_target_path(_parent, target)
