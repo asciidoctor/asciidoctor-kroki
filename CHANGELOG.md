@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- JavaScript/Node.js: reuse the persistent diagram cache for `data-uri` and `kroki-data-uri` output when `kroki-fetch-diagram` is enabled, avoiding repeated downloads of unchanged embedded images while preserving cache invalidation, disable, and refresh behavior.
+
 ## [2.0.0-rc.3] - 2026-08-11
 
 ### Added

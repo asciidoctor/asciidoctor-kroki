@@ -78,6 +78,16 @@ const mediaTypeAndEncoding = (format) => {
 const toDataUri = async (krokiDiagram, krokiClient) => {
   const { mediaType, encoding } = mediaTypeAndEncoding(krokiDiagram.format)
   const contents = await krokiClient.getImage(krokiDiagram, encoding)
+  return encodeDataUri(contents, mediaType, encoding)
+}
+
+/**
+ * @param {string} contents - Rendered image content.
+ * @param {string} mediaType - Output MIME type.
+ * @param {BufferEncoding} encoding - Content string encoding.
+ * @returns {string} Base64 data URI.
+ */
+const encodeDataUri = (contents, mediaType, encoding) => {
   // `contents` is either a byte-per-char "binary" string (svg/png/...) or a
   // real UTF-8 string (txt/atxt/utxt); convert either to bytes without
   // `Buffer`, which browser bundlers do not provide.
@@ -132,11 +142,6 @@ export default {
     const format = krokiDiagram.format
     const { mediaType, encoding } = mediaTypeAndEncoding(format)
 
-    // In data-URI mode no file is written, so the file name is irrelevant: embed the diagram inline.
-    if (dataUri) {
-      return { target: await toDataUri(krokiDiagram, krokiClient) }
-    }
-
     // An explicit name is used verbatim so links stay stable; otherwise the name is
     // content-addressed so anonymous diagrams don't collide (see #451).
     const named = typeof target === 'string' && target !== ''
@@ -166,6 +171,13 @@ export default {
       const fetched = await krokiClient.getImage(krokiDiagram, encoding)
       await writeToCache(cacheDir, key, format, fetched, encoding)
       return fetched
+    }
+
+    // Embedded images use the same persistent cache, but never write an output image.
+    if (dataUri) {
+      return {
+        target: encodeDataUri(await fetchDiagram(), mediaType, encoding),
+      }
     }
 
     let contents

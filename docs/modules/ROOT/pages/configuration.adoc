@@ -146,6 +146,12 @@ The cache key is derived from the actual request (server URL, diagram type, form
 * A named diagram whose content hasn't changed is served from the cache instead of being re-downloaded, even though its output file name stays the same across content changes.
 * The cache survives a clean or rebuilt output directory — useful for tools that wipe their output between runs, such as Antora.
 
+In the JavaScript/Node.js extension, this also applies to images embedded using `data-uri` or `kroki-data-uri` with `kroki-fetch-diagram` enabled.
+Embedded and linked images share the same cache entries: unchanged diagrams can be embedded in a single-file HTML document without contacting Kroki, even when the server is unavailable.
+The cached image bytes are encoded directly into the data URI; no separate output image is written.
+The same cache directory, invalidation rules, and `false` / `refresh` modes apply.
+Cache misses and refreshes still require the server, and preprocessing external source includes may require network access even on a diagram cache hit.
+
 By default, the cache lives in the platform's https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html[XDG cache directory] (`$XDG_CACHE_HOME/kroki`, or `~/.cache/kroki` when `XDG_CACHE_HOME` is unset).
 Set `kroki-cache-dir` to use a different location — for example, to point it at a directory your CI pipeline already persists between runs:
 
