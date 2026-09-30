@@ -221,6 +221,14 @@ const processKroki = async (
         !isNumeric(key),
     ),
   )
+  if (diagramType === 'ditaa') {
+    // Kroki's no-separation is a presence flag, even when its value is false.
+    // Preserve an explicit native option over the asciidoctor-diagram alias.
+    if (opts.separation === 'false' && !Object.hasOwn(opts, 'no-separation')) {
+      opts['no-separation'] = 'true'
+    }
+    delete opts.separation
+  }
   const krokiDiagram = new KrokiDiagram(diagramType, format, diagramText, opts)
   const krokiClient = new KrokiClient(doc, httpClient)
   let block
