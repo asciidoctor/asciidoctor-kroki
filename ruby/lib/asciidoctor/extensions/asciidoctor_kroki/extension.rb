@@ -314,10 +314,10 @@ module AsciidoctorExtensions
       def create_image_src(doc, kroki_diagram, kroki_client, logger, inline: false)
         if doc.attr('kroki-fetch-diagram') && doc.safe < ::Asciidoctor::SafeMode::SECURE
           # Embedded images use the same persistent cache, but never write an output image.
-          return { target: kroki_diagram.to_data_uri(kroki_client, **cache_options(doc, logger)) } if doc.attr?('data-uri') || doc.attr?('kroki-data-uri')
+          return { target: kroki_diagram.to_data_uri(kroki_client, **KrokiCache.options(doc, logger)) } if doc.attr?('data-uri') || doc.attr?('kroki-data-uri')
 
           images_output_dir = output_dir_path(doc)
-          diagram_name = kroki_diagram.save(images_output_dir, kroki_client, generated_files(doc), logger, **cache_options(doc, logger))
+          diagram_name = kroki_diagram.save(images_output_dir, kroki_client, generated_files(doc), logger, **KrokiCache.options(doc, logger))
           # The converter resolves the image target against the document's `imagesdir`
           # attribute, which only matches where we actually wrote the file when
           # `imagesoutdir` is unset. Overriding `imagesdir` on this image node (rather
@@ -347,23 +347,6 @@ module AsciidoctorExtensions
         else
           { target: kroki_diagram.get_diagram_uri(server_url(doc)) }
         end
-      end
-
-      # Persistent cache settings for this document (see cache.rb). The cache is an
-      # optimisation: failing to read or write it must never prevent a diagram from being
-      # rendered (e.g. read-only file system or unwritable home directory), so failures are
-      # only reported, once per document rather than once per diagram.
-      def cache_options(doc, logger)
-        cache_dir = KrokiCache.resolve_cache_dir(doc)
-        on_cache_error = lambda do |error|
-          next if doc.instance_variable_get(:@kroki_cache_warned)
-
-          doc.instance_variable_set(:@kroki_cache_warned, true)
-          logger.warn "kroki: unable to use the diagram cache directory '#{cache_dir}' (#{error.message}); " \
-                      'diagrams will be fetched from the server. Set kroki-cache-dir to a writable directory, ' \
-                      'or set kroki-cache to false to disable the cache.'
-        end
-        { cache_dir: cache_dir, cache_mode: KrokiCache.resolve_cache_mode(doc, logger), on_cache_error: on_cache_error }
       end
 
       # Returns the per-document registry of generated file names, mapping each name

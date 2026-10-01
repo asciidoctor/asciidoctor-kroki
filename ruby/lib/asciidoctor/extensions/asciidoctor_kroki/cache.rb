@@ -48,6 +48,24 @@ module AsciidoctorExtensions
         { enabled: value != 'false', refresh: value == 'refresh' }
       end
 
+      # Persistent cache settings for a document, as keyword arguments for KrokiDiagram#save
+      # and KrokiDiagram#to_data_uri. The cache is an optimisation: failing to read or write
+      # it must never prevent a diagram from being rendered (e.g. read-only file system or
+      # unwritable home directory), so failures are only reported, once per document rather
+      # than once per diagram.
+      def options(doc, logger)
+        cache_dir = resolve_cache_dir(doc)
+        on_cache_error = lambda do |error|
+          next if doc.instance_variable_get(:@kroki_cache_warned)
+
+          doc.instance_variable_set(:@kroki_cache_warned, true)
+          logger.warn "kroki: unable to use the diagram cache directory '#{cache_dir}' (#{error.message}); " \
+                      'diagrams will be fetched from the server. Set kroki-cache-dir to a writable directory, ' \
+                      'or set kroki-cache to false to disable the cache.'
+        end
+        { cache_dir: cache_dir, cache_mode: resolve_cache_mode(doc, logger), on_cache_error: on_cache_error }
+      end
+
       # Computes the content-addressed cache key for a diagram.
       #
       # Deliberately host-dependent: the server URL is part of the key because two Kroki
