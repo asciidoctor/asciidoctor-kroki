@@ -9,9 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- JavaScript/Node.js: reuse the persistent diagram cache for `data-uri` and `kroki-data-uri` output when `kroki-fetch-diagram` is enabled, avoiding repeated downloads of unchanged embedded images while preserving cache invalidation, disable, and refresh behavior.
-- JavaScript/Node.js: the persistent diagram cache is now best-effort: when the cache directory cannot be read or written (e.g. read-only file system), diagrams are fetched from the Kroki server and a single warning is logged, instead of being skipped.
-- JavaScript/Node.js: cache entries are now written atomically, so an interrupted build or concurrent builds sharing the cache can no longer leave a truncated entry that would be served on later builds. Empty entries left behind by previous versions are ignored.
+- Reuse the persistent diagram cache for `data-uri` and `kroki-data-uri` output when `kroki-fetch-diagram` is enabled, avoiding repeated downloads of unchanged embedded images while preserving cache invalidation, disable, and refresh behavior. Embedded images are therefore now written to the cache directory; set `kroki-cache` to `false` to opt out.
+- The persistent diagram cache is now best-effort: when the cache directory cannot be read or written (e.g. read-only file system), diagrams are fetched from the Kroki server and a single warning is logged, instead of being skipped.
+- Cache entries are now written atomically, so an interrupted build or concurrent builds sharing the cache can no longer leave a truncated entry that would be served on later builds. Empty entries left behind by previous versions are ignored.
 
 ## [2.0.0-rc.3] - 2026-08-11
 
