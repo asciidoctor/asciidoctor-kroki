@@ -42,13 +42,15 @@ function browserStubs() {
       if (importer && (source.startsWith('./') || source.startsWith('../'))) {
         const resolved = await this.resolve(source, importer, { skipSelf: true })
         if (resolved) {
+          // Suffixes use forward slashes, but resolved ids use backslashes on Windows.
+          const id = resolved.id.replaceAll('\\', '/')
           for (const [suffix, file] of PATH_REDIRECTS) {
-            if (resolved.id.endsWith(suffix)) {
+            if (id.endsWith(suffix)) {
               return file
             }
           }
           for (const [suffix] of PATH_STUBS) {
-            if (resolved.id.endsWith(suffix)) {
+            if (id.endsWith(suffix)) {
               return `\0stub:${suffix}`
             }
           }
