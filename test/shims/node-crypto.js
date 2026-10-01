@@ -9,4 +9,10 @@ export function createHash() {
   }
 }
 
-export default { createHash }
+export function randomBytes() {
+  throw new Error(
+    'node:crypto randomBytes() is not supported in browser environments',
+  )
+}
+
+export default { createHash, randomBytes }

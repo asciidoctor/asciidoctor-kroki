@@ -1,5 +1,5 @@
-import { createHash } from 'node:crypto'
-import { access, mkdir, readFile, writeFile } from 'node:fs/promises'
+import { createHash, randomBytes } from 'node:crypto'
+import { mkdir, readFile, rename, rm, stat, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 
@@ -91,6 +91,8 @@ const cacheFilePath = (cacheDir, key, format) =>
 
 /**
  * Whether a diagram is already present in the cache.
+ * An empty file is treated as missing: it can only be the leftover of an
+ * interrupted write (from a version that did not write atomically).
  *
  * @param {string} cacheDir - Cache directory.
  * @param {string} key - Content key.
@@ -99,8 +101,8 @@ const cacheFilePath = (cacheDir, key, format) =>
  */
 export const existsInCache = async (cacheDir, key, format) => {
   try {
-    await access(cacheFilePath(cacheDir, key, format))
-    return true
+    const { size } = await stat(cacheFilePath(cacheDir, key, format))
+    return size > 0
   } catch {
     return false
   }
@@ -120,6 +122,9 @@ export const readFromCache = (cacheDir, key, format, encoding) =>
 
 /**
  * Writes a diagram to the cache, creating the cache directory if needed.
+ * The content is written to a temporary file then renamed, so that an interrupted
+ * write never leaves a truncated entry behind, and concurrent builds sharing the
+ * cache never read a partially written one.
  *
  * @param {string} cacheDir - Cache directory.
  * @param {string} key - Content key.
@@ -136,5 +141,14 @@ export const writeToCache = async (
   encoding,
 ) => {
   await mkdir(cacheDir, { recursive: true })
-  await writeFile(cacheFilePath(cacheDir, key, format), contents, encoding)
+  const target = cacheFilePath(cacheDir, key, format)
+  // Unique per writer, and in the same directory so the rename stays on one file system.
+  const tmp = `${target}.${process.pid}-${randomBytes(4).toString('hex')}.tmp`
+  try {
+    await writeFile(tmp, contents, encoding)
+    await rename(tmp, target)
+  } catch (err) {
+    await rm(tmp, { force: true })
+    throw err
+  }
 }

@@ -4,6 +4,7 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { after, before, describe, test } from 'node:test'
+import { contentKey } from '../../src/cache.js'
 import fetch from '../../src/fetch.js'
 
 // The persistent cache (see cache.js) is enabled by default, but these tests are
@@ -418,6 +419,113 @@ describe('fetch.save persistent cache', () => {
     )
 
     assert.strictEqual(fetched, 2)
+  })
+
+  // A cache directory nested under a regular file can never be created, even as root
+  // or on Windows, which makes it a portable stand-in for a read-only file system.
+  const unwritableCacheDir = () => {
+    const file = path.join(cacheDir, `not-a-directory-${Math.random()}`)
+    fs.writeFileSync(file, '')
+    return path.join(file, 'kroki')
+  }
+
+  const createWarnLogger = () => {
+    const warnings = []
+    return { warnings, warn: (message) => warnings.push(message) }
+  }
+
+  for (const [mode, attributes, expectTarget] of [
+    ['linked', {}, (target) => target.startsWith('diag-')],
+    [
+      'data-uri',
+      { 'data-uri': 'true' },
+      (target) => target.startsWith('data:image/svg+xml;base64,'),
+    ],
+  ]) {
+    test(`an unwritable cache directory does not prevent rendering (${mode})`, async () => {
+      const logger = createWarnLogger()
+      const dir = unwritableCacheDir()
+      const doc = createDoc(
+        {
+          attributes: {
+            'kroki-cache': 'true',
+            'kroki-cache-dir': dir,
+            ...attributes,
+          },
+        },
+        logger,
+      )
+      let fetched = 0
+      const client = createKrokiClient(async () => {
+        fetched++
+        return '<svg/>'
+      })
+      const save = (encoded) =>
+        fetch.save(
+          createDiagram('svg', `https://kroki.io/plantuml/svg/${encoded}`, {
+            encode: () => encoded,
+          }),
+          doc,
+          undefined,
+          wipedOutputVfs(),
+          client,
+        )
+
+      assert.ok(expectTarget((await save('RO1')).target))
+      assert.ok(expectTarget((await save('RO2')).target))
+
+      assert.strictEqual(fetched, 2)
+      // Reported once per document, not once per diagram.
+      assert.strictEqual(logger.warnings.length, 1)
+      assert.match(logger.warnings[0], /unable to use the diagram cache/)
+      assert.ok(logger.warnings[0].includes(dir))
+    })
+  }
+
+  test('an unreadable cache entry falls back to fetching the diagram', async () => {
+    const logger = createWarnLogger()
+    const diagram = createDiagram(
+      'svg',
+      'https://kroki.io/plantuml/svg/UNREADABLE',
+      { encode: () => 'UNREADABLE' },
+    )
+    // A non-empty directory in place of the cached file: it exists, but cannot be read.
+    const entry = path.join(
+      cacheDir,
+      `${contentKey(diagram, 'https://kroki.io')}.svg`,
+    )
+    fs.mkdirSync(entry)
+    fs.writeFileSync(path.join(entry, 'file'), '')
+    const doc = createDoc(
+      {
+        attributes: {
+          'kroki-cache': 'true',
+          'kroki-cache-dir': cacheDir,
+          'data-uri': 'true',
+        },
+      },
+      logger,
+    )
+    let fetched = 0
+    const client = createKrokiClient(async () => {
+      fetched++
+      return '<svg/>'
+    })
+
+    const result = await fetch.save(
+      diagram,
+      doc,
+      undefined,
+      wipedOutputVfs(),
+      client,
+    )
+
+    assert.strictEqual(
+      result.target,
+      `data:image/svg+xml;base64,${Buffer.from('<svg/>').toString('base64')}`,
+    )
+    assert.strictEqual(fetched, 1)
+    assert.strictEqual(logger.warnings.length, 1)
   })
 })
 

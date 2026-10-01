@@ -14,6 +14,7 @@ export const mkdir = notSupported('mkdir')
 export const access = notSupported('access')
 export const unlink = notSupported('unlink')
 export const rm = notSupported('rm')
+export const rename = notSupported('rename')
 export const mkdtemp = notSupported('mkdtemp')
 
 const promises = {
@@ -25,6 +26,7 @@ const promises = {
   access,
   unlink,
   rm,
+  rename,
   mkdtemp,
 }
 
