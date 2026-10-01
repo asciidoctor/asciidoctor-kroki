@@ -107,6 +107,35 @@ const encodeDataUri = (contents, mediaType, encoding) => {
  */
 const generatedNamesByDocument = new WeakMap()
 
+/**
+ * Documents that already reported a persistent cache failure, so that an unusable
+ * cache directory is reported once per conversion rather than once per diagram.
+ *
+ * @type {WeakSet<Object>}
+ */
+const cacheWarnedDocuments = new WeakSet()
+
+/**
+ * Logs a persistent cache failure, at most once per document. The cache is an
+ * optimisation: failing to read or write it must never prevent a diagram from
+ * being rendered (e.g. read-only file system or unwritable home directory).
+ *
+ * @param {Object} doc - Asciidoctor document.
+ * @param {string} cacheDir - Cache directory that could not be used.
+ * @param {Error} err - Underlying file system error.
+ */
+const warnCacheFailure = (doc, cacheDir, err) => {
+  if (cacheWarnedDocuments.has(doc)) {
+    return
+  }
+  cacheWarnedDocuments.add(doc)
+  doc
+    .getLogger()
+    .warn(
+      `kroki: unable to use the diagram cache directory '${cacheDir}' (${err.message}); diagrams will be fetched from the server. Set kroki-cache-dir to a writable directory, or set kroki-cache to false to disable the cache.`,
+    )
+}
+
 export default {
   toDataUri,
   /**
@@ -165,11 +194,20 @@ export default {
       }
       const cacheDir = resolveCacheDir(doc)
       const key = contentKey(krokiDiagram, serverUrl)
+      // The cache is best-effort: on any file system error, fall back to the server.
       if (!cacheRefresh && (await existsInCache(cacheDir, key, format))) {
-        return readFromCache(cacheDir, key, format, encoding)
+        try {
+          return await readFromCache(cacheDir, key, format, encoding)
+        } catch (err) {
+          warnCacheFailure(doc, cacheDir, err)
+        }
       }
       const fetched = await krokiClient.getImage(krokiDiagram, encoding)
-      await writeToCache(cacheDir, key, format, fetched, encoding)
+      try {
+        await writeToCache(cacheDir, key, format, fetched, encoding)
+      } catch (err) {
+        warnCacheFailure(doc, cacheDir, err)
+      }
       return fetched
     }
 

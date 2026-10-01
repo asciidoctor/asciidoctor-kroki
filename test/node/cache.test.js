@@ -195,4 +195,29 @@ describe('existsInCache / readFromCache / writeToCache', () => {
       'PNG',
     )
   })
+
+  test('an empty entry, left behind by an interrupted write, does not exist', async () => {
+    fs.writeFileSync(path.join(cacheDir, 'empty.svg'), '')
+    assert.strictEqual(await existsInCache(cacheDir, 'empty', 'svg'), false)
+  })
+
+  test('writes atomically, leaving no temporary file behind', async () => {
+    const dir = path.join(cacheDir, 'atomic')
+    await writeToCache(dir, 'ghi789', 'svg', '<svg>1</svg>', 'binary')
+    await writeToCache(dir, 'ghi789', 'svg', '<svg>2</svg>', 'binary')
+    assert.deepStrictEqual(fs.readdirSync(dir), ['ghi789.svg'])
+    assert.strictEqual(
+      await readFromCache(dir, 'ghi789', 'svg', 'binary'),
+      '<svg>2</svg>',
+    )
+  })
+
+  test('removes the temporary file when the entry cannot be replaced', async () => {
+    const dir = path.join(cacheDir, 'unreplaceable')
+    // A non-empty directory in place of the entry makes the final rename fail.
+    fs.mkdirSync(path.join(dir, 'jkl012.svg'), { recursive: true })
+    fs.writeFileSync(path.join(dir, 'jkl012.svg', 'file'), '')
+    await assert.rejects(writeToCache(dir, 'jkl012', 'svg', '<svg/>', 'binary'))
+    assert.deepStrictEqual(fs.readdirSync(dir), ['jkl012.svg'])
+  })
 })
