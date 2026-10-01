@@ -3,6 +3,7 @@
 require 'digest'
 require 'fileutils'
 require 'json'
+require 'securerandom'
 
 module AsciidoctorExtensions
   # Persistent, content-addressed cache for fetched diagrams, independent of the output
@@ -60,8 +61,10 @@ module AsciidoctorExtensions
       end
 
       # Whether a diagram is already present in the cache.
+      # An empty file is treated as missing: it can only be the leftover of an interrupted
+      # write (from a version that did not write atomically).
       def exists_in_cache?(cache_dir, key, format)
-        File.exist?(cache_file_path(cache_dir, key, format))
+        !File.size?(cache_file_path(cache_dir, key, format)).nil?
       end
 
       # Reads a cached diagram.
@@ -70,9 +73,21 @@ module AsciidoctorExtensions
       end
 
       # Writes a diagram to the cache, creating the cache directory if needed.
+      # The content is written to a temporary file then renamed, so that an interrupted write
+      # never leaves a truncated entry behind, and concurrent builds sharing the cache never
+      # read a partially written one.
       def write_to_cache(cache_dir, key, format, contents)
         FileUtils.mkdir_p(cache_dir)
-        File.write(cache_file_path(cache_dir, key, format), contents, mode: 'wb')
+        target = cache_file_path(cache_dir, key, format)
+        # Unique per writer, and in the same directory so the rename stays on one file system.
+        tmp = "#{target}.#{Process.pid}-#{SecureRandom.hex(4)}.tmp"
+        begin
+          File.write(tmp, contents, mode: 'wb')
+          File.rename(tmp, target)
+        rescue StandardError
+          FileUtils.rm_f(tmp)
+          raise
+        end
       end
 
       private

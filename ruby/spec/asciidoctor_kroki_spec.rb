@@ -6,6 +6,24 @@ require 'zlib'
 require 'tmpdir'
 require_relative '../lib/asciidoctor/extensions/asciidoctor_kroki'
 
+# The persistent cache (see cache.rb) defaults to $XDG_CACHE_HOME/kroki (or ~/.cache/kroki);
+# point it at a throwaway directory so real end-to-end conversion specs never touch the
+# developer's actual cache.
+shared_context 'with a temporary kroki cache' do
+  around do |example|
+    original_xdg_cache_home = ENV.fetch('XDG_CACHE_HOME', nil)
+    temp_cache_dir = Dir.mktmpdir('kroki-spec-cache-')
+    ENV['XDG_CACHE_HOME'] = temp_cache_dir
+    example.run
+    if original_xdg_cache_home.nil?
+      ENV.delete('XDG_CACHE_HOME')
+    else
+      ENV['XDG_CACHE_HOME'] = original_xdg_cache_home
+    end
+    FileUtils.rm_rf(temp_cache_dir)
+  end
+end
+
 describe AsciidoctorExtensions::KrokiBlockProcessor do
   context 'convert to html5' do
     it 'should convert a PlantUML block to an image' do
@@ -237,21 +255,7 @@ describe AsciidoctorExtensions::KrokiBlockProcessor do
       (expect output).to include(%(<img src="https://kroki.io/plantuml/svg/#{encoded}" alt="Diagram">))
     end
     context 'with kroki-fetch-diagram writing to disk' do
-      # The persistent cache (see cache.rb) defaults to $XDG_CACHE_HOME/kroki (or ~/.cache/kroki);
-      # point it at a throwaway directory here so this real end-to-end conversion spec never
-      # touches the developer's actual cache.
-      around do |example|
-        original_xdg_cache_home = ENV.fetch('XDG_CACHE_HOME', nil)
-        temp_cache_dir = Dir.mktmpdir('kroki-spec-cache-')
-        ENV['XDG_CACHE_HOME'] = temp_cache_dir
-        example.run
-        if original_xdg_cache_home.nil?
-          ENV.delete('XDG_CACHE_HOME')
-        else
-          ENV['XDG_CACHE_HOME'] = original_xdg_cache_home
-        end
-        FileUtils.rm_rf(temp_cache_dir)
-      end
+      include_context 'with a temporary kroki cache'
 
       it 'should create SVG diagram in imagesdir if kroki-fetch-diagram is set' do
         input = <<~ADOC
@@ -294,6 +298,68 @@ describe AsciidoctorExtensions::KrokiBlockProcessor do
       end
     end
     context 'with kroki-fetch-diagram embedding as a data URI' do
+      include_context 'with a temporary kroki cache'
+
+      def count_image_requests
+        calls = 0
+        allow_any_instance_of(AsciidoctorExtensions::KrokiClient).to receive(:get_image) do
+          calls += 1
+          '<svg/>'
+        end
+        -> { calls }
+      end
+
+      it 'should reuse the persistent cache across conversions without writing an output image' do
+        requests = count_image_requests
+        input = <<~ADOC
+          [plantuml]
+          ....
+          alice -> bob: cached
+          ....
+        ADOC
+        Dir.mktmpdir('kroki-spec-output-') do |output_dir|
+          attrs = { 'kroki-fetch-diagram' => '', 'data-uri' => '', 'imagesoutdir' => output_dir }
+          2.times do
+            output = Asciidoctor.convert(input, attributes: attrs, standalone: false, safe: :safe)
+            (expect output).to include(%(<img src="data:image/svg+xml;base64,#{['<svg/>'].pack('m0')}"))
+          end
+          (expect requests.call).to eq(1)
+          (expect Dir.children(output_dir)).to be_empty
+        end
+      end
+      it 'should still embed diagrams and warn once when the cache directory is not writable' do
+        requests = count_image_requests
+        input = <<~ADOC
+          [plantuml]
+          ....
+          alice -> bob: one
+          ....
+
+          [plantuml]
+          ....
+          alice -> bob: two
+          ....
+        ADOC
+        Dir.mktmpdir('kroki-spec-unwritable-') do |dir|
+          # A cache directory nested under a regular file can never be created, even as root.
+          File.write(File.join(dir, 'file'), '')
+          cache_dir = File.join(dir, 'file', 'kroki')
+          logger = Asciidoctor::MemoryLogger.new
+          original_logger = Asciidoctor::LoggerManager.logger
+          Asciidoctor::LoggerManager.logger = logger
+          begin
+            attrs = { 'kroki-fetch-diagram' => '', 'kroki-data-uri' => '', 'kroki-cache-dir' => cache_dir }
+            output = Asciidoctor.convert(input, attributes: attrs, standalone: false, safe: :safe)
+          ensure
+            Asciidoctor::LoggerManager.logger = original_logger
+          end
+          (expect output.scan('src="data:image/svg+xml;base64,').size).to eq(2)
+          (expect requests.call).to eq(2)
+          warnings = logger.messages.map { |message| message[:message] }.grep(/unable to use the diagram cache directory/)
+          (expect warnings.size).to eq(1)
+          (expect warnings.first).to include(cache_dir)
+        end
+      end
       it 'should embed the fetched SVG as a base64 data URI when kroki-data-uri is set' do
         input = <<~ADOC
           plantuml::spec/fixtures/alice.puml[svg,role=sequence]

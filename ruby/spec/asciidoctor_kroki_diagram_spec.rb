@@ -218,5 +218,66 @@ describe AsciidoctorExtensions::KrokiDiagram do
 
       expect(fetched.call + other_server_fetched.call).to eq(2)
     end
+
+    it 'serves data-URI output from the persistent cache when enabled' do
+      client, fetched = counting_client
+      diagram = AsciidoctorExtensions::KrokiDiagram.new('plantuml', 'svg', 'CACHE7 alice -> bob')
+      cache_mode = { enabled: true, refresh: false }
+
+      first = diagram.to_data_uri(client, cache_dir: cache_dir, cache_mode: cache_mode)
+      second = diagram.to_data_uri(client, cache_dir: cache_dir, cache_mode: cache_mode)
+
+      expect(first).to eq("data:image/svg+xml;base64,#{['<svg/>'].pack('m0')}")
+      expect(second).to eq(first)
+      expect(fetched.call).to eq(1)
+    end
+
+    it 'does not use the persistent cache for data-URI output by default (inline option)' do
+      client, fetched = counting_client
+      diagram = AsciidoctorExtensions::KrokiDiagram.new('plantuml', 'svg', 'CACHE8 alice -> bob')
+
+      2.times { diagram.to_data_uri(client) }
+
+      expect(fetched.call).to eq(2)
+    end
+
+    [
+      ['linked', ->(diagram, client, options) { diagram.save(wiped_output_dir, client, nil, nil, **options) }],
+      ['data-uri', ->(diagram, client, options) { diagram.to_data_uri(client, **options) }]
+    ].each do |mode, render|
+      it "renders and reports the error when the cache directory is not writable (#{mode})" do
+        client, fetched = counting_client
+        errors = []
+        # A cache directory nested under a regular file can never be created, even as root.
+        File.write(File.join(cache_dir, 'file'), '')
+        options = { cache_dir: File.join(cache_dir, 'file', 'kroki'), cache_mode: { enabled: true, refresh: false },
+                    on_cache_error: ->(error) { errors << error } }
+
+        result = instance_exec(AsciidoctorExtensions::KrokiDiagram.new('plantuml', 'svg', "RO-#{mode}"), client, options, &render)
+
+        expect(result).not_to be_nil
+        expect(fetched.call).to eq(1)
+        expect(errors.size).to eq(1)
+        expect(errors.first).to be_a(SystemCallError)
+      end
+    end
+
+    it 'falls back to fetching the diagram when a cache entry cannot be read' do
+      client, fetched = counting_client
+      diagram = AsciidoctorExtensions::KrokiDiagram.new('plantuml', 'svg', 'UNREADABLE alice -> bob')
+      errors = []
+      # A non-empty directory in place of the cached file: it exists, but cannot be read.
+      entry = File.join(cache_dir, "#{AsciidoctorExtensions::KrokiCache.content_key(diagram, 'https://kroki.io')}.svg")
+      FileUtils.mkdir_p(entry)
+      File.write(File.join(entry, 'file'), '')
+
+      result = diagram.to_data_uri(client, cache_dir: cache_dir, cache_mode: { enabled: true, refresh: false },
+                                           on_cache_error: ->(error) { errors << error })
+
+      expect(result).to eq("data:image/svg+xml;base64,#{['<svg/>'].pack('m0')}")
+      expect(fetched.call).to eq(1)
+      # Both the read and the write (the entry cannot be replaced) fail.
+      expect(errors.size).to eq(2)
+    end
   end
 end

@@ -130,5 +130,27 @@ describe AsciidoctorExtensions::KrokiCache do
       expect(described_class.read_from_cache(cache_dir, 'shared-key', 'svg')).to eq('SVG')
       expect(described_class.read_from_cache(cache_dir, 'shared-key', 'png')).to eq('PNG')
     end
+
+    it 'an empty entry, left behind by an interrupted write, does not exist' do
+      File.write(File.join(cache_dir, 'empty.svg'), '')
+      expect(described_class.exists_in_cache?(cache_dir, 'empty', 'svg')).to be false
+    end
+
+    it 'writes atomically, leaving no temporary file behind' do
+      dir = File.join(cache_dir, 'atomic')
+      described_class.write_to_cache(dir, 'ghi789', 'svg', '<svg>1</svg>')
+      described_class.write_to_cache(dir, 'ghi789', 'svg', '<svg>2</svg>')
+      expect(Dir.children(dir)).to eq(['ghi789.svg'])
+      expect(described_class.read_from_cache(dir, 'ghi789', 'svg')).to eq('<svg>2</svg>')
+    end
+
+    it 'removes the temporary file when the entry cannot be replaced' do
+      dir = File.join(cache_dir, 'unreplaceable')
+      # A non-empty directory in place of the entry makes the final rename fail.
+      FileUtils.mkdir_p(File.join(dir, 'jkl012.svg'))
+      File.write(File.join(dir, 'jkl012.svg', 'file'), '')
+      expect { described_class.write_to_cache(dir, 'jkl012', 'svg', '<svg/>') }.to raise_error(SystemCallError)
+      expect(Dir.children(dir)).to eq(['jkl012.svg'])
+    end
   end
 end

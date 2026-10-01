@@ -313,12 +313,11 @@ module AsciidoctorExtensions
 
       def create_image_src(doc, kroki_diagram, kroki_client, logger, inline: false)
         if doc.attr('kroki-fetch-diagram') && doc.safe < ::Asciidoctor::SafeMode::SECURE
-          # In data-URI mode no file is written, so the file name is irrelevant: embed the diagram inline.
-          return { target: kroki_diagram.to_data_uri(kroki_client) } if doc.attr?('data-uri') || doc.attr?('kroki-data-uri')
+          # Embedded images use the same persistent cache, but never write an output image.
+          return { target: kroki_diagram.to_data_uri(kroki_client, **cache_options(doc, logger)) } if doc.attr?('data-uri') || doc.attr?('kroki-data-uri')
 
           images_output_dir = output_dir_path(doc)
-          diagram_name = kroki_diagram.save(images_output_dir, kroki_client, generated_files(doc), logger,
-                                            cache_dir: KrokiCache.resolve_cache_dir(doc), cache_mode: KrokiCache.resolve_cache_mode(doc, logger))
+          diagram_name = kroki_diagram.save(images_output_dir, kroki_client, generated_files(doc), logger, **cache_options(doc, logger))
           # The converter resolves the image target against the document's `imagesdir`
           # attribute, which only matches where we actually wrote the file when
           # `imagesoutdir` is unset. Overriding `imagesdir` on this image node (rather
@@ -348,6 +347,23 @@ module AsciidoctorExtensions
         else
           { target: kroki_diagram.get_diagram_uri(server_url(doc)) }
         end
+      end
+
+      # Persistent cache settings for this document (see cache.rb). The cache is an
+      # optimisation: failing to read or write it must never prevent a diagram from being
+      # rendered (e.g. read-only file system or unwritable home directory), so failures are
+      # only reported, once per document rather than once per diagram.
+      def cache_options(doc, logger)
+        cache_dir = KrokiCache.resolve_cache_dir(doc)
+        on_cache_error = lambda do |error|
+          next if doc.instance_variable_get(:@kroki_cache_warned)
+
+          doc.instance_variable_set(:@kroki_cache_warned, true)
+          logger.warn "kroki: unable to use the diagram cache directory '#{cache_dir}' (#{error.message}); " \
+                      'diagrams will be fetched from the server. Set kroki-cache-dir to a writable directory, ' \
+                      'or set kroki-cache to false to disable the cache.'
+        end
+        { cache_dir: cache_dir, cache_mode: KrokiCache.resolve_cache_mode(doc, logger), on_cache_error: on_cache_error }
       end
 
       # Returns the per-document registry of generated file names, mapping each name
@@ -419,7 +435,10 @@ module AsciidoctorExtensions
     # @param cache_dir [String, nil] persistent cache directory (see KrokiCache.resolve_cache_dir); required when cache_mode[:enabled]
     # @param cache_mode [Hash] {enabled:, refresh:} (see KrokiCache.resolve_cache_mode); disabled by default so callers that
     #   don't pass it (e.g. specs exercising #save directly) keep the pre-cache behaviour
-    def save(output_dir_path, kroki_client, generated_files = nil, logger = nil, cache_dir: nil, cache_mode: { enabled: false, refresh: false })
+    # @param on_cache_error [Proc, nil] called with the error when the cache cannot be read or written;
+    #   the diagram is then fetched from (or only served by) Kroki, so a cache failure is never fatal
+    def save(output_dir_path, kroki_client, generated_files = nil, logger = nil, cache_dir: nil, cache_mode: { enabled: false, refresh: false },
+             on_cache_error: nil)
       diagram_url = get_diagram_uri(kroki_client.server_url)
       # An explicit name is used verbatim so links stay stable across content changes;
       # otherwise the name is content-addressed so anonymous diagrams don't collide (see #451).
@@ -433,19 +452,20 @@ module AsciidoctorExtensions
         # same name is reused for a diagram with different content.
         warn_on_name_clash(generated_files, diagram_name, diagram_url, logger)
         generated_files[diagram_name] = diagram_url if generated_files
-        fetch_and_write(output_dir_path, file_path, kroki_client, cache_dir, cache_mode)
+        fetch_and_write(output_dir_path, file_path, kroki_client, cache_dir, cache_mode, on_cache_error)
       elsif !File.exist?(file_path)
         # Content-addressed name: an existing output file necessarily has identical content.
-        fetch_and_write(output_dir_path, file_path, kroki_client, cache_dir, cache_mode)
+        fetch_and_write(output_dir_path, file_path, kroki_client, cache_dir, cache_mode, on_cache_error)
       end
       diagram_name
     end
 
     # Fetches this diagram from Kroki and returns it as a `data:` URI, embedding the
-    # content directly without writing any file (mirrors the JavaScript extension's
-    # fetch.js#toDataUri).
-    def to_data_uri(kroki_client)
-      contents = kroki_client.get_image(self, image_encoding)
+    # content directly without writing any output file (mirrors the JavaScript extension's
+    # fetch.js). The persistent cache is opt-in, with the same options as #save: data-URI
+    # mode goes through it, while the `inline` option does not.
+    def to_data_uri(kroki_client, cache_dir: nil, cache_mode: { enabled: false, refresh: false }, on_cache_error: nil)
+      contents = fetch_diagram(kroki_client, cache_dir, cache_mode, on_cache_error)
       "data:#{media_type};base64,#{[contents].pack 'm0'}"
     end
 
@@ -462,8 +482,8 @@ module AsciidoctorExtensions
       end
     end
 
-    def fetch_and_write(output_dir_path, file_path, kroki_client, cache_dir, cache_mode)
-      contents = fetch_diagram(kroki_client, cache_dir, cache_mode)
+    def fetch_and_write(output_dir_path, file_path, kroki_client, cache_dir, cache_mode, on_cache_error)
+      contents = fetch_diagram(kroki_client, cache_dir, cache_mode, on_cache_error)
       FileUtils.mkdir_p(output_dir_path)
       File.write(file_path, contents, mode: 'wb')
     end
@@ -472,14 +492,25 @@ module AsciidoctorExtensions
     # cache is keyed on the diagram's actual content, not on the output file name, so it also
     # survives builds that wipe the output directory (e.g. Antora) and correctly detects
     # unchanged content for named diagrams (see #90, #113).
-    def fetch_diagram(kroki_client, cache_dir, cache_mode)
+    def fetch_diagram(kroki_client, cache_dir, cache_mode, on_cache_error = nil)
       return kroki_client.get_image(self, image_encoding) unless cache_mode[:enabled]
 
       key = KrokiCache.content_key(self, kroki_client.server_url)
-      return KrokiCache.read_from_cache(cache_dir, key, @format) if !cache_mode[:refresh] && KrokiCache.exists_in_cache?(cache_dir, key, @format)
+      # The cache is best-effort: on any file system error, fall back to the server.
+      if !cache_mode[:refresh] && KrokiCache.exists_in_cache?(cache_dir, key, @format)
+        begin
+          return KrokiCache.read_from_cache(cache_dir, key, @format)
+        rescue SystemCallError, IOError => e
+          on_cache_error&.call(e)
+        end
+      end
 
       fetched = kroki_client.get_image(self, image_encoding)
-      KrokiCache.write_to_cache(cache_dir, key, @format, fetched)
+      begin
+        KrokiCache.write_to_cache(cache_dir, key, @format, fetched)
+      rescue SystemCallError, IOError => e
+        on_cache_error&.call(e)
+      end
       fetched
     end
 
