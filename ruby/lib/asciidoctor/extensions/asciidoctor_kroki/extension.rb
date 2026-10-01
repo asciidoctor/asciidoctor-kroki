@@ -200,6 +200,7 @@ module AsciidoctorExtensions
         attrs['role'] = get_role(format, attrs['role'])
         attrs['format'] = format
         opts = attrs.filter { |key, _| key.is_a?(String) && BUILTIN_ATTRIBUTES.none? { |k| key == k } && !key.end_with?('-option') }
+        normalize_diagram_options(diagram_type, opts)
         kroki_diagram = KrokiDiagram.new(diagram_type, format, diagram_text, attrs['target'], opts)
         kroki_client = KrokiClient.new({
                                          server_url: server_url(doc),
@@ -226,6 +227,17 @@ module AsciidoctorExtensions
       # rubocop:enable Metrics/AbcSize, Metrics/PerceivedComplexity
 
       private
+
+      # Translates options that asciidoctor-diagram accepts but Kroki does not, so that diagrams
+      # render the same when migrating (mirrors the JavaScript/Node.js extension's index.js).
+      def normalize_diagram_options(diagram_type, opts)
+        return unless diagram_type == :ditaa
+
+        # Kroki's no-separation is a presence flag, even when its value is false.
+        # Preserve an explicit native option over the asciidoctor-diagram alias.
+        opts['no-separation'] = 'true' if opts['separation'] == 'false' && !opts.key?('no-separation')
+        opts.delete('separation')
+      end
 
       # Prepends the kroki-plantuml-include file content to the diagram text. Unlike the
       # !include directives resolved by preprocess_plantuml_includes below, this path is jailed
