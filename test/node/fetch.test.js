@@ -1,9 +1,11 @@
 import assert from 'node:assert'
 import { createHash } from 'node:crypto'
 import fs from 'node:fs'
+import fsPromises from 'node:fs/promises'
+import { syncBuiltinESMExports } from 'node:module'
 import os from 'node:os'
 import path from 'node:path'
-import { after, before, describe, test } from 'node:test'
+import { after, before, describe, mock, test } from 'node:test'
 import { contentKey } from '../../src/cache.js'
 import fetch from '../../src/fetch.js'
 
@@ -489,13 +491,11 @@ describe('fetch.save persistent cache', () => {
       'https://kroki.io/plantuml/svg/UNREADABLE',
       { encode: () => 'UNREADABLE' },
     )
-    // A non-empty directory in place of the cached file: it exists, but cannot be read.
     const entry = path.join(
       cacheDir,
       `${contentKey(diagram, 'https://kroki.io')}.svg`,
     )
-    fs.mkdirSync(entry)
-    fs.writeFileSync(path.join(entry, 'file'), '')
+    fs.writeFileSync(entry, '<svg>stale</svg>')
     const doc = createDoc(
       {
         attributes: {
@@ -512,13 +512,34 @@ describe('fetch.save persistent cache', () => {
       return '<svg/>'
     })
 
-    const result = await fetch.save(
-      diagram,
-      doc,
-      undefined,
-      wipedOutputVfs(),
-      client,
-    )
+    // Simulated rather than set up on disk: file permissions are not enforced for root
+    // or on Windows, and directory sizes (used to detect empty entries) differ across
+    // platforms. `syncBuiltinESMExports` propagates the mock to the named `readFile`
+    // import of cache.js.
+    const readFile = fsPromises.readFile
+    mock.method(fsPromises, 'readFile', async (file, ...args) => {
+      if (file === entry) {
+        throw Object.assign(
+          new Error(`EACCES: permission denied, open '${file}'`),
+          { code: 'EACCES' },
+        )
+      }
+      return readFile(file, ...args)
+    })
+    syncBuiltinESMExports()
+    let result
+    try {
+      result = await fetch.save(
+        diagram,
+        doc,
+        undefined,
+        wipedOutputVfs(),
+        client,
+      )
+    } finally {
+      mock.restoreAll()
+      syncBuiltinESMExports()
+    }
 
     assert.strictEqual(
       result.target,
@@ -526,6 +547,9 @@ describe('fetch.save persistent cache', () => {
     )
     assert.strictEqual(fetched, 1)
     assert.strictEqual(logger.warnings.length, 1)
+    assert.match(logger.warnings[0], /EACCES/)
+    // The freshly fetched diagram replaces the unreadable entry.
+    assert.strictEqual(fs.readFileSync(entry, 'utf8'), '<svg/>')
   })
 })
 
