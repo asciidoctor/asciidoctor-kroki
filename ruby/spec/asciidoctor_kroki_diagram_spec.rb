@@ -266,18 +266,21 @@ describe AsciidoctorExtensions::KrokiDiagram do
       client, fetched = counting_client
       diagram = AsciidoctorExtensions::KrokiDiagram.new('plantuml', 'svg', 'UNREADABLE alice -> bob')
       errors = []
-      # A non-empty directory in place of the cached file: it exists, but cannot be read.
-      entry = File.join(cache_dir, "#{AsciidoctorExtensions::KrokiCache.content_key(diagram, 'https://kroki.io')}.svg")
-      FileUtils.mkdir_p(entry)
-      File.write(File.join(entry, 'file'), '')
+      key = AsciidoctorExtensions::KrokiCache.content_key(diagram, 'https://kroki.io')
+      AsciidoctorExtensions::KrokiCache.write_to_cache(cache_dir, key, 'svg', '<svg>stale</svg>')
+      # Simulated rather than set up on disk: file permissions are not enforced for root,
+      # and directory sizes (used to detect empty entries) differ across platforms.
+      allow(AsciidoctorExtensions::KrokiCache).to receive(:read_from_cache).and_raise(Errno::EACCES)
 
       result = diagram.to_data_uri(client, cache_dir: cache_dir, cache_mode: { enabled: true, refresh: false },
                                            on_cache_error: ->(error) { errors << error })
 
       expect(result).to eq("data:image/svg+xml;base64,#{['<svg/>'].pack('m0')}")
       expect(fetched.call).to eq(1)
-      # Both the read and the write (the entry cannot be replaced) fail.
-      expect(errors.size).to eq(2)
+      expect(errors.size).to eq(1)
+      expect(errors.first).to be_a(Errno::EACCES)
+      # The freshly fetched diagram replaces the unreadable entry.
+      expect(File.read(File.join(cache_dir, "#{key}.svg"), mode: 'rb')).to eq('<svg/>')
     end
   end
 end
