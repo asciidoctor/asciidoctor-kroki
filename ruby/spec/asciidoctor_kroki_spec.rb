@@ -36,6 +36,17 @@ describe AsciidoctorExtensions::KrokiBlockProcessor do
 </div>
 </div>)
     end
+    it 'should render a custom diagram type using the generic kroki block' do
+      input = <<~ADOC
+        [kroki,type=custom-diagram,format=png,view=details]
+        ....
+        alice -> bob: hello
+        ....
+      ADOC
+      output = Asciidoctor.convert(input, standalone: false)
+      (expect output).to include('https://kroki.io/custom-diagram/png/eNpLzMlMTlXQtVNIyk-yUshIzcnJBwA9iwZL?view=details')
+      (expect output).not_to include('type=custom-diagram')
+    end
     it 'should use the title attribute as the alt value' do
       input = <<~ADOC
         [plantuml,title="Alice saying hello to Bob"]
@@ -391,7 +402,7 @@ end
 describe AsciidoctorExtensions::Kroki do
   it 'should return the list of supported diagrams' do
     diagram_names = AsciidoctorExtensions::Kroki::SUPPORTED_DIAGRAM_NAMES
-    expect(diagram_names).to include('vegalite', 'plantuml', 'bytefield', 'bpmn', 'excalidraw', 'wavedrom', 'pikchr', 'structurizr', 'diagramsnet')
+    expect(diagram_names).to include('kroki', 'vegalite', 'plantuml', 'bytefield', 'bpmn', 'excalidraw', 'wavedrom', 'pikchr', 'structurizr', 'diagramsnet')
   end
   it 'should register the extension for the list of supported diagrams' do
     doc = Asciidoctor::Document.new

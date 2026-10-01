@@ -15,6 +15,9 @@ const isBrowser = () => typeof window === 'object'
 // A value of 20 (SECURE) disallows the document from attempting to read files from the file system
 const SAFE_MODE_SECURE = 20
 
+const GENERIC_DIAGRAM_TYPE = 'kroki'
+const DIAGRAM_TYPE_PATTERN = /^[a-z0-9][a-z0-9_-]*$/
+
 const BUILTIN_ATTRIBUTES = [
   'target',
   'width',
@@ -123,6 +126,40 @@ function getOption(attrs, document) {
 
 function isNumeric(value) {
   return /^\d+$/.test(value)
+}
+
+/**
+ * Resolve the diagram type and attributes used for rendering.
+ *
+ * The generic `kroki` block and block macro take the diagram type from a
+ * required named attribute. The attribute is consumed here so it is not also
+ * forwarded to the Kroki server as a diagram-specific option.
+ *
+ * @param {string} registeredName - Registered block or macro name.
+ * @param {Object} attrs - Block or macro attributes.
+ * @returns {{diagramType: string, attrs: Object}} Resolved type and rendering attributes.
+ */
+function resolveDiagram(registeredName, attrs) {
+  if (registeredName !== GENERIC_DIAGRAM_TYPE) {
+    return { diagramType: registeredName, attrs }
+  }
+
+  const diagramType = attrs.type
+  if (!diagramType) {
+    throw new Error("The generic kroki block requires a 'type' attribute")
+  }
+  if (
+    typeof diagramType !== 'string' ||
+    !DIAGRAM_TYPE_PATTERN.test(diagramType)
+  ) {
+    throw new Error(
+      `Invalid Kroki diagram type '${diagramType}': use lowercase letters, numbers, hyphens, and underscores`,
+    )
+  }
+
+  const renderingAttrs = { ...attrs }
+  delete renderingAttrs.type
+  return { diagramType, attrs: renderingAttrs }
 }
 
 /** @type {Set<string>} Diagram types Kroki can only render as SVG (no PNG output). */
@@ -263,18 +300,21 @@ function diagramBlock(context) {
     this.onContext(['listing', 'literal'])
     this.positionalAttributes(['target', 'format'])
     this.process(async (parent, reader, attrs) => {
-      const diagramType = this.name.toString()
+      const registeredName = this.name.toString()
+      let diagramType = registeredName
       const role = attrs.role
       // Capture the cursor at the block start before read() advances it.
       const sourceLocation = reader?.cursor
       const diagramText = await reader.read()
       const logger = parent.getDocument().getLogger()
       try {
+        const resolved = resolveDiagram(registeredName, attrs)
+        diagramType = resolved.diagramType
         context.logger = logger
         return await processKroki(
           this,
           parent,
-          attrs,
+          resolved.attrs,
           diagramType,
           diagramText,
           context,
@@ -343,15 +383,17 @@ function diagramBlockMacro(name, context) {
       }
       context.logger = parent.getDocument().getLogger()
       const role = attrs.role
-      const diagramType = name
+      let diagramType = name
       try {
+        const resolved = resolveDiagram(name, attrs)
+        diagramType = resolved.diagramType
         const diagramText = await vfs.read(target)
         const resource = (typeof vfs.parse === 'function' &&
           vfs.parse(target)) || { dir: '' }
         return await processKroki(
           this,
           parent,
-          attrs,
+          resolved.attrs,
           diagramType,
           diagramText,
           context,
@@ -392,6 +434,7 @@ function diagramBlockMacro(name, context) {
  */
 export function register(registry, context = {}) {
   const names = [
+    GENERIC_DIAGRAM_TYPE,
     'actdiag',
     'blockdiag',
     'bpmn',

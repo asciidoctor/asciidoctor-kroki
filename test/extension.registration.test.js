@@ -9,6 +9,7 @@ describe('Registration', () => {
     assert.strictEqual(registry.hasBlockMacros(), false)
     register(registry)
     assert.strictEqual(registry.hasBlockMacros(), true)
+    assert.ok(registry.registeredForBlockMacro('kroki'))
     assert.ok(registry.registeredForBlockMacro('plantuml'))
     assert.ok(registry.registeredForBlockMacro('vega'))
     assert.ok(registry.registeredForBlockMacro('vegalite'))

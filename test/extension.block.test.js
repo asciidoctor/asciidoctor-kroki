@@ -52,6 +52,85 @@ alice -> bob
       '<div class="imageblock sequence kroki-format-svg kroki">',
     )
   })
+  test('renders a custom diagram type using the generic kroki block', async () => {
+    const input = `
+[kroki,type=custom-diagram,format=png,view=details]
+....
+alice -> bob
+....
+`
+    const registry = Extensions.create()
+    register(registry)
+    const html = await convert(input, {
+      extension_registry: registry,
+      attributes: { 'kroki-server-url': krokiServerUrl },
+    })
+    assertContains(
+      html,
+      `${krokiServerUrl}/custom-diagram/png/eNpLzMlMTlXQtVNIyk8CABoDA90=?view=details`,
+    )
+    assert.ok(!html.includes('type=custom-diagram'))
+  })
+  test('renders a custom diagram type using the generic kroki block macro', async () => {
+    const input =
+      'kroki::diagram.txt[type=custom-diagram,format=png,view=details]'
+    const registry = Extensions.create()
+    register(registry, {
+      vfs: {
+        read: async () => 'alice -> bob',
+        parse: () => ({ dir: '' }),
+      },
+    })
+    const html = await convert(input, {
+      extension_registry: registry,
+      attributes: { 'kroki-server-url': krokiServerUrl },
+    })
+    assertContains(
+      html,
+      `${krokiServerUrl}/custom-diagram/png/eNpLzMlMTlXQtVNIyk8CABoDA90=?view=details`,
+    )
+    assert.ok(!html.includes('type=custom-diagram'))
+  })
+  test('requires a type on the generic kroki block', async () => {
+    const input = `
+[kroki]
+....
+alice -> bob
+....
+`
+    const registry = Extensions.create()
+    register(registry)
+    const memoryLogger = MemoryLogger.create()
+    const html = await convert(input, {
+      extension_registry: registry,
+      logger: memoryLogger,
+    })
+    assertContains(
+      memoryLogger.getMessages()[0].getText(),
+      "The generic kroki block requires a 'type' attribute",
+    )
+    assertContains(html, 'kroki-error')
+  })
+  test('rejects an invalid type on the generic kroki block', async () => {
+    const input = `
+[kroki,type=../custom]
+....
+alice -> bob
+....
+`
+    const registry = Extensions.create()
+    register(registry)
+    const memoryLogger = MemoryLogger.create()
+    const html = await convert(input, {
+      extension_registry: registry,
+      logger: memoryLogger,
+    })
+    assertContains(
+      memoryLogger.getMessages()[0].getText(),
+      "Invalid Kroki diagram type '../custom'",
+    )
+    assertContains(html, 'kroki-error')
+  })
   test('logs a warning with the source location when a diagram block cannot be rendered', async () => {
     const input = `before
 
