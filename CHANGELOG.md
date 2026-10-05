@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.0-rc.4] - 2026-10-05
+
 ### Fixed
 
 - Reuse the persistent diagram cache for `data-uri` and `kroki-data-uri` output when `kroki-fetch-diagram` is enabled, avoiding repeated downloads of unchanged embedded images while preserving cache invalidation, disable, and refresh behavior. Embedded images are therefore now written to the cache directory; set `kroki-cache` to `false` to opt out.
