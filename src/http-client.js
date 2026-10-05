@@ -1,3 +1,9 @@
+// Guards against a misbehaving or malicious Kroki server causing a hang (slow/no
+// response) or memory exhaustion (unbounded response body) that would block the
+// build pipeline.
+const REQUEST_TIMEOUT_MS = 20000
+const MAX_RESPONSE_BYTES = 25 * 1024 * 1024
+
 const httpRequest = async (
   uri,
   method,
@@ -6,11 +12,24 @@ const httpRequest = async (
   body,
   expectedContentType,
 ) => {
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
   let response
   try {
-    response = await fetch(uri, { method, headers, body })
+    response = await fetch(uri, { method, headers, body, signal: controller.signal })
   } catch (e) {
+    if (e.name === 'AbortError') {
+      throw new Error(`${method} ${uri} - timed out after ${REQUEST_TIMEOUT_MS}ms`)
+    }
     throw new Error(`${method} ${uri} - error; reason: ${e.message}`)
+  } finally {
+    clearTimeout(timeout)
+  }
+  const contentLength = response.headers.get('content-length')
+  if (contentLength && Number(contentLength) > MAX_RESPONSE_BYTES) {
+    throw new Error(
+      `${method} ${uri} - response too large (${contentLength} bytes, max ${MAX_RESPONSE_BYTES})`,
+    )
   }
   if (response.ok) {
     if (expectedContentType) {
