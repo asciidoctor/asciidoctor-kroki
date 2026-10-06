@@ -1,9 +1,9 @@
-import { defineConfig } from 'rollup'
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
+import commonjs from '@rollup/plugin-commonjs'
 import json from '@rollup/plugin-json'
 import resolve from '@rollup/plugin-node-resolve'
-import commonjs from '@rollup/plugin-commonjs'
-import { fileURLToPath } from 'node:url'
-import { join, dirname } from 'node:path'
+import { defineConfig } from 'rollup'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const shim = (name) => join(__dirname, `test/shims/${name}.js`)
@@ -16,16 +16,25 @@ const PATH_REDIRECTS = new Map([
 
 // Stub code indexed by resolved absolute path suffix
 const PATH_STUBS = new Map([
-  ['/src/node-fs.js', 'export default {}; export function resolveVfs(vfs) { return vfs || {} }'],
+  [
+    '/src/node-fs.js',
+    'export default {}; export function createNodeFs() { return {} }; export function resolveVfs(vfs, fallback) { return vfs || {} }',
+  ],
   ['/src/antora-adapter.js', 'export default function () {}'],
 ])
 
 // Stub code indexed by bare module specifier
 const ID_STUBS = new Map([
-  ['node:crypto', 'export const createHash = () => ({ update: () => ({ digest: () => "" }) }); export default {}'],
+  [
+    'node:crypto',
+    'export const createHash = () => ({ update: () => ({ digest: () => "" }) }); export default {}',
+  ],
   ['node:fs/promises', 'export default {}'],
   ['node:os', 'export default {}'],
-  ['node:url', 'export const fileURLToPath = (u) => u; export const pathToFileURL = (p) => p; export default {}'],
+  [
+    'node:url',
+    'export const fileURLToPath = (u) => u; export const pathToFileURL = (p) => p; export default {}',
+  ],
 ])
 
 function browserStubs() {
@@ -40,7 +49,9 @@ function browserStubs() {
         return `\0stub:${source}`
       }
       if (importer && (source.startsWith('./') || source.startsWith('../'))) {
-        const resolved = await this.resolve(source, importer, { skipSelf: true })
+        const resolved = await this.resolve(source, importer, {
+          skipSelf: true,
+        })
         if (resolved) {
           // Suffixes use forward slashes, but resolved ids use backslashes on Windows.
           const id = resolved.id.replaceAll('\\', '/')
@@ -90,18 +101,12 @@ const nodeConfig = {
     format: 'cjs',
     exports: 'named',
   },
-  external: [
-    /^node:/,
-    'json5',
-    'pako',
-  ],
-  plugins: [
-    json(),
-    resolve(),
-    commonjs(),
-  ],
+  external: [/^node:/, 'json5', 'pako'],
+  plugins: [json(), resolve(), commonjs()],
 }
 
 const configs = { browser: browserConfig, node: nodeConfig }
 
-export default defineConfig(target ? configs[target] : [browserConfig, nodeConfig])
+export default defineConfig(
+  target ? configs[target] : [browserConfig, nodeConfig],
+)

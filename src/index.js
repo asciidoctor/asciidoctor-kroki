@@ -1,9 +1,9 @@
 // @ts-check
 
 import fetch from './fetch.js'
-import httpClient from './http-client.js'
+import { createHttpClient } from './http-client.js'
 import { KrokiClient, KrokiDiagram } from './kroki-client.js'
-import fs from './node-fs.js'
+import { createNodeFs, resolveVfs } from './node-fs.js'
 import {
   preprocessPlantUML,
   preprocessStructurizr,
@@ -158,9 +158,13 @@ const processKroki = async (
   diagramType,
   diagramText,
   context,
+  services,
   resource,
 ) => {
   const doc = parent.getDocument()
+  // Methods missing from the custom VFS fall back to the client-bound Node.js VFS, so
+  // that remote includes are subject to the configured HTTP limits.
+  context = { ...context, vfs: resolveVfs(context.vfs, services.nodeFs) }
   // If "subs" attribute is specified, substitute accordingly.
   // Be careful not to specify "specialcharacters" or your diagram code won't be valid anymore!
   const subs = attrs.subs
@@ -230,7 +234,7 @@ const processKroki = async (
     delete opts.separation
   }
   const krokiDiagram = new KrokiDiagram(diagramType, format, diagramText, opts)
-  const krokiClient = new KrokiClient(doc, httpClient)
+  const krokiClient = new KrokiClient(doc, services.httpClient)
   let block
   if (format === 'txt' || format === 'atxt' || format === 'utxt') {
     const textContent = await krokiClient.getTextContent(krokiDiagram)
@@ -266,7 +270,7 @@ const processKroki = async (
   return block
 }
 
-function diagramBlock(context) {
+function diagramBlock(context, services) {
   return function () {
     this.onContext(['listing', 'literal'])
     this.positionalAttributes(['target', 'format'])
@@ -286,6 +290,7 @@ function diagramBlock(context) {
           diagramType,
           diagramText,
           context,
+          services,
         )
       } catch (err) {
         const doc = parent.getDocument()
@@ -302,7 +307,7 @@ function diagramBlock(context) {
   }
 }
 
-function diagramBlockMacro(name, context) {
+function diagramBlockMacro(name, context, services) {
   return function () {
     this.named(name)
     this.positionalAttributes(['format'])
@@ -345,7 +350,7 @@ function diagramBlockMacro(name, context) {
         }
       } else {
         if (vfs === undefined || typeof vfs.read !== 'function') {
-          vfs = fs
+          vfs = services.nodeFs
           target = parent.normalizeSystemPath(target)
         }
       }
@@ -363,6 +368,7 @@ function diagramBlockMacro(name, context) {
           diagramType,
           diagramText,
           context,
+          services,
           resource,
         )
       } catch (err) {
@@ -387,6 +393,10 @@ function diagramBlockMacro(name, context) {
  * @property {Partial<import('./node-fs.js').Vfs>} [vfs] - Custom virtual filesystem used to read
  *   diagram sources and write generated images. Missing methods fall back to the Node.js
  *   implementation (or to a `fetch`-based implementation in the browser).
+ * @property {import('./http-client.js').HttpOptions} [http] - Resource limits of the HTTP client,
+ *   applied to Kroki requests and to remote (`http://`, `https://`) includes:
+ *   `timeout` (milliseconds, default 20000, covers receiving the full response body) and
+ *   `maxResponseSize` (bytes, default 25 MiB).
  * @property {Object} [logger] - Asciidoctor logger; set by the extension while processing.
  */
 
@@ -431,9 +441,11 @@ export function register(registry, context = {}) {
     'diagramsnet',
     'wireviz',
   ]
+  const httpClient = createHttpClient(context.http)
+  const services = { httpClient, nodeFs: createNodeFs(httpClient) }
   for (const name of names) {
-    registry.block(name, diagramBlock(context))
-    registry.blockMacro(diagramBlockMacro(name, context))
+    registry.block(name, diagramBlock(context, services))
+    registry.blockMacro(diagramBlockMacro(name, context, services))
   }
   return registry
 }
