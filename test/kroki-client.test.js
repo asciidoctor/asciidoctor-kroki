@@ -3,9 +3,11 @@
 import assert from 'node:assert'
 import { describe, mock, test } from 'node:test'
 import { load } from '@asciidoctor/core'
-import httpClient from '../src/http-client.js'
+import { createHttpClient } from '../src/http-client.js'
 import { KrokiClient, KrokiDiagram } from '../src/kroki-client.js'
 import { referenceEncode } from './reference-encode.js'
+
+const httpClient = createHttpClient()
 
 describe('KrokiDiagram', () => {
   // KrokiDiagram#encode must be isomorphic: it cannot rely on the Node-only `Buffer`

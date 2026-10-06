@@ -18,7 +18,6 @@ import {
 import pako from 'pako'
 import sinon from 'sinon'
 import { GenericContainer } from 'testcontainers'
-import http from '../../src/http-client.js'
 import { register } from '../../src/index.js'
 import {
   assertContains,
@@ -738,7 +737,7 @@ plantuml::{fixtures-dir}/alice.puml[svg,role=sequence]
 AsciiDoc -> HTML5: convert
 ....
 `
-        sinon.spy(http, 'get')
+        sinon.spy(globalThis, 'fetch')
         try {
           const registry = Extensions.create()
           register(registry)
@@ -760,11 +759,11 @@ AsciiDoc -> HTML5: convert
             `<img src=".asciidoctor/kroki/diag-${hash}.svg" alt="Diagram">`,
           )
           assert.ok(
-            http.get.callCount <= 1,
-            'http.get should be called only once!',
+            globalThis.fetch.callCount <= 1,
+            'fetch should be called only once!',
           )
         } finally {
-          http.get.restore()
+          globalThis.fetch.restore()
         }
       })
       test('renders the diagram as ASCII art in a preformatted block when format is txt', async () => {
@@ -774,7 +773,7 @@ AsciiDoc -> HTML5: convert
 Bob->Alice : hello
 ....
 `
-        sinon.spy(http, 'get')
+        sinon.spy(globalThis, 'fetch')
         try {
           const registry = Extensions.create()
           register(registry)
@@ -795,9 +794,9 @@ Bob->Alice : hello
               '     |Bob|          |Alice|\n' +
               "     `---'          `-----'</pre>",
           )
-          assert.ok(http.get.calledOnce)
+          assert.ok(globalThis.fetch.calledOnce)
         } finally {
-          http.get.restore()
+          globalThis.fetch.restore()
         }
       })
       test('embeds SVG as a data URI when allow-uri-read and data-uri are set', async () => {

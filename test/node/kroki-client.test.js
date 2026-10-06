@@ -5,9 +5,11 @@ import os from 'node:os'
 import { after, before, describe, test } from 'node:test'
 import { load } from '@asciidoctor/core'
 import { GenericContainer } from 'testcontainers'
-import httpClient from '../../src/http-client.js'
+import { createHttpClient } from '../../src/http-client.js'
 import { KrokiClient, KrokiDiagram } from '../../src/kroki-client.js'
 import { readFixture } from './utils.js'
+
+const httpClient = createHttpClient()
 
 let container
 let krokiServerUrl

@@ -3,7 +3,6 @@ import { readFileSync } from 'node:fs'
 import { describe, test } from 'node:test'
 import { Extensions, load } from '@asciidoctor/core'
 import sinon from 'sinon'
-import http from '../../src/http-client.js'
 import { register } from '../../src/index.js'
 
 describe('Ditaa separation compatibility', () => {
@@ -37,7 +36,12 @@ describe('Ditaa separation compatibility', () => {
 
   for (const [type, options, expected] of cases) {
     test(`${type} ${options || 'default'}`, async (t) => {
-      const get = sinon.stub(http, 'get').resolves('<svg/>')
+      const get = sinon.stub(globalThis, 'fetch').callsFake(
+        async () =>
+          new Response('<svg/>', {
+            headers: { 'content-type': 'image/svg+xml' },
+          }),
+      )
       t.after(() => {
         get.restore()
       })
@@ -59,7 +63,7 @@ describe('Ditaa separation compatibility', () => {
       const image = doc.findBy({ context: 'image' })[0]
       assert.ok(image)
       assert.strictEqual(get.callCount, 1)
-      const [uri, headers] = get.firstCall.args
+      const [uri, { headers }] = get.firstCall.args
       assert.deepStrictEqual(
         Object.fromEntries(
           Object.entries(headers).filter(([key]) =>
