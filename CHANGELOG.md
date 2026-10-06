@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- JavaScript/Node.js: configurable HTTP `timeout` (default 20s) and `maxResponseSize` (default 25 MiB) via the `http` option of `register()`
+
+### Security
+
+- JavaScript/Node.js: enforce an HTTP timeout until the response body is fully received and a maximum response size while streaming, for Kroki requests and remote includes (CWE-400)
+
 ## [2.0.0-rc.4] - 2026-10-05
 
 ### Fixed
