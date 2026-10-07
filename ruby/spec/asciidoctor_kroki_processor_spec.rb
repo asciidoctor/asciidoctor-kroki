@@ -5,6 +5,31 @@ require 'asciidoctor'
 require_relative '../lib/asciidoctor/extensions/asciidoctor_kroki'
 
 describe '::AsciidoctorExtensions::KrokiProcessor' do
+  describe 'generic diagram resolution' do
+    it 'should require a type for the generic kroki block' do
+      expect do
+        AsciidoctorExtensions::Kroki.resolve_diagram('kroki', {})
+      end.to raise_error("The generic kroki block requires a 'type' attribute")
+    end
+
+    it 'should reject an invalid type for the generic kroki block' do
+      expect do
+        AsciidoctorExtensions::Kroki.resolve_diagram('kroki', { 'type' => '../custom' })
+      end.to raise_error(
+        "Invalid Kroki diagram type '../custom': use lowercase letters, numbers, hyphens, and underscores"
+      )
+    end
+
+    it 'should consume the type without modifying the original attributes' do
+      attrs = { 'type' => 'custom-diagram', 'view' => 'details' }
+      diagram_type, rendering_attrs = AsciidoctorExtensions::Kroki.resolve_diagram('kroki', attrs)
+
+      expect(diagram_type).to eq 'custom-diagram'
+      expect(rendering_attrs).to eq({ 'view' => 'details' })
+      expect(attrs).to eq({ 'type' => 'custom-diagram', 'view' => 'details' })
+    end
+  end
+
   it 'should return the images output directory (imagesoutdir attribute)' do
     doc = Asciidoctor.load('hello', attributes: { 'imagesoutdir' => '.asciidoctor/kroki/images', 'imagesdir' => '../images' })
     output_dir_path = AsciidoctorExtensions::KrokiProcessor.send(:output_dir_path, doc)

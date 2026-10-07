@@ -34,7 +34,8 @@ module AsciidoctorExtensions
       role = attrs['role']
       source_location = reader.cursor
       diagram_text = reader.string
-      KrokiProcessor.process(self, parent, attrs, diagram_type, diagram_text, @logger)
+      diagram_type, rendering_attrs = Kroki.resolve_diagram(diagram_type, attrs)
+      KrokiProcessor.process(self, parent, rendering_attrs, diagram_type, diagram_text, @logger)
     rescue => e # rubocop:disable Style/RescueStandardError
       # Matches the JavaScript/Node.js extension: a failure talking to the Kroki server (network
       # error, non-2xx response, unexpected content-type) shouldn't abort the whole document
@@ -95,7 +96,8 @@ module AsciidoctorExtensions
         return create_block(parent, 'paragraph', unresolved_block_macro_message(diagram_type, path), {})
       end
       begin
-        KrokiProcessor.process(self, parent, attrs, diagram_type, diagram_text, @logger, resource_path: path)
+        diagram_type, rendering_attrs = Kroki.resolve_diagram(diagram_type, attrs)
+        KrokiProcessor.process(self, parent, rendering_attrs, diagram_type, diagram_text, @logger, resource_path: path)
       rescue => e # rubocop:disable Style/RescueStandardError
         # Matches the JavaScript/Node.js extension: a failure talking to the Kroki server
         # shouldn't abort the whole document conversion, so it's degraded to a warning instead.
@@ -137,7 +139,11 @@ module AsciidoctorExtensions
   # Kroki API
   #
   module Kroki
+    GENERIC_DIAGRAM_TYPE = 'kroki'
+    DIAGRAM_TYPE_PATTERN = /\A[a-z0-9][a-z0-9_-]*\z/.freeze
+
     SUPPORTED_DIAGRAM_NAMES = %w[
+      kroki
       actdiag
       blockdiag
       bpmn
@@ -169,6 +175,24 @@ module AsciidoctorExtensions
       diagramsnet
       wireviz
     ].freeze
+
+    # Resolve the type and attributes used to render a diagram. The generic
+    # kroki block takes its type from a required named attribute, which is
+    # consumed so it is not forwarded as a diagram-specific option.
+    def self.resolve_diagram(registered_name, attrs)
+      return [registered_name, attrs] unless registered_name.to_s == GENERIC_DIAGRAM_TYPE
+
+      diagram_type = attrs['type']
+      raise "The generic kroki block requires a 'type' attribute" unless diagram_type
+
+      unless diagram_type.is_a?(String) && DIAGRAM_TYPE_PATTERN.match?(diagram_type)
+        raise "Invalid Kroki diagram type '#{diagram_type}': use lowercase letters, numbers, hyphens, and underscores"
+      end
+
+      rendering_attrs = attrs.dup
+      rendering_attrs.delete('type')
+      [diagram_type, rendering_attrs]
+    end
   end
 
   # Internal processor

@@ -36,6 +36,29 @@ vegalite::chart.vlite[svg]
 
 In the above example, the diagram type is `vegalite`, the target is `chart.vlite`, and the image format is `svg`.
 
+== Generic Kroki block
+
+Use the generic `kroki` block with the required `type` attribute when the diagram type is not registered by this extension.
+This is useful with a self-hosted Kroki instance that provides custom diagram types:
+
+[source,asciidoc]
+....
+[kroki,type=custom-diagram,format=svg]
+----
+custom diagram source
+----
+....
+
+The equivalent block macro form is:
+
+[source,asciidoc]
+----
+kroki::diagram.custom[type=custom-diagram,format=svg]
+----
+
+The `type` value may contain lowercase letters, numbers, hyphens, and underscores.
+All other diagram-specific attributes are forwarded to the Kroki server as usual.
+
 == Named attributes
 
 You can combine positional and named attributes:
@@ -80,6 +103,9 @@ The following attributes are used by the built-in HTML 5 converter:
 
 |`format`
 |Image format (default: `svg`)
+
+|`type`
+|Diagram type to render when using the generic `kroki` block or block macro (required)
 
 |`fallback`
 |Fallback image if the diagram cannot be rendered
