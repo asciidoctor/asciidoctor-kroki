@@ -88,6 +88,36 @@ console.log(await convert('plantuml::hello.puml[svg]', { safe: 'safe', extension
 <2> Override file existence check.
 <3> Pass the custom VFS via the `context` argument.
 
+=== HTTP limits
+
+HTTP requests sent to Kroki, and remote includes (`http://` and `https://` URLs read by the default VFS), are limited in time and in response size.
+The limits can be changed with the `http` option of the `context` argument:
+
+[source,js]
+----
+register(registry, {
+  http: {
+    timeout: 120000,
+    maxResponseSize: 50 * 1024 * 1024,
+  },
+})
+----
+
+[cols="2,1,4"]
+|===
+|Option |Default |Description
+
+|`http.timeout`
+|`60000`
+|Maximum time in milliseconds for a request, including the time needed to receive the complete response body.
+
+|`http.maxResponseSize`
+|`26214400` (25 MiB)
+|Maximum size in bytes of a response body, enforced while the response is streamed (also when the server does not send a `Content-Length` header).
+|===
+
+NOTE: These limits do not apply to the `read` function of a custom VFS, nor to files read by the `fetch`-based VFS in the browser.
+
 == Browser
 
 Install the dependencies:

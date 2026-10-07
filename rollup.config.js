@@ -16,7 +16,7 @@ const PATH_REDIRECTS = new Map([
 
 // Stub code indexed by resolved absolute path suffix
 const PATH_STUBS = new Map([
-  ['/src/node-fs.js', 'export default {}; export function resolveVfs(vfs) { return vfs || {} }'],
+  ['/src/node-fs.js', 'export default {}; export function createNodeFs() { return {} }; export function resolveVfs(vfs) { return vfs || {} }'],
   ['/src/antora-adapter.js', 'export default function () {}'],
 ])
 

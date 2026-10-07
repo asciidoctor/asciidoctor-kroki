@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+
+- JavaScript/Node.js: limit the duration (60s, including receiving the body) and the size (25 MiB, enforced while streaming) of HTTP responses, for Kroki requests and remote includes (CWE-400). Both limits can be changed with the `http` option of `register()`. Previously, requests had no timeout.
+
 ## [2.0.0-rc.4] - 2026-10-05
 
 ### Fixed
