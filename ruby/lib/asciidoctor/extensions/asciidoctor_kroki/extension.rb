@@ -78,7 +78,8 @@ module AsciidoctorExtensions
       role = attrs['role']
       target = parent.apply_subs(target, [:attributes])
 
-      unless read_allowed?(target)
+      # like include::, reading a remote target requires allow-uri-read
+      unless read_allowed?(target) && (!remote_target?(target) || parent.document.attr?('allow-uri-read'))
         link = create_inline(parent, :anchor, target, type: :link, target: target)
         return create_block(parent, :paragraph, link.convert, {}, content_model: :raw)
       end
@@ -113,6 +114,8 @@ module AsciidoctorExtensions
     # @param parent [Asciidoctor::AbstractBlock] the parent asciidoc block of the block or block macro being processed
     # @param target [String] the target value of a block macro
     def resolve_target_path(parent, target)
+      return target if remote_target?(target)
+
       parent.normalize_system_path(target)
     end
 
@@ -121,12 +124,16 @@ module AsciidoctorExtensions
     end
 
     def read(target)
-      if target.start_with?('http://') || target.start_with?('https://')
+      if remote_target?(target)
         require 'open-uri'
         ::OpenURI.open_uri(target, &:read)
       else
         File.read(target, mode: 'rb:utf-8:utf-8')
       end
+    end
+
+    def remote_target?(target)
+      target.start_with?('http://', 'https://')
     end
 
     def unresolved_block_macro_message(name, target)

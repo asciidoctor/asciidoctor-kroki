@@ -42,6 +42,9 @@ The target can be a path relative to the document, an absolute path, or an `http
 plantuml::https://example.org/diagrams/hello.puml[svg]
 ----
 
+As with the `include::` directive, a URL target is only read when the `allow-uri-read` attribute is set (from the API or the CLI); otherwise, the macro is replaced by a link to the URL.
+In the browser, the target is always fetched.
+
 == Include directive
 
 Use the `include` directive to embed a diagram file inline:

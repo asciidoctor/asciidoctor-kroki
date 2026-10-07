@@ -351,7 +351,24 @@ function diagramBlockMacro(name, context, services) {
       } else {
         if (vfs === undefined || typeof vfs.read !== 'function') {
           vfs = services.nodeFs
-          target = parent.normalizeSystemPath(target)
+          if (target.startsWith('http://') || target.startsWith('https://')) {
+            // like include::, reading a remote target requires allow-uri-read
+            if (!parent.getDocument().isAttribute('allow-uri-read')) {
+              const link = this.createInline(parent, 'anchor', target, {
+                type: 'link',
+                target,
+              })
+              return this.createBlock(
+                parent,
+                'paragraph',
+                await link.convert(),
+                {},
+                { content_model: 'raw' },
+              )
+            }
+          } else {
+            target = parent.normalizeSystemPath(target)
+          }
         }
       }
       context.logger = parent.getDocument().getLogger()
