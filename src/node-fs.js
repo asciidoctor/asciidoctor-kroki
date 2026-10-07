@@ -113,18 +113,38 @@ const nodefs = {
 }
 
 /**
- * Resolves a complete {@link Vfs} implementation by merging the provided `vfs` object
- * with {@link nodefs} fallbacks for any missing methods.
+ * Creates a Node.js virtual filesystem whose remote reads (`http://` and `https://`)
+ * go through the given HTTP client, and are therefore subject to its limits.
  *
- * @param {Partial<Vfs>|undefined} vfs - Custom VFS implementation, or `undefined` to use Node.js defaults entirely.
+ * @param {{get: Function}} httpClient - HTTP client used for remote reads.
+ * @returns {Vfs}
+ */
+export function createNodeFs(httpClient) {
+  return {
+    ...nodefs,
+    read: async (path, encoding = 'utf8') => {
+      if (path.startsWith('http://') || path.startsWith('https://')) {
+        return httpClient.get(path, {}, encoding)
+      }
+      return nodefs.read(path, encoding)
+    },
+  }
+}
+
+/**
+ * Resolves a complete {@link Vfs} implementation by merging the provided `vfs` object
+ * with fallbacks for any missing methods.
+ *
+ * @param {Partial<Vfs>|undefined} vfs - Custom VFS implementation, or `undefined` to use the fallback entirely.
+ * @param {Vfs} [fallback=nodefs] - Implementation used for the missing methods.
  * @returns {Vfs} A fully-resolved VFS with all four methods defined.
  */
-export function resolveVfs(vfs) {
+export function resolveVfs(vfs, fallback = nodefs) {
   return {
-    read: typeof vfs?.read === 'function' ? vfs.read : nodefs.read,
-    exists: typeof vfs?.exists === 'function' ? vfs.exists : nodefs.exists,
-    parse: typeof vfs?.parse === 'function' ? vfs.parse : nodefs.parse,
-    add: typeof vfs?.add === 'function' ? vfs.add : nodefs.add,
+    read: typeof vfs?.read === 'function' ? vfs.read : fallback.read,
+    exists: typeof vfs?.exists === 'function' ? vfs.exists : fallback.exists,
+    parse: typeof vfs?.parse === 'function' ? vfs.parse : fallback.parse,
+    add: typeof vfs?.add === 'function' ? vfs.add : fallback.add,
   }
 }
 
