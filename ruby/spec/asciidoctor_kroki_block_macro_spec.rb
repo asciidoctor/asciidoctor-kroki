@@ -1,6 +1,7 @@
 # rubocop:disable Lint/ConstantDefinitionInBlock
 # frozen_string_literal: true
 
+require 'open-uri'
 require 'tmpdir'
 require 'rspec_helper'
 require 'asciidoctor'
@@ -163,6 +164,30 @@ describe AsciidoctorExtensions::KrokiBlockMacroProcessor do
 </div>
 </div>)
       end
+    end
+  end
+  context 'with a remote target' do
+    it 'should read the remote target when allow-uri-read is set' do
+      allow(OpenURI).to receive(:open_uri).with('https://domain.org/alice.puml').and_return(File.read('spec/fixtures/alice.puml'))
+      input = <<~ADOC
+        plantuml::https://domain.org/alice.puml[svg,role=sequence]
+      ADOC
+      output = Asciidoctor.convert(input, standalone: false, safe: :safe, attributes: { 'allow-uri-read' => '' })
+      (expect output).to eql %(<div class="imageblock sequence kroki-format-svg kroki">
+<div class="content">
+<img src="https://kroki.io/plantuml/svg/eNpLzMlMTlXQtVNIyk-yUshIzcnJ5wIAQ-AGVQ==" alt="Diagram">
+</div>
+</div>)
+    end
+    it 'should render a link to the remote target when allow-uri-read is not set' do
+      expect(OpenURI).not_to receive(:open_uri)
+      input = <<~ADOC
+        plantuml::https://domain.org/alice.puml[svg,role=sequence]
+      ADOC
+      output = Asciidoctor.convert(input, standalone: false, safe: :safe)
+      (expect output).to eql %(<div class="paragraph">
+<p><a href="https://domain.org/alice.puml">https://domain.org/alice.puml</a></p>
+</div>)
     end
   end
   context 'when the Kroki server round-trip fails' do

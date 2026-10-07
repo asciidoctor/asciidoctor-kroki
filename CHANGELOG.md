@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Block macro with an `http://` or `https://` URL as target (e.g. `plantuml::https://example.org/hello.puml[]`): the URL is no longer turned into a local path, so the diagram source is downloaded as documented. Like `include::`, the URL is only read when `allow-uri-read` is set; otherwise, the macro is replaced by a link (Ruby and JavaScript/Node.js).
+
 ### Security
 
 - JavaScript/Node.js: limit the duration (60s, including receiving the body) and the size (25 MiB, enforced while streaming) of HTTP responses, for Kroki requests and remote includes (CWE-400). Both limits can be changed with the `http` option of `register()`. Previously, requests had no timeout.
