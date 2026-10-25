@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Ruby: keep the title of a diagram block or block macro on the `kroki-error` block that replaces it when the diagram cannot be converted (e.g., the Kroki server is unreachable), like the JavaScript/Node.js extension. The title was dropped.
 - Block macro with an `http://` or `https://` URL as target (e.g. `plantuml::https://example.org/hello.puml[]`): the URL is no longer turned into a local path, so the diagram source is downloaded as documented. Like `include::`, the URL is only read when `allow-uri-read` is set; otherwise, the macro is replaced by a link (Ruby and JavaScript/Node.js).
 - Trailing slashes in `kroki-server-url` are removed when building the request URLs and the cache key, so that `https://my.domain.org/kroki/` no longer produces `https://my.domain.org/kroki//plantuml/svg/...`. The Ruby extension already removed them from GET URLs, but not from POST URLs (`kroki-http-method` set to `post`, or `adaptive` when the URI exceeds `kroki-max-uri-length`); the JavaScript extension removed them nowhere (Ruby and JavaScript/Node.js).
 
