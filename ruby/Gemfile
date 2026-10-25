@@ -3,3 +3,8 @@
 source 'https://rubygems.org'
 
 gemspec
+
+# Dependencies of testcontainers-core: the latest versions compatible with Ruby 2.7 (tested in CI),
+# since Gemfile.lock is shared by all the Ruby versions.
+gem 'excon', '< 1.2.6'
+gem 'multi_json', '< 1.16'

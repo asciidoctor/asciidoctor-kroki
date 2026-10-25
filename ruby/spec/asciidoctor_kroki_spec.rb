@@ -257,16 +257,17 @@ describe AsciidoctorExtensions::KrokiBlockProcessor do
     context 'with kroki-fetch-diagram writing to disk' do
       include_context 'with a temporary kroki cache'
 
-      it 'should create SVG diagram in imagesdir if kroki-fetch-diagram is set' do
+      it 'should create SVG diagram in imagesdir if kroki-fetch-diagram is set', kroki_server: true do
         input = <<~ADOC
           :imagesdir: .asciidoctor/kroki
 
           plantuml::spec/fixtures/alice.puml[svg,role=sequence]
         ADOC
-        output = Asciidoctor.convert(input, attributes: { 'kroki-fetch-diagram' => '' }, standalone: false, safe: :safe)
+        output = Asciidoctor.convert(input, attributes: { 'kroki-fetch-diagram' => '', 'kroki-server-url' => kroki_server_url }, standalone: false, safe: :safe)
+        diagram_hash = Digest::SHA256.hexdigest("#{kroki_server_url}/plantuml/svg/eNpLzMlMTlXQtVNIyk-yUshIzcnJ5wIAQ-AGVQ==")
         (expect output).to eql %(<div class="imageblock sequence kroki-format-svg kroki">
 <div class="content">
-<img src=".asciidoctor/kroki/diag-f6acdc206506b6ca7badd3fe722f252af992871426e580c8361ff4d47c2c7d9b.svg" alt="Diagram">
+<img src=".asciidoctor/kroki/diag-#{diagram_hash}.svg" alt="Diagram">
 </div>
 </div>)
       end
@@ -283,16 +284,17 @@ describe AsciidoctorExtensions::KrokiBlockProcessor do
 </div>
 </div>)
       end
-      it 'should create PNG diagram in imagesdir if kroki-fetch-diagram is set' do
+      it 'should create PNG diagram in imagesdir if kroki-fetch-diagram is set', kroki_server: true do
         input = <<~ADOC
           :imagesdir: .asciidoctor/kroki
 
           plantuml::spec/fixtures/alice.puml[png,role=sequence]
         ADOC
-        output = Asciidoctor.convert(input, attributes: { 'kroki-fetch-diagram' => '' }, standalone: false, safe: :safe)
+        output = Asciidoctor.convert(input, attributes: { 'kroki-fetch-diagram' => '', 'kroki-server-url' => kroki_server_url }, standalone: false, safe: :safe)
+        diagram_hash = Digest::SHA256.hexdigest("#{kroki_server_url}/plantuml/png/eNpLzMlMTlXQtVNIyk-yUshIzcnJ5wIAQ-AGVQ==")
         (expect output).to eql %(<div class="imageblock sequence kroki-format-png kroki">
 <div class="content">
-<img src=".asciidoctor/kroki/diag-d4f314b2d4e75cc08aa4f8c2c944f7bf78321895d8ec5f665b42476d4e67e610.png" alt="Diagram">
+<img src=".asciidoctor/kroki/diag-#{diagram_hash}.png" alt="Diagram">
 </div>
 </div>)
       end
@@ -360,18 +362,20 @@ describe AsciidoctorExtensions::KrokiBlockProcessor do
           (expect warnings.first).to include(cache_dir)
         end
       end
-      it 'should embed the fetched SVG as a base64 data URI when kroki-data-uri is set' do
+      it 'should embed the fetched SVG as a base64 data URI when kroki-data-uri is set', kroki_server: true do
         input = <<~ADOC
           plantuml::spec/fixtures/alice.puml[svg,role=sequence]
         ADOC
-        output = Asciidoctor.convert(input, attributes: { 'kroki-fetch-diagram' => '', 'kroki-data-uri' => '' }, standalone: false, safe: :safe)
+        attrs = { 'kroki-fetch-diagram' => '', 'kroki-data-uri' => '', 'kroki-server-url' => kroki_server_url }
+        output = Asciidoctor.convert(input, attributes: attrs, standalone: false, safe: :safe)
         (expect output).to match(%r{<img src="data:image/svg\+xml;base64,[A-Za-z0-9+/]+=*" alt="Diagram">})
       end
-      it 'should embed the fetched PNG as a base64 data URI when the standard data-uri attribute is set' do
+      it 'should embed the fetched PNG as a base64 data URI when the standard data-uri attribute is set', kroki_server: true do
         input = <<~ADOC
           plantuml::spec/fixtures/alice.puml[png,role=sequence]
         ADOC
-        output = Asciidoctor.convert(input, attributes: { 'kroki-fetch-diagram' => '', 'data-uri' => '' }, standalone: false, safe: :safe)
+        attrs = { 'kroki-fetch-diagram' => '', 'data-uri' => '', 'kroki-server-url' => kroki_server_url }
+        output = Asciidoctor.convert(input, attributes: attrs, standalone: false, safe: :safe)
         (expect output).to match(%r{<img src="data:image/png;base64,[A-Za-z0-9+/]+=*" alt="Diagram">})
       end
       it 'should not embed as a data URI when kroki-data-uri is set but kroki-fetch-diagram is not' do
@@ -402,7 +406,8 @@ describe AsciidoctorExtensions::KrokiBlockProcessor do
 <p>following text</p>
 </div>)
       end
-      it 'should render a kroki-error block instead of a broken image when the Kroki server rejects the diagram (real end-to-end request)' do
+      it 'should render a kroki-error block instead of a broken image when the Kroki server rejects the diagram (real end-to-end request)',
+         kroki_server: true do
         input = <<~ADOC
           [plantuml]
           ....
@@ -411,7 +416,7 @@ describe AsciidoctorExtensions::KrokiBlockProcessor do
 
           following text
         ADOC
-        attrs = { 'kroki-fetch-diagram' => '', 'kroki-cache' => 'false', 'kroki-server-url' => 'https://kroki.io' }
+        attrs = { 'kroki-fetch-diagram' => '', 'kroki-cache' => 'false', 'kroki-server-url' => kroki_server_url }
         output = Asciidoctor.convert(input, standalone: false, safe: :safe, attributes: attrs)
         (expect output).to include('class="literalblock kroki-error"')
         (expect output).to include('this is not valid plantuml syntax !!! ###')
@@ -425,9 +430,9 @@ describe AsciidoctorExtensions::KrokiBlockProcessor do
       # (https://github.com/asciidoctor/asciidoctor/issues/3791). These specs check the resolved
       # image target directly, like the JavaScript/Node.js extension's equivalent specs do, so
       # they keep passing both today and once a released gem picks up the upstream fix.
-      it 'should resolve the inline option to a data URI when allow-uri-read is not set' do
+      it 'should resolve the inline option to a data URI when allow-uri-read is not set', kroki_server: true do
         input = 'plantuml::spec/fixtures/alice.puml[svg,opts=inline]'
-        doc = Asciidoctor.load(input, safe: :safe, attributes: { 'kroki-server-url' => 'https://kroki.io' })
+        doc = Asciidoctor.load(input, safe: :safe, attributes: { 'kroki-server-url' => kroki_server_url })
         image = doc.find_by(context: :image)[0]
         (expect image).not_to be_nil
         (expect image.attr('target')).to match(%r{^data:image/svg\+xml;base64,})
