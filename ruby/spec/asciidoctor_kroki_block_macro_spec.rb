@@ -202,6 +202,14 @@ describe AsciidoctorExtensions::KrokiBlockMacroProcessor do
       (expect output).to include('plantuml::spec/fixtures/alice.puml[]')
       (expect output).to include('following text')
     end
+    it 'should keep the block title on the kroki-error paragraph when the server is unreachable' do
+      input = <<~ADOC
+        .Alice and Bob
+        plantuml::spec/fixtures/alice.puml[txt]
+      ADOC
+      output = Asciidoctor.convert(input, standalone: false, safe: :safe, attributes: { 'kroki-server-url' => 'http://127.0.0.1:1' })
+      (expect output).to include(%(<div class="paragraph kroki-error">\n<div class="title">Alice and Bob</div>))
+    end
   end
 end
 # rubocop:enable Lint/ConstantDefinitionInBlock

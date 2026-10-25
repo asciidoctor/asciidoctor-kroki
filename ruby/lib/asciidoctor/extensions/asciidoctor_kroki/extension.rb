@@ -190,6 +190,9 @@ module AsciidoctorExtensions
     class << self
       # rubocop:disable Metrics/AbcSize, Metrics/PerceivedComplexity
       def process(processor, parent, attrs, diagram_type, diagram_text, logger, resource_path: nil)
+        # Work on a copy, like the JavaScript extension, so that the kroki-error block that
+        # the caller creates on failure keeps the original attributes, such as the title.
+        attrs = attrs.dup
         doc = parent.document
         diagram_text = prepend_plantuml_config(diagram_text, diagram_type, doc, logger)
         diagram_text = preprocess_plantuml_includes(diagram_text, diagram_type, doc, resource_path, logger)

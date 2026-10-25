@@ -406,6 +406,22 @@ describe AsciidoctorExtensions::KrokiBlockProcessor do
 <p>following text</p>
 </div>)
       end
+      it 'should keep the block title on the kroki-error block when the server is unreachable' do
+        input = <<~ADOC
+          .Alice and Bob
+          [plantuml,,txt]
+          ....
+          alice -> bob: hello
+          ....
+        ADOC
+        output = Asciidoctor.convert(input, standalone: false, safe: :safe, attributes: { 'kroki-server-url' => 'http://127.0.0.1:1' })
+        (expect output).to eql %(<div class="literalblock kroki-error">
+<div class="title">Alice and Bob</div>
+<div class="content">
+<pre>alice -&gt; bob: hello</pre>
+</div>
+</div>)
+      end
       it 'should render a kroki-error block instead of a broken image when the Kroki server rejects the diagram (real end-to-end request)',
          kroki_server: true do
         input = <<~ADOC
