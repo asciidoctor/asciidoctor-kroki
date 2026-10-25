@@ -186,10 +186,13 @@ export class KrokiClient {
   /**
    * Returns the Kroki server URL, falling back to `https://kroki.io` when the
    * `kroki-server-url` document attribute is not set.
+   * Trailing slashes are removed.
    *
-   * @returns {string} Kroki server base URL.
+   * @returns {string} Kroki server base URL, without trailing slashes.
    */
   getServerUrl() {
-    return this.doc.getAttribute('kroki-server-url') || 'https://kroki.io'
+    return (
+      this.doc.getAttribute('kroki-server-url') || 'https://kroki.io'
+    ).replace(/\/+$/, '')
   }
 }
