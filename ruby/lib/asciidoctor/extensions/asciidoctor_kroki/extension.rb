@@ -578,7 +578,8 @@ module AsciidoctorExtensions
     }.freeze
 
     def initialize(opts, logger = ::Asciidoctor::LoggerManager.logger)
-      @server_url = opts[:server_url]
+      # remove trailing slashes
+      @server_url = opts[:server_url]&.gsub(%r{/+$}, '')
       @max_uri_length = opts.fetch(:max_uri_length, 4000)
       @http_client = opts[:http_client]
       @source_location = opts[:source_location]

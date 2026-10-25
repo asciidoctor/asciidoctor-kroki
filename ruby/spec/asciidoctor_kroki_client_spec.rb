@@ -60,6 +60,29 @@ describe AsciidoctorExtensions::KrokiClient do
     result = kroki_client.get_image(kroki_diagram, 'utf8')
     expect(result).to eq('POST http://localhost:8000/type/format - text')
   end
+  it 'should remove trailing slashes from the server URL with a POST request' do
+    kroki_http_client = Class.new do
+      class << self
+        def post(uri, data, _, _, _)
+          "POST #{uri} - #{data}"
+        end
+      end
+    end
+    kroki_diagram = Class.new do
+      attr_reader :type, :text, :format, :opts
+
+      def initialize(type, format, text, opts = {})
+        @text = text
+        @type = type
+        @format = format
+        @opts = opts
+      end
+    end.new('type', 'format', 'text')
+    kroki_client = AsciidoctorExtensions::KrokiClient.new(server_url: 'https://my-server/kroki//', http_method: 'post', http_client: kroki_http_client)
+    expect(kroki_client.server_url).to eq('https://my-server/kroki')
+    result = kroki_client.get_image(kroki_diagram, 'utf8')
+    expect(result).to eq('POST https://my-server/kroki/type/format - text')
+  end
   it 'should get an image with GET request if the URI length is lower or equals than the value configured' do
     kroki_http_client = Class.new do
       class << self
