@@ -206,4 +206,28 @@ describe('Kroki HTTP client', () => {
       assert.strictEqual(image, 'GET diagram-uri')
     })
   })
+
+  describe('POST mode', () => {
+    test('removes trailing slashes from the server URL', async () => {
+      const doc = await load('')
+      doc.setAttribute('kroki-http-method', 'post')
+      doc.setAttribute('kroki-server-url', 'https://my-server/kroki//')
+      const krokiClient = new KrokiClient(doc, {
+        get: (uri) => `GET ${uri}`,
+        post: (uri, body) => `POST ${uri} - ${body}`,
+      })
+      const krokiDiagram = {
+        type: 'type',
+        format: 'format',
+        text: 'text',
+        opts: {},
+        getDiagramUri: () => 'diagram-uri',
+      }
+      const image = await krokiClient.getImage(krokiDiagram)
+      assert.strictEqual(
+        image,
+        'POST https://my-server/kroki/type/format - text',
+      )
+    })
+  })
 })
