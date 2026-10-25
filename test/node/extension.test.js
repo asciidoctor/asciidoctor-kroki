@@ -20,6 +20,7 @@ import sinon from 'sinon'
 import { GenericContainer } from 'testcontainers'
 import http from '../../src/http-client.js'
 import { register } from '../../src/index.js'
+import { KROKI_IMAGE } from '../kroki-image.js'
 import {
   assertContains,
   deleteDirWithFiles,
@@ -69,7 +70,7 @@ describe('Conversion', () => {
               force: true,
             },
           )
-          container = await new GenericContainer('yuzutech/kroki:0.28.0')
+          container = await new GenericContainer(KROKI_IMAGE)
             .withExposedPorts(8000)
             .start()
           krokiServerUrl = `http://${container.getHost()}:${container.getMappedPort(8000)}`
@@ -786,14 +787,15 @@ Bob->Alice : hello
           })
           assertContains(
             html,
-            'pre>     ,---.          ,-----.\n' +
-              '     |Bob|          |Alice|\n' +
-              "     `-+-'          `--+--'\n" +
-              '       |    hello      |\n' +
-              '       |--------------&gt;|\n' +
-              '     ,-+-.          ,--+--.\n' +
-              '     |Bob|          |Alice|\n' +
-              "     `---'          `-----'</pre>",
+            '<pre>,---.   ,-----.\n' +
+              '|Bob|   |Alice|\n' +
+              "`-+-'   `--+--'\n" +
+              '  | hello  |\n' +
+              '  |-------&gt;|\n' +
+              '  |        |\n' +
+              ',-+-.   ,--+--.\n' +
+              '|Bob|   |Alice|\n' +
+              "`---'   `-----'</pre>",
           )
           assert.ok(http.get.calledOnce)
         } finally {

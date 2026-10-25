@@ -7,6 +7,7 @@ import { load } from '@asciidoctor/core'
 import { GenericContainer } from 'testcontainers'
 import httpClient from '../../src/http-client.js'
 import { KrokiClient, KrokiDiagram } from '../../src/kroki-client.js'
+import { KROKI_IMAGE } from '../kroki-image.js'
 import { readFixture } from './utils.js'
 
 let container
@@ -19,7 +20,7 @@ describe('Kroki HTTP client — Adaptive mode with real server', {
   if (os.platform() !== 'win32') {
     before(
       async () => {
-        container = await new GenericContainer('yuzutech/kroki:0.30.1')
+        container = await new GenericContainer(KROKI_IMAGE)
           .withExposedPorts(8000)
           .start()
         krokiServerUrl = `http://${container.getHost()}:${container.getMappedPort(8000)}`
