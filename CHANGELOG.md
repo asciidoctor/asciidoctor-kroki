@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Block macro with an `http://` or `https://` URL as target (e.g. `plantuml::https://example.org/hello.puml[]`): the URL is no longer turned into a local path, so the diagram source is downloaded as documented. Like `include::`, the URL is only read when `allow-uri-read` is set; otherwise, the macro is replaced by a link (Ruby and JavaScript/Node.js).
+- JavaScript/Node.js: remove trailing slashes from `kroki-server-url` when building the diagram URL, like the Ruby extension, so that `https://my.domain.org/kroki/` no longer produces `https://my.domain.org/kroki//plantuml/svg/...`.
 
 ### Security
 

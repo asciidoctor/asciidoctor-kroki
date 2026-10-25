@@ -42,7 +42,8 @@ export class KrokiDiagram {
    * Builds the GET URI for this diagram against the given Kroki server URL.
    * Options are appended as URL-encoded query parameters.
    *
-   * @param {string} serverUrl - Base URL of the Kroki server (e.g. `https://kroki.io`).
+   * @param {string} serverUrl - Base URL of the Kroki server (e.g. `https://kroki.io`), with or
+   *   without trailing slashes.
    * @returns {string} Fully-qualified diagram URI.
    */
   getDiagramUri(serverUrl) {
@@ -52,7 +53,7 @@ export class KrokiDiagram {
           `${encodeURIComponent(key)}=${encodeURIComponent(value.toString())}`,
       )
       .join('&')
-    return `${serverUrl}/${this.type}/${this.format}/${this.encode()}${queryParams ? `?${queryParams}` : ''}`
+    return `${serverUrl.replace(/\/+$/, '')}/${this.type}/${this.format}/${this.encode()}${queryParams ? `?${queryParams}` : ''}`
   }
 
   /**
