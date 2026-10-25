@@ -44,44 +44,46 @@ describe AsciidoctorExtensions::KrokiDiagram do
     diagram_definition_encoded = kroki_diagram.encode
     expect(diagram_definition_encoded).to eq('eNpTSMzJTE5V0LVTSMpPslLISM3JyQcAQAwGaw==')
   end
-  it 'should fetch a diagram from Kroki and save it to disk' do
+  it 'should fetch a diagram from Kroki and save it to disk', kroki_server: true do
     kroki_diagram = AsciidoctorExtensions::KrokiDiagram.new('plantuml', 'txt', ' alice -> bob: hello')
     kroki_http_client = AsciidoctorExtensions::KrokiHttpClient
-    kroki_client = AsciidoctorExtensions::KrokiClient.new(server_url: 'https://kroki.io', http_method: 'get', http_client: kroki_http_client)
+    kroki_client = AsciidoctorExtensions::KrokiClient.new(server_url: kroki_server_url, http_method: 'get', http_client: kroki_http_client)
     output_dir_path = "#{__dir__}/../.asciidoctor/kroki"
     diagram_name = kroki_diagram.save(output_dir_path, kroki_client)
     diagram_path = File.join(output_dir_path, diagram_name)
     expect(File.exist?(diagram_path)).to be_truthy, "diagram should be saved at: #{diagram_path}"
-    content = <<-TXT.chomp
-     ,-----.          ,---.
-     |alice|          |bob|
-     `--+--'          `-+-'
-        |    hello      |
-        |-------------->|
-     ,--+--.          ,-+-.
-     |alice|          |bob|
-     `-----'          `---'
+    content = <<~TXT.chomp
+      ,-----.   ,---.
+      |alice|   |bob|
+      `--+--'   `-+-'
+         | hello  |
+         |------->|
+         |        |
+      ,--+--.   ,-+-.
+      |alice|   |bob|
+      `-----'   `---'
     TXT
     expect(File.read(diagram_path).split("\n").map(&:rstrip).join("\n")).to eq(content)
   end
-  it 'should fetch a diagram from Kroki and save it to disk using the target name' do
+  it 'should fetch a diagram from Kroki and save it to disk using the target name', kroki_server: true do
     kroki_diagram = AsciidoctorExtensions::KrokiDiagram.new('plantuml', 'txt', ' alice -> bob: hello', 'hello-world')
     kroki_http_client = AsciidoctorExtensions::KrokiHttpClient
-    kroki_client = AsciidoctorExtensions::KrokiClient.new(server_url: 'https://kroki.io', http_method: 'get', http_client: kroki_http_client)
+    kroki_client = AsciidoctorExtensions::KrokiClient.new(server_url: kroki_server_url, http_method: 'get', http_client: kroki_http_client)
     output_dir_path = "#{__dir__}/../.asciidoctor/kroki"
     diagram_name = kroki_diagram.save(output_dir_path, kroki_client)
     diagram_path = File.join(output_dir_path, diagram_name)
     expect(diagram_name).to eq('hello-world.txt'), "diagram name should be the target name without a checksum, got: #{diagram_name}"
     expect(File.exist?(diagram_path)).to be_truthy, "diagram should be saved at: #{diagram_path}"
-    content = <<-TXT.chomp
-     ,-----.          ,---.
-     |alice|          |bob|
-     `--+--'          `-+-'
-        |    hello      |
-        |-------------->|
-     ,--+--.          ,-+-.
-     |alice|          |bob|
-     `-----'          `---'
+    content = <<~TXT.chomp
+      ,-----.   ,---.
+      |alice|   |bob|
+      `--+--'   `-+-'
+         | hello  |
+         |------->|
+         |        |
+      ,--+--.   ,-+-.
+      |alice|   |bob|
+      `-----'   `---'
     TXT
     expect(File.read(diagram_path).split("\n").map(&:rstrip).join("\n")).to eq(content)
   end

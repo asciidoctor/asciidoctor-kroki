@@ -32,4 +32,5 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'rake', '~> 13.3.0'
   s.add_development_dependency 'rspec', '~> 3.13.1'
   s.add_development_dependency 'rubocop', '~> 1.78'
+  s.add_development_dependency 'testcontainers-core', '~> 0.2.0'
 end

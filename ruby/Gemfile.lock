@@ -10,9 +10,16 @@ GEM
     asciidoctor (2.0.26)
     ast (2.4.3)
     diff-lcs (1.6.2)
+    docker-api (2.4.0)
+      excon (>= 0.64.0)
+      multi_json
+    excon (1.2.5)
+      logger
     json (2.13.0)
     language_server-protocol (3.17.0.5)
     lint_roller (1.1.0)
+    logger (1.7.0)
+    multi_json (1.15.0)
     parallel (1.27.0)
     parser (3.3.8.0)
       ast (~> 2.4.1)
@@ -50,6 +57,8 @@ GEM
       parser (>= 3.3.7.2)
       prism (~> 1.4)
     ruby-progressbar (1.13.0)
+    testcontainers-core (0.2.0)
+      docker-api (~> 2.2)
     unicode-display_width (3.1.4)
       unicode-emoji (~> 4.0, >= 4.0.4)
     unicode-emoji (4.0.4)
@@ -59,9 +68,12 @@ PLATFORMS
 
 DEPENDENCIES
   asciidoctor-kroki!
+  excon (< 1.2.6)
+  multi_json (< 1.16)
   rake (~> 13.3.0)
   rspec (~> 3.13.1)
   rubocop (~> 1.78)
+  testcontainers-core (~> 0.2.0)
 
 BUNDLED WITH
    2.3.15

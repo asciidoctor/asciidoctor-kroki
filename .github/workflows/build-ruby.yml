@@ -4,11 +4,13 @@ on:
   push:
     paths:
       - 'ruby/**'
+      - '.kroki-version'
     branches:
       - main
   pull_request:
     paths:
       - 'ruby/**'
+      - '.kroki-version'
     branches:
       - '*'
 
