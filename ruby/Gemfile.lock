@@ -9,6 +9,7 @@ GEM
   specs:
     asciidoctor (2.0.26)
     ast (2.4.3)
+    base64 (0.3.0)
     diff-lcs (1.6.2)
     docker-api (2.4.0)
       excon (>= 0.64.0)
@@ -68,6 +69,7 @@ PLATFORMS
 
 DEPENDENCIES
   asciidoctor-kroki!
+  base64 (~> 0.3.0)
   excon (< 1.2.6)
   multi_json (< 1.16)
   rake (~> 13.3.0)
