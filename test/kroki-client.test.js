@@ -64,6 +64,22 @@ describe('KrokiDiagram', () => {
         `Expected encoded value in URI: ${uri}`,
       )
     })
+
+    test('removes a trailing slash from the server URL', () => {
+      const diagram = new KrokiDiagram('vegalite', 'png', '{}', {})
+      assert.strictEqual(
+        diagram.getDiagramUri('https://my.domain.org/kroki/'),
+        'https://my.domain.org/kroki/vegalite/png/eNqrrgUAAXUA-Q==',
+      )
+    })
+
+    test('removes trailing slashes from the server URL', () => {
+      const diagram = new KrokiDiagram('vegalite', 'png', '{}', {})
+      assert.strictEqual(
+        diagram.getDiagramUri('https://my-server/kroki//'),
+        'https://my-server/kroki/vegalite/png/eNqrrgUAAXUA-Q==',
+      )
+    })
   })
 })
 
