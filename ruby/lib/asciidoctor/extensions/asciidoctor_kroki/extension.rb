@@ -317,7 +317,8 @@ module AsciidoctorExtensions
       end
 
       def get_format(doc, attrs, diagram_type)
-        format = attrs['format'] || doc.attr('kroki-default-format') || 'svg'
+        # An empty value (e.g. `format=` or an empty `kroki-default-format`) is ignored, like the JavaScript/Node.js extension.
+        format = [attrs['format'], doc.attr('kroki-default-format')].find { |value| value && !value.empty? } || 'svg'
         if format == 'png'
           # redirect PNG format to SVG if the diagram library only supports SVG as output format.
           # this is useful when the default format has been set to PNG

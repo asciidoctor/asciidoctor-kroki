@@ -100,6 +100,34 @@ describe AsciidoctorExtensions::KrokiBlockProcessor do
 </div>
 </div>)
     end
+    it 'should use kroki-default-format if the format attribute is empty' do
+      input = <<~ADOC
+        [plantuml,format=]
+        ....
+        alice -> bob: hello
+        ....
+      ADOC
+      output = Asciidoctor.convert(input, attributes: { 'kroki-default-format' => 'png' }, standalone: false)
+      (expect output).to eql %(<div class="imageblock kroki">
+<div class="content">
+<img src="https://kroki.io/plantuml/png/eNpLzMlMTlXQtVNIyk-yUshIzcnJBwA9iwZL" alt="Diagram">
+</div>
+</div>)
+    end
+    it 'should use svg if kroki-default-format is empty' do
+      input = <<~ADOC
+        [plantuml]
+        ....
+        alice -> bob: hello
+        ....
+      ADOC
+      output = Asciidoctor.convert(input, attributes: { 'kroki-default-format' => '' }, standalone: false)
+      (expect output).to eql %(<div class="imageblock kroki">
+<div class="content">
+<img src="https://kroki.io/plantuml/svg/eNpLzMlMTlXQtVNIyk-yUshIzcnJBwA9iwZL" alt="Diagram">
+</div>
+</div>)
+    end
     it 'should include the plantuml-include file when safe mode is safe' do
       input = <<~ADOC
         [plantuml]
