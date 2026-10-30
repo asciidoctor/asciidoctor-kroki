@@ -106,6 +106,7 @@ To change this default behavior, set the `kroki-default-options` attribute:
 
 Unset it with `:kroki-default-options: none`, `:kroki-default-options!:`, or override it per block or macro using `opts=none`.
 
+[#generated-file-names]
 == Generated file names
 
 When `kroki-fetch-diagram` is set, diagrams are downloaded and saved to disk.
@@ -186,6 +187,8 @@ asciidoc:
     kroki-cache-dir: .cache/kroki
 ----
 
+NOTE: Antora 3 is not yet compatible with this version (see xref:whats-new.adoc#compatibility[Compatibility]), and the persistent cache is not available in the `latest-0` release line.
+
 Disable the cache entirely with `kroki-cache: false`, or force a refresh (re-fetch and update the cache, bypassing any cached read) with `kroki-cache: refresh`:
 
 [source,asciidoc]
@@ -204,6 +207,7 @@ For the same reason, the cache does not know when a diagram library is upgraded 
 The persistent cache is only used by the JavaScript/Node.js extension and the Ruby gem when `kroki-fetch-diagram` is set; it is not available in the browser.
 ====
 
+[#preprocessing]
 == Preprocessing
 
 Some diagram libraries support referencing external entities by URL or accessing filesystem resources.
@@ -282,4 +286,4 @@ The JavaScript/Node.js extension and the Ruby gem share the same version and are
 |No (waiting for a release that contains https://github.com/asciidoctor/asciidoctor/issues/3660[asciidoctor#3660]; the image path does not include the output directory)
 |===
 
-NOTE: Antora uses the JavaScript/Node.js extension, so preprocessing is fully available in an Antora pipeline.
+NOTE: Antora uses the JavaScript/Node.js extension, so preprocessing is also available in an Antora pipeline, with the `latest-0` release line (see xref:whats-new.adoc#compatibility[Compatibility]).

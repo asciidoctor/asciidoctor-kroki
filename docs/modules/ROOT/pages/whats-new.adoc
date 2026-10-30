@@ -1,0 +1,148 @@
+= What's New in Asciidoctor Kroki 2.0
+:description: The main new features and breaking changes of Asciidoctor Kroki 2.0, and a summary of version 1.0.
+
+This page describes the main changes of version 2.0, and how to upgrade from version 1.0.
+This documentation only covers the latest version, so it also summarizes what changed in version 1.0.
+For the complete list of changes, see the https://github.com/asciidoctor/asciidoctor-kroki/blob/main/CHANGELOG.md[changelog].
+
+[#compatibility]
+== Compatibility
+
+[WARNING]
+====
+With JavaScript, versions 1.0 and 2.0 are only compatible with Asciidoctor.js 4 (`@asciidoctor/core` `>=4.0.0 <5.0.0`).
+
+They are *not yet compatible with Antora*, as Antora 3 uses an older version of Asciidoctor.js.
+With Antora, use the `latest-0` release line (currently 0.18.1), documented in the https://github.com/asciidoctor/asciidoctor-kroki/tree/0.x[`0.x` branch]:
+
+ npm i asciidoctor-kroki@latest-0
+
+See xref:install.adoc#antora[Install on Antora].
+====
+
+[cols="1,2"]
+|===
+|Environment |Requirements of version 2.0
+
+|Node.js and browser
+|Asciidoctor.js 4 and, for Node.js, Node.js 22 or later
+
+|Ruby
+|Asciidoctor 2 and Ruby 3.2 or later (Ruby 2.7 is no longer supported)
+
+|Antora
+|Not compatible yet
+|===
+
+== New features
+
+Persistent cache::
+Downloaded diagrams are kept in a cache, independent of the output directory, so an unchanged diagram is not downloaded again, even if its name is stable or the output directory was cleared.
+The cache is available in JavaScript and in Ruby, and is enabled by default when `kroki-fetch-diagram` is set.
+Set `kroki-cache` to `false` to disable it.
+See xref:configuration.adoc#_persistent_cache[Persistent cache].
+
+PlantUML includes in Ruby::
+The Ruby gem now resolves the `!include` family of directives (`!include`, `!include_many`, `!include_once`, `!includeurl`, and `!includesub`) before it sends the diagram to Kroki, and supports `kroki-plantuml-include-paths`.
+
+Data URIs in Ruby::
+The Ruby gem now supports `kroki-data-uri` and `data-uri`, to embed fetched diagrams rather than write them to disk.
+
+`kroki-fetch-diagram` in the browser::
+Diagrams are embedded as data URIs, because there is no disk to write to.
+They used to be replaced by an error block.
+
+URL as the target of a block macro::
+A target such as `plantuml::https://example.org/hello.puml[]` is now downloaded in Node.js and in Ruby, if `allow-uri-read` is set.
+Otherwise, the macro is replaced by a link to the URL.
+
+Limits on HTTP requests::
+HTTP requests sent to Kroki and remote reads are limited to 60 seconds and 25 MiB.
+With JavaScript, you can change these limits with the xref:install.adoc#http-limits[`http` option].
+
+Errors no longer stop the conversion in Ruby::
+When the Kroki server is unreachable or rejects a diagram, the gem logs a warning and displays the diagram source in a `kroki-error` block, like the JavaScript extension.
+
+== Breaking changes
+
+=== Node.js and Ruby
+
+Resources are read with the rules of the `include::` directive::
+In `safe` and `server` modes, a PlantUML `!include`, `kroki-plantuml-include`, `kroki-plantuml-include-paths`, a Structurizr `!include` and a Vega-Lite `data.url` can no longer read a local file outside of the base directory.
+In all safe modes, a URL is only read if `allow-uri-read` is set.
++
+A warning is logged, and the `!include` directive is left for the Kroki server to resolve.
+A Vega-Lite diagram that references a local file that is not allowed is replaced by an error block.
++
+*To upgrade*: set `allow-uri-read` if your diagrams reference URLs, and move the files inside the base directory, or set the `base_dir` option.
+See xref:configuration.adoc#preprocessing[Preprocessing].
+The browser and a custom virtual file system that provides `read` are not affected.
+
+A document can no longer write anywhere::
+In `safe` and `server` modes, `imagesoutdir`, `imagesdir`, `outdir` and `kroki-cache-dir` set in a document can no longer point outside of the base directory or the output directory.
+A diagram is then embedded as a data URI, or the default cache directory is used, and a warning is logged.
+A diagram name that contains `..` is replaced by a content-addressed name.
++
+*To upgrade*: set these attributes from the API or the CLI, without the `@` suffix, as a document cannot change them.
+This often concerns a document in a subdirectory that uses `:imagesdir: ../images`.
+See xref:configuration.adoc#generated-file-names[Generated file names].
+
+Relative paths are resolved from the base directory::
+A relative `!include`, `kroki-plantuml-include` or Vega-Lite `data.url` in a diagram written in the document is resolved from the document's base directory, like `include::`.
+It used to be resolved from the current working directory, so the result depended on where the conversion was started.
+An `!include` that does not exist in the base directory is still looked up in the current working directory.
++
+*To upgrade*: make these paths relative to the document.
+
+=== Node.js
+
+`register` is a named export::
+The default export is removed.
++
+[source,js]
+----
+// Version 1.0
+import asciidoctorKroki from 'asciidoctor-kroki'
+asciidoctorKroki.register(registry)
+
+// Version 2.0
+import { register } from 'asciidoctor-kroki'
+register(registry)
+----
+
+Internal files have moved::
+The source entry point is now `src/index.js`, and TypeScript declarations are in the `types` directory.
+This only concerns direct imports of internal files, not the imports that go through the `exports` field of the package.
+
+Virtual file system methods are asynchronous::
+The extension expects the `exists` and `add` methods of a custom virtual file system to return a promise, like `read`.
+A synchronous implementation still works, because the result is always awaited, but do not rely on it having completed synchronously.
+
+=== Ruby
+
+Ruby 2.7 is no longer supported::
+The gem is tested on Ruby 3.2 and 3.4.
+
+`subs` is applied before the includes are resolved::
+`!include {dir}/file.puml` is now resolved, and the content of an included file is no longer substituted, like in JavaScript.
++
+*To upgrade*: if an included file relies on a substitution, set the value in the diagram itself.
+
+A custom HTTP client receives a new argument::
+A custom `:http_client` now receives an `expected_content_type` argument on `get` and `post`.
+
+Failures no longer raise an error::
+A build that relies on a conversion failure when Kroki is unreachable must now check for the logged warning, for example with the `--failure-level` option of the Asciidoctor CLI.
+
+== Version 1.0
+
+Version 1.0 is the first stable release, and the first one to target Asciidoctor.js 4:
+
+* It requires Asciidoctor.js 4 and Node.js 22 or later, so Antora users stay on the `latest-0` release line (see <<compatibility>>).
+* A fetched diagram with a name now keeps a stable file name: `[ditaa,foo]` generates `foo.svg` rather than `foo-<checksum>.svg`.
+Anonymous diagrams use a content-addressed name, based on SHA-256.
+* The `inline` option embeds the diagram as a data URI when neither `kroki-fetch-diagram` nor `allow-uri-read` is set.
+* The extension works in a real browser without a `Buffer` polyfill, for example in VS Code for the Web.
+* A relative `!include` inside a remote file is resolved against the URL of this file.
+* The Ruby gem supports the `kroki-default-options` attribute.
+* The package publishes TypeScript declarations (since version 1.0.1).

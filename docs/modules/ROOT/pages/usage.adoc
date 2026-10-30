@@ -61,6 +61,8 @@ image::https://kroki.io/plantuml/png/eNpzKC5JLCopzc3hSszJTE5V0LVTSMpP4nJIzUsBCgI
 
 == Antora: references and includes
 
+NOTE: Antora 3 requires the `latest-0` release line of the extension (see xref:whats-new.adoc#compatibility[Compatibility]).
+
 If you are using Asciidoctor Kroki with Antora, all file references and includes *must* use https://docs.antora.org/antora/latest/page/resource-id/[Antora Resource IDs].
 Place diagram source files (`.puml`, `.vlite`, etc.) in the https://docs.antora.org/antora/latest/page/partials/[`partials` directory] of your module.
 

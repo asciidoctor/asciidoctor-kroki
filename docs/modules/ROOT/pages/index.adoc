@@ -13,13 +13,20 @@ The extension is available for:
 * *Node.js* — use it in your build scripts or Asciidoctor.js-based toolchains
 * *Browser* — use it directly in the browser
 * *Ruby* — use it with the Asciidoctor Ruby gem
-* *Antora* — integrate it into your Antora documentation site
+* *Antora* — integrate it into your Antora documentation site, with the `latest-0` release line
+
+[WARNING]
+====
+With JavaScript, versions 1.0 and later are only compatible with Asciidoctor.js 4, and *not yet with Antora*.
+See xref:whats-new.adoc#compatibility[Compatibility].
+====
 
 == Getting started
 
 * xref:install.adoc[Install the extension]
 * xref:usage.adoc[Write your first diagram]
 * xref:configuration.adoc[Configure the extension]
+* xref:whats-new.adoc[See what's new in version 2.0]
 
 == Supported diagram types
 

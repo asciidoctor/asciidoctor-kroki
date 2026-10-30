@@ -88,6 +88,7 @@ console.log(await convert('plantuml::hello.puml[svg]', { safe: 'safe', extension
 <2> Override file existence check.
 <3> Pass the custom VFS via the `context` argument.
 
+[#http-limits]
 === HTTP limits
 
 HTTP requests sent to Kroki, and remote includes (`http://` and `https://` URLs read by the default VFS), are limited in time and in response size (60 seconds and 25 MiB by default).
@@ -191,6 +192,7 @@ Require the library using the `--require` (or `-r`) option from the Asciidoctor 
 
  asciidoctor -r asciidoctor-kroki doc.adoc
 
+[#antora]
 == Antora
 
 If you are using https://antora.org/[Antora], you can integrate Kroki in your documentation site.
@@ -198,14 +200,13 @@ If you are using https://antora.org/[Antora], you can integrate Kroki in your do
 [WARNING]
 ====
 Version 1.0.0 and above requires Asciidoctor.js 4, which is *not compatible with Antora 3* (Antora uses Asciidoctor.js 2).
-Use version `latest-0` (currently 0.18.1) with Antora 3:
-
- npm i asciidoctor-kroki@latest-0
+Use the `latest-0` release line (currently 0.18.1) with Antora 3, as shown below.
+Some features described in this documentation, such as the persistent cache, are not available in this release line: see its https://github.com/asciidoctor/asciidoctor-kroki/tree/0.x[documentation].
 ====
 
 . Install the extension in your playbook project:
 +
- npm i asciidoctor-kroki
+ npm i asciidoctor-kroki@latest-0
 
 . Register the extension in your https://docs.antora.org/antora/latest/playbook/asciidoc-extensions/[playbook file]:
 +
