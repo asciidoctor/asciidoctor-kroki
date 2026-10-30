@@ -1859,6 +1859,46 @@ paragraph
           })
           assertContains(html, 'https://kroki.io/nomnoml/svg/')
         })
+        const emptyAttributeValues = [
+          { description: 'empty', value: '' },
+          { description: 'blank', value: ' ' },
+          { description: 'true', value: true },
+        ]
+        const plantumlSvgUrl =
+          'https://kroki.io/plantuml/svg/eNpLzMlMTlXQtVNIyk-yUshIzcnJBwA9iwZL'
+        const convertHello = async (blockAttrs, attributes) => {
+          const registry = Extensions.create()
+          register(registry)
+          return await convert(
+            `[${blockAttrs}]\n....\nalice -> bob: hello\n....\n`,
+            { extension_registry: registry, attributes, safe: 'safe' },
+          )
+        }
+        for (const { description, value } of emptyAttributeValues) {
+          test(`uses svg when kroki-default-format is ${description}`, async () => {
+            const html = await convertHello('plantuml', {
+              'kroki-default-format': value,
+            })
+            assertContains(html, plantumlSvgUrl)
+          })
+          test(`uses the default server when kroki-server-url is ${description}`, async () => {
+            const html = await convertHello('plantuml', {
+              'kroki-server-url': value,
+            })
+            assertContains(html, plantumlSvgUrl)
+          })
+          test(`ignores kroki-plantuml-include when it is ${description}`, async () => {
+            const html = await convertHello('plantuml', {
+              'kroki-plantuml-include': value,
+            })
+            assertContains(html, plantumlSvgUrl)
+          })
+        }
+        test('uses svg and keeps a valid role class when the format attribute is blank', async () => {
+          const html = await convertHello('plantuml,role=sequence,format=" "')
+          assertContains(html, plantumlSvgUrl)
+          assertContains(html, 'imageblock sequence kroki-format-svg kroki')
+        })
         const inlineOptionsFixtures = [
           {
             location: 'page attr',
