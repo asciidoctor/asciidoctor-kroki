@@ -285,6 +285,19 @@ describe AsciidoctorExtensions::KrokiBlockProcessor do
     context 'with kroki-fetch-diagram writing to disk' do
       include_context 'with a temporary kroki cache'
 
+      it 'should name the fetched file after the default format if the format attribute is empty' do
+        allow_any_instance_of(AsciidoctorExtensions::KrokiClient).to receive(:get_image).and_return('<svg/>')
+        input = <<~ADOC
+          [plantuml,format=]
+          ....
+          alice -> bob: hello
+          ....
+        ADOC
+        Dir.mktmpdir('kroki-spec-output-') do |output_dir|
+          Asciidoctor.convert(input, attributes: { 'kroki-fetch-diagram' => '', 'imagesoutdir' => output_dir }, standalone: false, safe: :safe)
+          (expect Dir.children(output_dir)).to contain_exactly(match(/\Adiag-\h+\.svg\z/))
+        end
+      end
       it 'should create SVG diagram in imagesdir if kroki-fetch-diagram is set', kroki_server: true do
         input = <<~ADOC
           :imagesdir: .asciidoctor/kroki

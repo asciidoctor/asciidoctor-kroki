@@ -2,7 +2,7 @@
 
 import fetch from './fetch.js'
 import httpClient, { createHttpClient } from './http-client.js'
-import { KrokiClient, KrokiDiagram } from './kroki-client.js'
+import { attrValue, KrokiClient, KrokiDiagram } from './kroki-client.js'
 import fs, { createNodeFs, resolveVfs } from './node-fs.js'
 import {
   preprocessPlantUML,
@@ -145,7 +145,9 @@ const SVG_ONLY_DIAGRAM_TYPES = new Set([
  */
 function getFormat(doc, attrs, diagramType) {
   const format =
-    attrs.format || doc.getAttribute('kroki-default-format') || 'svg'
+    attrValue(attrs.format) ||
+    attrValue(doc.getAttribute('kroki-default-format')) ||
+    'svg'
   return format === 'png' && SVG_ONLY_DIAGRAM_TYPES.has(diagramType)
     ? 'svg'
     : format
@@ -179,7 +181,9 @@ const processKroki = async (
         resource?.dir || '',
       )
     } else if (diagramType === 'plantuml' || diagramType === 'c4plantuml') {
-      const plantUmlIncludeFile = doc.getAttribute('kroki-plantuml-include')
+      const plantUmlIncludeFile = attrValue(
+        doc.getAttribute('kroki-plantuml-include'),
+      )
       if (plantUmlIncludeFile) {
         diagramText = `!include ${plantUmlIncludeFile}\n${diagramText}`
       }
