@@ -202,6 +202,17 @@ To work around this, Asciidoctor Kroki resolves and loads external resources *be
 For PlantUML, the whole `!include` family is supported: `!include`, `!include_many`, `!include_once`, `!includeurl`, and `!includesub`.
 This feature is only available when Asciidoctor safe mode is `server` or lower.
 
+Asciidoctor Kroki applies the same rules as the `include::` directive when it reads a resource referenced by a document (`!include`, `kroki-plantuml-include`, `kroki-plantuml-include-paths`, Vega-Lite `data.url`):
+
+* A local file is only read if it is inside the document's base directory, unless the safe mode is `unsafe`.
+* A URL is only read if the `allow-uri-read` attribute is set.
+
+A resource that is not allowed is not read, and a warning is logged.
+The `!include` directive is left in the diagram source, so that the Kroki server can resolve it, if it's allowed to.
+A Vega-Lite diagram that references a local data file that is not allowed is replaced by an error block.
+
+These rules do not apply in the browser, where everything is fetched by the browser, or when a custom virtual file system provides the `read` function (as with Antora): it is then responsible for what it reads.
+
 [IMPORTANT]
 ====
 PlantUML `!include` preprocessing is implemented in both the JavaScript/Node.js extension and the Ruby gem.
@@ -245,6 +256,14 @@ The JavaScript/Node.js extension and the Ruby gem share the same version and are
 |`kroki-default-options`
 |Yes
 |Yes
+
+|`inline` option without `allow-uri-read`
+|Yes (requires Asciidoctor.js 4.0.2 or later)
+|No (waiting for https://github.com/asciidoctor/asciidoctor/pull/4865[asciidoctor#4865]; the image is rendered as a blank placeholder)
+
+|Image path when `imagesoutdir` differs from `imagesdir`
+|Yes
+|No (waiting for a release that contains https://github.com/asciidoctor/asciidoctor/issues/3660[asciidoctor#3660]; the image path does not include the output directory)
 |===
 
 NOTE: Antora uses the JavaScript/Node.js extension, so preprocessing is fully available in an Antora pipeline.

@@ -181,7 +181,10 @@ describe('Async HTTP client (fetch)', () => {
           {
             safe: 'safe',
             extension_registry: registry,
-            attributes: { 'kroki-server-url': `http://localhost:${port}` },
+            attributes: {
+              'kroki-server-url': `http://localhost:${port}`,
+              'allow-uri-read': '',
+            },
           },
         )
         // a message with a source location is an object

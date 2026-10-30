@@ -90,7 +90,8 @@ console.log(await convert('plantuml::hello.puml[svg]', { safe: 'safe', extension
 
 === HTTP limits
 
-HTTP requests sent to Kroki, and remote includes (`http://` and `https://` URLs read by the default VFS), are limited in time and in response size.
+HTTP requests sent to Kroki, and remote includes (`http://` and `https://` URLs read by the default VFS), are limited in time and in response size (60 seconds and 25 MiB by default).
+The Ruby gem applies the same limits, which cannot be changed.
 The limits can be changed with the `http` option of the `context` argument:
 
 [source,js]

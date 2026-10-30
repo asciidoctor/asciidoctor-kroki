@@ -250,7 +250,8 @@ describe AsciidoctorExtensions::KrokiBlockProcessor do
       styles_dir = File.expand_path('../../test/fixtures/plantuml/styles', __dir__)
       included = File.read(File.join(styles_dir, 'general.iuml'))
       diagram_text = "#{included}\nalice -> bob: hello"
-      output = Asciidoctor.convert(input, attributes: { 'kroki-plantuml-include-paths' => styles_dir }, standalone: false, safe: :safe)
+      output = Asciidoctor.convert(input, attributes: { 'kroki-plantuml-include-paths' => styles_dir }, standalone: false, safe: :safe,
+                                          base_dir: File.expand_path('../..', __dir__))
       encoded = [Zlib::Deflate.deflate(diagram_text, 9)].pack('m0').tr('+/', '-_')
       (expect output).to include(%(<img src="https://kroki.io/plantuml/svg/#{encoded}" alt="Diagram">))
     end

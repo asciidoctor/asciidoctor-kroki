@@ -126,6 +126,36 @@ export async function preprocessPlantUML(
 }
 
 /**
+ * Checks that a file can be included, before it is added to the diagram.
+ * A standard library include is resolved by the Kroki server.
+ *
+ * @param {string} includeFile
+ * @param {any} context
+ * @param {string} diagramIncludePaths - predefined include paths (can be null)
+ * @param {{[key: string]: string}} resource - diagram resource identity
+ * @returns {Promise<boolean>}
+ */
+export async function canReadPlantUmlInclude(
+  includeFile,
+  context,
+  diagramIncludePaths = '',
+  resource = { dir: '' },
+) {
+  if (includeFile.startsWith('<')) {
+    return true
+  }
+  const { skip } = await readPlantUmlInclude(
+    includeFile,
+    resource,
+    diagramIncludePaths ? diagramIncludePaths.split(delimiter) : [],
+    [],
+    context.vfs,
+    'logger' in context ? context.logger : console,
+  )
+  return !skip
+}
+
+/**
  * @param {string} diagramText
  * @param {{[key: string]: string}} resource
  * @param {string[]} includeOnce
