@@ -25,14 +25,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
-        ruby: ['2.7', '3.4']
-        exclude:
-          - os: ubuntu-latest
-            ruby: '2.7'
-        include:
-          # Ruby 2.7 is not available on ubuntu-26.04, which is now ubuntu-latest
-          - os: ubuntu-24.04
-            ruby: '2.7'
+        ruby: ['3.2', '3.4']
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v6

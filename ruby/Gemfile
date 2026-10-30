@@ -4,9 +4,5 @@ source 'https://rubygems.org'
 
 gemspec
 
-# Dependencies of testcontainers-core: the latest versions compatible with Ruby 2.7 (tested in CI),
-# since Gemfile.lock is shared by all the Ruby versions.
-gem 'excon', '< 1.2.6'
-gem 'multi_json', '< 1.16'
 # required by testcontainers-core but not declared, and no longer a default gem since Ruby 3.4
 gem 'base64', '~> 0.3.0'

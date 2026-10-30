@@ -70,8 +70,6 @@ PLATFORMS
 DEPENDENCIES
   asciidoctor-kroki!
   base64 (~> 0.3.0)
-  excon (< 1.2.6)
-  multi_json (< 1.16)
   rake (~> 13.3.0)
   rspec (~> 3.13.1)
   rubocop (~> 1.78)

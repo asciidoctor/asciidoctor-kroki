@@ -20,6 +20,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Block macro with an `http://` or `https://` URL as target (e.g. `plantuml::https://example.org/hello.puml[]`): the URL is no longer turned into a local path, so the diagram source is downloaded as documented. Like `include::`, the URL is only read when `allow-uri-read` is set; otherwise, the macro is replaced by a link (Ruby and JavaScript/Node.js).
 - Trailing slashes in `kroki-server-url` are removed when building the request URLs and the cache key, so that `https://my.domain.org/kroki/` no longer produces `https://my.domain.org/kroki//plantuml/svg/...`. The Ruby extension already removed them from GET URLs, but not from POST URLs (`kroki-http-method` set to `post`, or `adaptive` when the URI exceeds `kroki-max-uri-length`); the JavaScript extension removed them nowhere (Ruby and JavaScript/Node.js).
 
+### Removed
+
+- *Breaking*, Ruby: drop support for Ruby 2.7. The gem now requires Ruby 3.2 or later.
+
 ### Security
 
 - JavaScript/Node.js: limit the duration (60s, including receiving the body) and the size (25 MiB, enforced while streaming) of HTTP responses, for Kroki requests and remote includes (CWE-400). Both limits can be changed with the `http` option of `register()`. Previously, requests had no timeout.

@@ -13,8 +13,8 @@ module AsciidoctorExtensions
   # the Ruby gem is not used with Antora.
   # rubocop:disable Metrics/ModuleLength
   module PlantUmlPreprocessor
-    PLANTUML_BLOCK_RX = /@startuml\r?\n([\s\S]*?)\r?\n@enduml/.freeze
-    INCLUDE_LINE_RX = /^\s*!(include(?:_many|_once|url|sub)?)\s+(.*)/.freeze
+    PLANTUML_BLOCK_RX = /@startuml\r?\n([\s\S]*?)\r?\n@enduml/
+    INCLUDE_LINE_RX = /^\s*!(include(?:_many|_once|url|sub)?)\s+(.*)/
 
     class << self
       # @param diagram_text [String] the raw diagram source
