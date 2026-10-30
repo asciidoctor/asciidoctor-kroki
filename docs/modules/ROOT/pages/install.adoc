@@ -61,7 +61,7 @@ Every method is asynchronous (returns a promise), whether or not the implementat
 |Parses a resource identifier and returns an object with `dir` and `path` properties. The only synchronous method: it's pure string manipulation, no I/O.
 
 |`add(image)`
-|Saves a diagram image. Called when `kroki-fetch-diagram` is enabled. Receives an object with `relative`, `basename`, and `contents` properties.
+|Saves a diagram image. Called when `kroki-fetch-diagram` is enabled, except in the browser where images are embedded as data-URI elements. Receives an object with `relative`, `basename`, and `contents` properties.
 |===
 
 Any method not provided falls back to the default Node.js file system implementation.
