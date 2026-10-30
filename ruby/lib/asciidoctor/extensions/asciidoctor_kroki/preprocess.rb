@@ -34,8 +34,15 @@ module AsciidoctorExtensions
 
       # A lexical check, like Asciidoctor
       def inside_jail?(path)
-        resolved = ::File.expand_path(path)
-        resolved == jail || resolved.start_with?(jail.end_with?('/') ? jail : "#{jail}/")
+        resolved = normalize(path)
+        dir = normalize(jail)
+        resolved == dir || resolved.start_with?(dir.end_with?('/') ? dir : "#{dir}/")
+      end
+
+      # The case of the drive letter varies on Windows.
+      def normalize(path)
+        expanded = ::File.expand_path(path)
+        ::File::ALT_SEPARATOR ? expanded.downcase : expanded
       end
     end
 

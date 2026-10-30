@@ -11,6 +11,15 @@ const SAFE_MODE_SAFE = 1
 const isHttpUrl = (value) => /^https?:\/\//i.test(value)
 
 /**
+ * @param {string} value - Local path.
+ * @returns {string} Absolute path, in lower case on Windows, where the case of the drive letter varies.
+ */
+const resolvePath = (value) => {
+  const resolved = path.resolve(value)
+  return process.platform === 'win32' ? resolved.toLowerCase() : resolved
+}
+
+/**
  * Resolves the rules that apply when the extension reads a resource referenced by a document,
  * which are the ones of the `include::` directive: a local file must be inside the base directory
  * when the safe mode is `safe` or higher, and a URL requires the `allow-uri-read` attribute.
@@ -21,9 +30,7 @@ const isHttpUrl = (value) => /^https?:\/\//i.test(value)
 const resolveReadPolicy = (doc) => ({
   allowUriRead: doc.isAttribute('allow-uri-read'),
   jail:
-    doc.getSafe() >= SAFE_MODE_SAFE
-      ? path.resolve(doc.getBaseDir())
-      : undefined,
+    doc.getSafe() >= SAFE_MODE_SAFE ? resolvePath(doc.getBaseDir()) : undefined,
 })
 
 /**
@@ -32,7 +39,7 @@ const resolveReadPolicy = (doc) => ({
  * @returns {boolean} `true` when the path is inside the directory (lexical check, like Asciidoctor).
  */
 const isInsideDir = (value, dir) => {
-  const resolved = path.resolve(
+  const resolved = resolvePath(
     value.toLowerCase().startsWith('file://') ? fileURLToPath(value) : value,
   )
   const prefix = dir.endsWith(path.sep) ? dir : `${dir}${path.sep}`
