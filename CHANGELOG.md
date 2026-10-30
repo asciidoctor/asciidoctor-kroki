@@ -7,7 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-It includes every change from the `2.0.0-rc.*` prereleases.
+It includes every change from the `2.0.0-rc.*` prereleases. See [What's New in 2.0](https://docs.asciidoctor.org/kroki-extension/latest/whats-new/) to upgrade from version 1.0.
+
+With JavaScript, this version requires [Asciidoctor.js 4](https://github.com/asciidoctor/asciidoctor.js) (`@asciidoctor/core` `>=4.0.0 <5.0.0`). It is **not yet compatible with Antora**, which still bundles an older Asciidoctor.js; keep using the `latest-0` release line (currently 0.18.1) with Antora.
 
 ### Added
 
