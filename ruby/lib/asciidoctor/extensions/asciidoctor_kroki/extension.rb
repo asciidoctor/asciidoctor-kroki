@@ -162,6 +162,7 @@ module AsciidoctorExtensions
       excalidraw
       goat
       graphviz
+      lini
       mermaid
       nomnoml
       nwdiag
@@ -337,8 +338,8 @@ module AsciidoctorExtensions
         if format == 'png'
           # redirect PNG format to SVG if the diagram library only supports SVG as output format.
           # this is useful when the default format has been set to PNG
-          # Currently, goat, nomnoml, svgbob, wavedrom only support SVG as output format.
-          svg_only_diagram_types = %i[goat nomnoml svgbob wavedrom]
+          # Currently, bpmn, bytefield, d2, dbml, excalidraw, goat, lini, nomnoml, pikchr, svgbob, wavedrom only support SVG as output format.
+          svg_only_diagram_types = %i[bpmn bytefield d2 dbml excalidraw goat lini nomnoml pikchr svgbob wavedrom]
           format = 'svg' if svg_only_diagram_types.include?(diagram_type)
         end
         format

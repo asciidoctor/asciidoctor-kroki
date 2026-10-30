@@ -100,6 +100,28 @@ describe AsciidoctorExtensions::KrokiBlockProcessor do
 </div>
 </div>)
     end
+    %w[bpmn bytefield d2 dbml excalidraw goat lini nomnoml pikchr svgbob wavedrom].each do |diagram_type|
+      it "should use svg if kroki-default-format is set to png for #{diagram_type}" do
+        input = <<~ADOC.sub('DIAGRAM', diagram_type)
+          [DIAGRAM]
+          ....
+          content
+          ....
+        ADOC
+        output = Asciidoctor.convert(input, attributes: { 'kroki-default-format' => 'png' }, standalone: false)
+        (expect output).to include("https://kroki.io/#{diagram_type}/svg/")
+      end
+    end
+    it 'should keep png for symbolator if kroki-default-format is set to png' do
+      input = <<~ADOC
+        [symbolator]
+        ....
+        content
+        ....
+      ADOC
+      output = Asciidoctor.convert(input, attributes: { 'kroki-default-format' => 'png' }, standalone: false)
+      (expect output).to include('https://kroki.io/symbolator/png/')
+    end
     it 'should use kroki-default-format if the format attribute is empty' do
       input = <<~ADOC
         [plantuml,format=]
@@ -520,7 +542,7 @@ end
 describe AsciidoctorExtensions::Kroki do
   it 'should return the list of supported diagrams' do
     diagram_names = AsciidoctorExtensions::Kroki::SUPPORTED_DIAGRAM_NAMES
-    expect(diagram_names).to include('vegalite', 'plantuml', 'bytefield', 'bpmn', 'excalidraw', 'wavedrom', 'pikchr', 'structurizr', 'diagramsnet')
+    expect(diagram_names).to include('vegalite', 'plantuml', 'bytefield', 'bpmn', 'excalidraw', 'wavedrom', 'pikchr', 'structurizr', 'diagramsnet', 'lini')
   end
   it 'should register the extension for the list of supported diagrams' do
     doc = Asciidoctor::Document.new

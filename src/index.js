@@ -141,8 +141,15 @@ function isNumeric(value) {
 
 /** @type {Set<string>} Diagram types Kroki can only render as SVG (no PNG output). */
 const SVG_ONLY_DIAGRAM_TYPES = new Set([
+  'bpmn',
+  'bytefield',
+  'd2',
+  'dbml',
+  'excalidraw',
   'goat',
+  'lini',
   'nomnoml',
+  'pikchr',
   'svgbob',
   'wavedrom',
 ])
@@ -508,6 +515,7 @@ export function register(registry, context = {}) {
     'excalidraw',
     'goat',
     'graphviz',
+    'lini',
     'mermaid',
     'nomnoml',
     'nwdiag',
