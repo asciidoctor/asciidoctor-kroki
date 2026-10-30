@@ -637,7 +637,8 @@ function addCauseToError(error, causedBy) {
 function isRemoteUrl(string) {
   try {
     const url = new URL(string)
-    return url.protocol !== 'file:'
+    // A single letter is a Windows drive (e.g. `C:\\file.csv`), which is a valid URL.
+    return url.protocol !== 'file:' && url.protocol.length > 2
   } catch (_) {
     return false
   }
