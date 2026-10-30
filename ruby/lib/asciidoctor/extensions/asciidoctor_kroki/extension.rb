@@ -4,6 +4,7 @@ require 'cgi'
 require 'pathname'
 require 'asciidoctor/extensions' unless RUBY_ENGINE == 'opal'
 require_relative 'attributes'
+require_relative 'http_limits'
 require_relative 'preprocess'
 require_relative 'cache'
 
@@ -79,22 +80,22 @@ module AsciidoctorExtensions
       role = attrs['role']
       target = parent.apply_subs(target, [:attributes])
 
-      # like include::, reading a remote target requires allow-uri-read
-      unless read_allowed?(target) && (!remote_target?(target) || parent.document.attr?('allow-uri-read'))
+      # like include::, reading a remote target requires allow-uri-read and is disabled in secure mode
+      unless read_allowed?(target) && (!remote_target?(target) || (parent.document.attr?('allow-uri-read') && parent.document.safe < ::Asciidoctor::SafeMode::SECURE))
         link = create_inline(parent, :anchor, target, type: :link, target: target)
         return create_block(parent, :paragraph, link.convert, {}, content_model: :raw)
       end
 
       unless (path = resolve_target_path(parent, target))
-        logger.error message_with_context "#{diagram_type} block macro not found: #{target}.", source_location: parent.document.reader.cursor_at_mark
-        return create_block(parent, 'paragraph', unresolved_block_macro_message(diagram_type, target), {})
+        logger.warn message_with_context "Skipping #{diagram_type} block: block macro not found: #{target}.", source_location: parent.document.reader.cursor_at_mark
+        return create_error_block(parent, unresolved_block_macro_message(diagram_type, target), attrs, role)
       end
 
       begin
         diagram_text = read(path)
       rescue => e # rubocop:disable Style/RescueStandardError
-        logger.error message_with_context "Failed to read #{diagram_type} file: #{path}. #{e}.", source_location: parent.document.reader.cursor_at_mark
-        return create_block(parent, 'paragraph', unresolved_block_macro_message(diagram_type, path), {})
+        logger.warn message_with_context "Skipping #{diagram_type} block: failed to read #{path}. #{e}.", source_location: parent.document.reader.cursor_at_mark
+        return create_error_block(parent, unresolved_block_macro_message(diagram_type, target), attrs, role)
       end
       begin
         KrokiProcessor.process(self, parent, attrs, diagram_type, diagram_text, @logger, resource_path: path)
@@ -102,8 +103,7 @@ module AsciidoctorExtensions
         # Matches the JavaScript/Node.js extension: a failure talking to the Kroki server
         # shouldn't abort the whole document conversion, so it's degraded to a warning instead.
         logger.warn message_with_context "Skipping #{diagram_type} block: #{e.message}", source_location: parent.document.reader.cursor_at_mark
-        attrs['role'] = role ? "#{role} kroki-error" : 'kroki-error'
-        create_block(parent, 'paragraph', "#{e.message} - #{diagram_type}::#{target}[]", attrs)
+        create_error_block(parent, "#{e.message} - #{diagram_type}::#{target}[]", attrs, role)
       end
     end
     # rubocop:enable Metrics/AbcSize
@@ -124,10 +124,14 @@ module AsciidoctorExtensions
       true
     end
 
+    def create_error_block(parent, message, attrs, role)
+      attrs['role'] = role.nil_or_empty? ? 'kroki-error' : "#{role} kroki-error"
+      create_block(parent, 'paragraph', message, attrs)
+    end
+
     def read(target)
       if remote_target?(target)
-        require 'open-uri'
-        ::OpenURI.open_uri(target, &:read)
+        KrokiHttpLimits.read_uri(target)
       else
         File.read(target, mode: 'rb:utf-8:utf-8')
       end
@@ -212,7 +216,7 @@ module AsciidoctorExtensions
         attrs['format'] = format
         opts = attrs.filter { |key, _| key.is_a?(String) && BUILTIN_ATTRIBUTES.none? { |k| key == k } && !key.end_with?('-option') }
         normalize_diagram_options(diagram_type, opts)
-        kroki_diagram = KrokiDiagram.new(diagram_type, format, diagram_text, attrs['target'], opts)
+        kroki_diagram = KrokiDiagram.new(diagram_type, format, diagram_text, output_name(doc, attrs['target'], logger), opts)
         kroki_client = KrokiClient.new({
                                          server_url: server_url(doc),
                                          http_method: http_method(doc),
@@ -258,7 +262,7 @@ module AsciidoctorExtensions
       def prepend_plantuml_config(diagram_text, diagram_type, doc, logger)
         if PLANTUML_TYPES.include?(diagram_type) && doc.safe < ::Asciidoctor::SafeMode::SECURE && (plantuml_include = KrokiAttributes.value(doc.attr('kroki-plantuml-include')))
           plantuml_include_path = doc.normalize_system_path(plantuml_include)
-          if ::File.readable? plantuml_include_path
+          if ::File.file?(plantuml_include_path) && ::File.readable?(plantuml_include_path)
             config = File.read(plantuml_include_path)
             diagram_text = "#{config}\n#{diagram_text}"
           else
@@ -278,7 +282,8 @@ module AsciidoctorExtensions
         return diagram_text unless PLANTUML_TYPES.include?(diagram_type) && doc.safe < ::Asciidoctor::SafeMode::SECURE
 
         include_paths = KrokiAttributes.value(doc.attr('kroki-plantuml-include-paths'))
-        PlantUmlPreprocessor.preprocess(diagram_text, resource_path, include_paths, logger)
+        policy = PlantUmlPreprocessor::ReadPolicy.new(doc.attr?('allow-uri-read'), doc.safe >= ::Asciidoctor::SafeMode::SAFE ? ::File.expand_path(doc.base_dir) : nil)
+        PlantUmlPreprocessor.preprocess(diagram_text, resource_path, include_paths, logger, policy)
       end
 
       def get_alt(attrs)
@@ -292,7 +297,7 @@ module AsciidoctorExtensions
       end
 
       def get_role(format, role)
-        role ? "#{role} kroki-format-#{format} kroki" : 'kroki'
+        role.nil_or_empty? ? 'kroki' : "#{role} kroki-format-#{format} kroki"
       end
 
       # Get the option defined on the block or macro.
@@ -321,6 +326,16 @@ module AsciidoctorExtensions
         format
       end
 
+      # Checks a diagram file name that comes from the document before it is written to the output
+      # directory, like Asciidoctor does for the paths it resolves when the safe mode is `safe` or higher.
+      def output_name(doc, target, logger)
+        return target unless target.is_a?(::String) && doc.attr('kroki-fetch-diagram') && doc.safe.between?(::Asciidoctor::SafeMode::SAFE, ::Asciidoctor::SafeMode::SERVER)
+        return target unless target.split(%r{[\\/]}).include?('..')
+
+        logger.warn "kroki: ignoring the diagram file name '#{target}', because it is outside of the output directory."
+        nil
+      end
+
       def apply_image_src(attrs, image_src)
         attrs['target'] = image_src[:target]
         attrs['imagesdir'] = image_src[:imagesdir] if image_src[:imagesdir]
@@ -328,6 +343,9 @@ module AsciidoctorExtensions
 
       def create_image_src(doc, kroki_diagram, kroki_client, logger, inline: false)
         if doc.attr('kroki-fetch-diagram') && doc.safe < ::Asciidoctor::SafeMode::SECURE
+          # The format is part of the name of the output file and of the cache entry.
+          raise "Invalid diagram format '#{kroki_diagram.format}'" if kroki_diagram.format.match?(%r{[\\/]})
+
           # Embedded images use the same persistent cache, but never write an output image.
           return { target: kroki_diagram.to_data_uri(kroki_client, **KrokiCache.options(doc, logger)) } if doc.attr?('data-uri') || doc.attr?('kroki-data-uri')
 
@@ -635,18 +653,9 @@ module AsciidoctorExtensions
       REFERER = "asciidoctor/kroki.rb/#{Asciidoctor::AsciidoctorKroki::VERSION}".freeze
 
       def get(uri, opts, _encoding, expected_content_type = nil)
-        parsed_uri = URI(uri)
         headers = opts.transform_keys { |key| "Kroki-Diagram-Options-#{key}" }
                       .merge({ 'referer' => REFERER })
-        request = ::Net::HTTP::Get.new(parsed_uri, headers)
-        response = ::Net::HTTP.start(
-          parsed_uri.hostname,
-          parsed_uri.port,
-          use_ssl: (parsed_uri.scheme == 'https')
-        ) do |http|
-          http.request(request)
-        end
-        handle_response(response, 'GET', uri, expected_content_type)
+        send_request('GET', uri, ::Net::HTTP::Get.new(URI(uri), headers), expected_content_type)
       end
 
       def post(uri, data, opts, _encoding, expected_content_type = nil)
@@ -655,15 +664,34 @@ module AsciidoctorExtensions
                                'Content-Type' => 'text/plain',
                                'referer' => REFERER
                              })
-        response = ::Net::HTTP.post(
-          URI(uri),
-          data,
-          headers
-        )
-        handle_response(response, 'POST', uri, expected_content_type)
+        request = ::Net::HTTP::Post.new(URI(uri), headers)
+        request.body = data
+        send_request('POST', uri, request, expected_content_type)
       end
 
       private
+
+      def send_request(method, uri, request, expected_content_type)
+        parsed_uri = URI(uri)
+        response = KrokiHttpLimits.with_timeout(method, uri) do
+          ::Net::HTTP.start(parsed_uri.hostname, parsed_uri.port, use_ssl: (parsed_uri.scheme == 'https')) do |http|
+            http.request(request) { |incoming| read_body(incoming, method, uri) }
+          end
+        end
+        handle_response(response, method, uri, expected_content_type)
+      end
+
+      # Reads the body incrementally, so that no more than the maximum size is ever accumulated,
+      # even when the server omits (or lies about) Content-Length.
+      def read_body(response, method, uri)
+        KrokiHttpLimits.check_size(response['content-length'].to_i, method, uri)
+        body = String.new
+        response.read_body do |chunk|
+          body << chunk
+          KrokiHttpLimits.check_size(body.bytesize, method, uri)
+        end
+        response.body = body
+      end
 
       # Mirrors the JavaScript/Node.js extension's http-client.js: unlike Net::HTTP, which
       # returns whatever body the server sent regardless of status code, this raises a clear

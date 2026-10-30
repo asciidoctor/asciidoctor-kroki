@@ -6,10 +6,12 @@ import httpClient, { createHttpClient } from './http-client.js'
 import { KrokiClient, KrokiDiagram } from './kroki-client.js'
 import fs, { createNodeFs, resolveVfs } from './node-fs.js'
 import {
+  canReadPlantUmlInclude,
   preprocessPlantUML,
   preprocessStructurizr,
   preprocessVegaLite,
 } from './preprocess.js'
+import { guardVfs, resolveOutputName } from './read-policy.js'
 
 const isBrowser = () => typeof window === 'object'
 
@@ -80,7 +82,17 @@ const createImageSrc = async (
     doc.isAttribute('kroki-fetch-diagram') &&
     doc.getSafe() < SAFE_MODE_SECURE
   ) {
-    return fetch.save(krokiDiagram, doc, target, vfs, krokiClient)
+    // The format is part of the name of the output file and of the cache entry.
+    if (/[\\/]/.test(krokiDiagram.format)) {
+      throw new Error(`Invalid diagram format '${krokiDiagram.format}'`)
+    }
+    return fetch.save(
+      krokiDiagram,
+      doc,
+      resolveOutputName(doc, target),
+      vfs,
+      krokiClient,
+    )
   }
   // The `inline` option asks the converter to embed the diagram (e.g. inline
   // SVG). The converter can fetch the content itself from the server URL when
@@ -167,6 +179,7 @@ const processKroki = async (
   const doc = parent.getDocument()
   // Missing VFS methods fall back to the Node.js VFS bound to the configured HTTP client,
   // so that remote includes are subject to the same limits as Kroki requests.
+  const customRead = typeof context.vfs?.read === 'function'
   context = { ...context, vfs: resolveVfs(context.vfs, services.nodeFs) }
   // If "subs" attribute is specified, substitute accordingly.
   // Be careful not to specify "specialcharacters" or your diagram code won't be valid anymore!
@@ -175,30 +188,55 @@ const processKroki = async (
     diagramText = await parent.applySubs(diagramText, parent.resolveSubs(subs))
   }
   if (doc.getSafe() < SAFE_MODE_SECURE) {
+    // A custom virtual file system is responsible for what it reads, and everything is a URL in
+    // the browser. Only the preprocessors are guarded: the output files are written by the extension.
+    const preprocessContext =
+      customRead || isBrowser()
+        ? context
+        : { ...context, vfs: guardVfs(context.vfs, doc) }
     if (diagramType === 'vegalite') {
       diagramText = await preprocessVegaLite(
         diagramText,
-        context,
+        preprocessContext,
         resource?.dir || '',
       )
     } else if (diagramType === 'plantuml' || diagramType === 'c4plantuml') {
       const plantUmlIncludeFile = attrValue(
         doc.getAttribute('kroki-plantuml-include'),
       )
-      if (plantUmlIncludeFile) {
-        diagramText = `!include ${plantUmlIncludeFile}\n${diagramText}`
-      }
       const plantUmlIncludePaths = attrValue(
         doc.getAttribute('kroki-plantuml-include-paths'),
       )
+      if (plantUmlIncludeFile) {
+        if (
+          await canReadPlantUmlInclude(
+            plantUmlIncludeFile,
+            preprocessContext,
+            plantUmlIncludePaths,
+            resource,
+          )
+        ) {
+          diagramText = `!include ${plantUmlIncludeFile}\n${diagramText}`
+        } else {
+          doc
+            .getLogger()
+            .warn(
+              `Unable to read plantuml-include. File not found or not readable: ${plantUmlIncludeFile}.`,
+            )
+        }
+      }
       diagramText = await preprocessPlantUML(
         diagramText,
-        context,
+        preprocessContext,
         plantUmlIncludePaths,
         resource,
       )
     } else if (diagramType === 'structurizr') {
-      diagramText = await preprocessStructurizr(diagramText, context, resource)
+      diagramText = await preprocessStructurizr(
+        diagramText,
+        preprocessContext,
+        resource,
+      )
     }
   }
   const blockId = attrs.id
@@ -319,6 +357,7 @@ function diagramBlockMacro(name, context, services) {
     this.process(async (parent, target, attrs) => {
       let vfs = context.vfs
       target = await parent.applySubs(target, ['attributes'])
+      const sourceTarget = target
       if (isBrowser()) {
         if (
           !['file://', 'https://', 'http://'].some((prefix) =>
@@ -356,22 +395,28 @@ function diagramBlockMacro(name, context, services) {
       } else {
         if (vfs === undefined || typeof vfs.read !== 'function') {
           vfs = services.nodeFs
-          if (target.startsWith('http://') || target.startsWith('https://')) {
-            // like include::, reading a remote target requires allow-uri-read
-            if (!parent.getDocument().isAttribute('allow-uri-read')) {
-              const link = this.createInline(parent, 'anchor', target, {
-                type: 'link',
-                target,
-              })
-              return this.createBlock(
-                parent,
-                'paragraph',
-                await link.convert(),
-                {},
-                { content_model: 'raw' },
-              )
-            }
-          } else {
+          const doc = parent.getDocument()
+          const remote =
+            target.startsWith('http://') || target.startsWith('https://')
+          // like include::, reading a remote target requires allow-uri-read and is disabled in secure mode
+          if (
+            remote &&
+            (doc.getSafe() >= SAFE_MODE_SECURE ||
+              !doc.isAttribute('allow-uri-read'))
+          ) {
+            const link = this.createInline(parent, 'anchor', target, {
+              type: 'link',
+              target,
+            })
+            return this.createBlock(
+              parent,
+              'paragraph',
+              await link.convert(),
+              {},
+              { content_model: 'raw' },
+            )
+          }
+          if (!remote) {
             target = parent.normalizeSystemPath(target)
           }
         }
@@ -379,8 +424,21 @@ function diagramBlockMacro(name, context, services) {
       context.logger = parent.getDocument().getLogger()
       const role = attrs.role
       const diagramType = name
+      const errorBlock = (text) => {
+        attrs.role = role ? `${role} kroki-error` : 'kroki-error'
+        return this.createBlock(parent, 'paragraph', text, attrs)
+      }
+      let diagramText
       try {
-        const diagramText = await vfs.read(target)
+        diagramText = await vfs.read(target)
+      } catch (err) {
+        const doc = parent.getDocument()
+        doc.getLogger().warn(skipDiagramMessage(doc, err, diagramType))
+        return errorBlock(
+          `Unresolved block macro - ${diagramType}::${sourceTarget}[]`,
+        )
+      }
+      try {
         const resource = (typeof vfs.parse === 'function' &&
           vfs.parse(target)) || { dir: '' }
         return await processKroki(
@@ -396,13 +454,7 @@ function diagramBlockMacro(name, context, services) {
       } catch (err) {
         const doc = parent.getDocument()
         doc.getLogger().warn(skipDiagramMessage(doc, err, diagramType))
-        attrs.role = role ? `${role} kroki-error` : 'kroki-error'
-        return this.createBlock(
-          parent,
-          'paragraph',
-          `${err.message} - ${diagramType}::${target}[]`,
-          attrs,
-        )
+        return errorBlock(`${err.message} - ${diagramType}::${sourceTarget}[]`)
       }
     })
   }

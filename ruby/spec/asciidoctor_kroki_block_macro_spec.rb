@@ -23,7 +23,7 @@ describe AsciidoctorExtensions::KrokiBlockMacroProcessor do
         plantuml::spec/fixtures/missing.puml[svg,role=sequence]
       ADOC
       output = Asciidoctor.convert(input, standalone: false, extension_registry: registry)
-      (expect output).to eql %(<div class="paragraph">
+      (expect output).to eql %(<div class="paragraph sequence kroki-error">
 <p>Unresolved block macro - plantuml::spec/fixtures/missing.puml[]</p>
 </div>)
     end
@@ -117,7 +117,7 @@ describe AsciidoctorExtensions::KrokiBlockMacroProcessor do
         plantuml::alice.puml[svg,role=sequence]
       ADOC
       output = Asciidoctor.convert(input, standalone: false, extension_registry: registry)
-      (expect output).to eql %(<div class="paragraph">
+      (expect output).to eql %(<div class="paragraph sequence kroki-error">
 <p>Unresolved block macro - plantuml::alice.puml[]</p>
 </div>)
     end
@@ -139,7 +139,7 @@ describe AsciidoctorExtensions::KrokiBlockMacroProcessor do
         plantuml::spec/fixtures/missing.puml[svg,role=sequence]
       ADOC
       output = Asciidoctor.convert(input, standalone: false, extension_registry: registry)
-      (expect output).to eql %(<div class="paragraph">
+      (expect output).to eql %(<div class="paragraph sequence kroki-error">
 <p><strong>[ERROR: plantuml::spec/fixtures/missing.puml[] - unresolved block macro]</strong></p>
 </div>)
     end
@@ -168,7 +168,7 @@ describe AsciidoctorExtensions::KrokiBlockMacroProcessor do
   end
   context 'with a remote target' do
     it 'should read the remote target when allow-uri-read is set' do
-      allow(OpenURI).to receive(:open_uri).with('https://domain.org/alice.puml').and_return(File.read('spec/fixtures/alice.puml'))
+      allow(OpenURI).to receive(:open_uri).with('https://domain.org/alice.puml', anything).and_return(File.read('spec/fixtures/alice.puml'))
       input = <<~ADOC
         plantuml::https://domain.org/alice.puml[svg,role=sequence]
       ADOC
