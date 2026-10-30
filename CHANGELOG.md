@@ -29,7 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
-- *Breaking*, Ruby: drop support for Ruby 2.7. The gem now requires Ruby 3.2 or later.
+- *Breaking*, Ruby: drop support for Ruby 2.7. The gem is now tested on Ruby 3.2 and 3.4.
 
 ### Security
 

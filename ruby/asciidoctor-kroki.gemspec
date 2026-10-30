@@ -26,7 +26,6 @@ Gem::Specification.new do |s|
   files |= ['README.md']
   s.files = files
   s.require_paths = ['lib']
-  s.required_ruby_version = '>= 3.2'
 
   s.add_dependency 'asciidoctor', '~> 2.0'
 
