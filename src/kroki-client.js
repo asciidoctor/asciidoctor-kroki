@@ -1,5 +1,6 @@
 import pako from 'pako'
 import packageJson from '../package.json' with { type: 'json' }
+import { attrValue } from './attributes.js'
 import { toBase64 } from './base64.js'
 
 /** @type {number} Default maximum URI length before switching to POST. */
@@ -20,20 +21,6 @@ const MIME_TYPES = {
 
 /** @type {string} Referer header value sent with every request. */
 const REFERER = `asciidoctor/kroki.js/${packageJson.version}`
-
-/**
- * Returns the value of an attribute as a trimmed string, or `undefined` if it has none
- * (unset, empty, blank, or `true` for a flag set through the API), so that the caller's default applies.
- *
- * @param {*} value - Attribute value.
- * @returns {string|undefined} Trimmed value, or `undefined` if it has none.
- */
-export function attrValue(value) {
-  if (value === undefined || value === null || value === true) {
-    return undefined
-  }
-  return String(value).trim() || undefined
-}
 
 /**
  * Represents a Kroki diagram, holding its type, output format, source text, and rendering options.

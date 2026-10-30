@@ -39,6 +39,17 @@ describe('resolveCacheDir', () => {
     assert.strictEqual(resolveCacheDir(doc), '/tmp/my-cache')
   })
 
+  for (const value of ['', ' ', true]) {
+    test(`ignores the kroki-cache-dir attribute when it is ${JSON.stringify(value)}`, () => {
+      const xdgCacheHome = path.join(path.sep, 'tmp', 'xdg-cache')
+      process.env.XDG_CACHE_HOME = xdgCacheHome
+      assert.strictEqual(
+        resolveCacheDir(createDoc({ 'kroki-cache-dir': value })),
+        path.join(xdgCacheHome, 'kroki'),
+      )
+    })
+  }
+
   test('defaults to $XDG_CACHE_HOME/kroki when set', () => {
     const xdgCacheHome = path.join(path.sep, 'tmp', 'xdg-cache')
     process.env.XDG_CACHE_HOME = xdgCacheHome
