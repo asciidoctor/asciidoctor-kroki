@@ -242,6 +242,9 @@ Kroki currently supports the following diagram libraries:
 |https://www.graphviz.org/[GraphViz]
 |`graphviz`
 
+|https://lini.rs[Lini] footnote:[Requires Kroki 0.34.0 or later.]
+|`lini`
+
 |https://github.com/knsv/mermaid[Mermaid]
 |`mermaid`
 

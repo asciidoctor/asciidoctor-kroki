@@ -1859,6 +1859,49 @@ paragraph
           })
           assertContains(html, 'https://kroki.io/nomnoml/svg/')
         })
+        for (const diagramType of [
+          'bpmn',
+          'bytefield',
+          'd2',
+          'dbml',
+          'excalidraw',
+          'goat',
+          'lini',
+          'pikchr',
+          'svgbob',
+          'wavedrom',
+        ]) {
+          test(`redirects png to svg for ${diagramType} when kroki-default-format is png`, async () => {
+            const input = `
+[${diagramType}]
+....
+content
+....
+`
+            const registry = Extensions.create()
+            register(registry)
+            const html = await convert(input, {
+              extension_registry: registry,
+              attributes: { 'kroki-default-format': 'png' },
+            })
+            assertContains(html, `https://kroki.io/${diagramType}/svg/`)
+          })
+        }
+        test('keeps png for symbolator, which supports it, when kroki-default-format is png', async () => {
+          const input = `
+[symbolator]
+....
+content
+....
+`
+          const registry = Extensions.create()
+          register(registry)
+          const html = await convert(input, {
+            extension_registry: registry,
+            attributes: { 'kroki-default-format': 'png' },
+          })
+          assertContains(html, 'https://kroki.io/symbolator/png/')
+        })
         const emptyAttributeValues = [
           { description: 'empty', value: '' },
           { description: 'blank', value: ' ' },

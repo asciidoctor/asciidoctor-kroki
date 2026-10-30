@@ -21,5 +21,6 @@ describe('Registration', () => {
     assert.ok(registry.registeredForBlockMacro('structurizr'))
     assert.ok(registry.registeredForBlockMacro('diagramsnet'))
     assert.ok(registry.registeredForBlockMacro('wireviz'))
+    assert.ok(registry.registeredForBlockMacro('lini'))
   })
 })
