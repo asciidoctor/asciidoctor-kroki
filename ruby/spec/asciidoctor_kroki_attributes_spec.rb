@@ -67,6 +67,16 @@ describe AsciidoctorExtensions::KrokiBlockProcessor do
       (expect output).to include('<img src="https://kroki.io/plantuml/42/eNpLzMlMTlXQtVNIyk-yUshIzcnJBwA9iwZL" alt="Diagram">')
     end
     [['', 'empty'], [' ', 'blank'], [true, 'true']].each do |value, description|
+      it "should ignore kroki-plantuml-include-paths if it is #{description}" do
+        input = <<~ADOC
+          [plantuml]
+          ....
+          alice -> bob: hello
+          ....
+        ADOC
+        output = Asciidoctor.convert(input, attributes: { 'kroki-plantuml-include-paths' => value }, standalone: false, safe: :safe)
+        (expect output).to include('<img src="https://kroki.io/plantuml/svg/eNpLzMlMTlXQtVNIyk-yUshIzcnJBwA9iwZL" alt="Diagram">')
+      end
       it "should use the default server if kroki-server-url is #{description}" do
         input = <<~ADOC
           [plantuml]

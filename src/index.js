@@ -1,8 +1,9 @@
 // @ts-check
 
+import { attrValue } from './attributes.js'
 import fetch from './fetch.js'
 import httpClient, { createHttpClient } from './http-client.js'
-import { attrValue, KrokiClient, KrokiDiagram } from './kroki-client.js'
+import { KrokiClient, KrokiDiagram } from './kroki-client.js'
 import fs, { createNodeFs, resolveVfs } from './node-fs.js'
 import {
   preprocessPlantUML,
@@ -187,8 +188,8 @@ const processKroki = async (
       if (plantUmlIncludeFile) {
         diagramText = `!include ${plantUmlIncludeFile}\n${diagramText}`
       }
-      const plantUmlIncludePaths = doc.getAttribute(
-        'kroki-plantuml-include-paths',
+      const plantUmlIncludePaths = attrValue(
+        doc.getAttribute('kroki-plantuml-include-paths'),
       )
       diagramText = await preprocessPlantUML(
         diagramText,

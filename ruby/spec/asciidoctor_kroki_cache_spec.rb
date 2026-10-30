@@ -27,6 +27,14 @@ describe AsciidoctorExtensions::KrokiCache do
       expect(described_class.resolve_cache_dir(doc)).to eq('/tmp/my-cache')
     end
 
+    ['', ' ', true].each do |value|
+      it "ignores the kroki-cache-dir attribute when it is #{value.inspect}" do
+        ENV['XDG_CACHE_HOME'] = '/tmp/xdg-cache'
+        doc = doc_with('kroki-cache-dir' => value)
+        expect(described_class.resolve_cache_dir(doc)).to eq(File.join('/tmp/xdg-cache', 'kroki'))
+      end
+    end
+
     it 'defaults to $XDG_CACHE_HOME/kroki when set' do
       ENV['XDG_CACHE_HOME'] = '/tmp/xdg-cache'
       expect(described_class.resolve_cache_dir(doc_with)).to eq(File.join('/tmp/xdg-cache', 'kroki'))

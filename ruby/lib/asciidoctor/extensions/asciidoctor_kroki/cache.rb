@@ -4,6 +4,7 @@ require 'digest'
 require 'fileutils'
 require 'json'
 require 'securerandom'
+require_relative 'attributes'
 
 module AsciidoctorExtensions
   # Persistent, content-addressed cache for fetched diagrams, independent of the output
@@ -20,8 +21,8 @@ module AsciidoctorExtensions
       # Uses the `kroki-cache-dir` attribute when set; otherwise defaults to the XDG cache
       # directory (`$XDG_CACHE_HOME/kroki` or `~/.cache/kroki`).
       def resolve_cache_dir(doc)
-        configured = doc.attr('kroki-cache-dir')
-        return configured if configured && !configured.empty?
+        configured = KrokiAttributes.value(doc.attr('kroki-cache-dir'))
+        return configured if configured
 
         xdg_cache_home = ENV['XDG_CACHE_HOME'] || File.join(Dir.home, '.cache')
         File.join(xdg_cache_home, 'kroki')

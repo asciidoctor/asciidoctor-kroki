@@ -3,6 +3,7 @@
 require 'cgi'
 require 'pathname'
 require 'asciidoctor/extensions' unless RUBY_ENGINE == 'opal'
+require_relative 'attributes'
 require_relative 'preprocess'
 require_relative 'cache'
 
@@ -255,7 +256,7 @@ module AsciidoctorExtensions
       # value (unlike an !include target written by the diagram's author) may come from outside
       # the diagram itself (e.g. a document-wide default set by a build script).
       def prepend_plantuml_config(diagram_text, diagram_type, doc, logger)
-        if PLANTUML_TYPES.include?(diagram_type) && doc.safe < ::Asciidoctor::SafeMode::SECURE && (plantuml_include = attr_value(doc.attr('kroki-plantuml-include')))
+        if PLANTUML_TYPES.include?(diagram_type) && doc.safe < ::Asciidoctor::SafeMode::SECURE && (plantuml_include = KrokiAttributes.value(doc.attr('kroki-plantuml-include')))
           plantuml_include_path = doc.normalize_system_path(plantuml_include)
           if ::File.readable? plantuml_include_path
             config = File.read(plantuml_include_path)
@@ -276,7 +277,7 @@ module AsciidoctorExtensions
       def preprocess_plantuml_includes(diagram_text, diagram_type, doc, resource_path, logger)
         return diagram_text unless PLANTUML_TYPES.include?(diagram_type) && doc.safe < ::Asciidoctor::SafeMode::SECURE
 
-        include_paths = doc.attr('kroki-plantuml-include-paths')
+        include_paths = KrokiAttributes.value(doc.attr('kroki-plantuml-include-paths'))
         PlantUmlPreprocessor.preprocess(diagram_text, resource_path, include_paths, logger)
       end
 
@@ -309,7 +310,7 @@ module AsciidoctorExtensions
       end
 
       def get_format(doc, attrs, diagram_type)
-        format = attr_value(attrs['format']) || attr_value(doc.attr('kroki-default-format')) || 'svg'
+        format = KrokiAttributes.value(attrs['format']) || KrokiAttributes.value(doc.attr('kroki-default-format')) || 'svg'
         if format == 'png'
           # redirect PNG format to SVG if the diagram library only supports SVG as output format.
           # this is useful when the default format has been set to PNG
@@ -318,16 +319,6 @@ module AsciidoctorExtensions
           format = 'svg' if svg_only_diagram_types.include?(diagram_type)
         end
         format
-      end
-
-      # Returns the value of an attribute as a stripped string, or nil if it has none (unset, empty,
-      # blank, or `true` for a flag set through the API), so that the caller's default applies.
-      # Mirrors attrValue in the JavaScript/Node.js extension's kroki-client.js.
-      def attr_value(value)
-        return if value == true
-
-        value = value.to_s.strip
-        value unless value.empty?
       end
 
       def apply_image_src(attrs, image_src)
@@ -382,7 +373,7 @@ module AsciidoctorExtensions
       end
 
       def server_url(doc)
-        attr_value(doc.attr('kroki-server-url')) || 'https://kroki.io'
+        KrokiAttributes.value(doc.attr('kroki-server-url')) || 'https://kroki.io'
       end
 
       def http_method(doc)

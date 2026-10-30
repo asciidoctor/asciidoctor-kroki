@@ -2,6 +2,7 @@ import { createHash, randomBytes } from 'node:crypto'
 import { mkdir, readFile, rename, rm, stat, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
+import { attrValue } from './attributes.js'
 
 /**
  * Resolves the persistent cache directory.
@@ -12,7 +13,7 @@ import path from 'node:path'
  * @returns {string} Absolute path to the cache directory.
  */
 export const resolveCacheDir = (doc) => {
-  const configured = doc.getAttribute('kroki-cache-dir')
+  const configured = attrValue(doc.getAttribute('kroki-cache-dir'))
   if (configured) {
     return configured
   }

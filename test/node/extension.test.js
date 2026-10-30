@@ -1887,6 +1887,12 @@ paragraph
             })
             assertContains(html, plantumlSvgUrl)
           })
+          test(`ignores kroki-plantuml-include-paths when it is ${description}`, async () => {
+            const html = await convertHello('plantuml', {
+              'kroki-plantuml-include-paths': value,
+            })
+            assertContains(html, plantumlSvgUrl)
+          })
           test(`ignores kroki-plantuml-include when it is ${description}`, async () => {
             const html = await convertHello('plantuml', {
               'kroki-plantuml-include': value,
