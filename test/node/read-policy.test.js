@@ -166,6 +166,28 @@ describe('Read and write policy', () => {
     })
   })
 
+  describe('relative paths', () => {
+    test('resolves a !include of a block from the base directory, not from the current directory', async () => {
+      const { html } = await run(
+        block('plantuml', '!include inside.puml\nalice'),
+      )
+      assert.ok(diagramSource(html).includes('skinparam inside true'))
+    })
+    test('resolves kroki-plantuml-include from the base directory, not from the current directory', async () => {
+      const { html } = await run(block('plantuml', 'alice'), {
+        attributes: { 'kroki-plantuml-include': 'inside.puml' },
+      })
+      assert.ok(diagramSource(html).includes('skinparam inside true'))
+    })
+    test('resolves kroki-plantuml-include from the base directory for a block macro in a subdirectory', async () => {
+      fs.writeFileSync(path.join(baseDir, 'sub', 'macro.puml'), 'alice')
+      const { html } = await run('plantuml::sub/macro.puml[]\n', {
+        attributes: { 'kroki-plantuml-include': 'inside.puml' },
+      })
+      assert.ok(diagramSource(html).includes('skinparam inside true'))
+    })
+  })
+
   describe('remote resources', () => {
     test('does not read a PlantUML !include URL without allow-uri-read', async () => {
       requests.length = 0
@@ -291,6 +313,129 @@ describe('Read and write policy', () => {
         )
       })
     }
+    for (const safe of ['safe', 'server']) {
+      for (const [name, value] of [
+        ['imagesoutdir', () => outsideDir],
+        ['imagesdir', () => `../${path.basename(outsideDir)}`],
+        ['outdir', () => outsideDir],
+      ]) {
+        test(`embeds the diagram when the ${name} attribute of the document is outside of the base directory in ${safe} mode`, async () => {
+          const { html, logs } = await run(
+            `:${name}: ${value()}\n\n[plantuml,${name}-${safe}]\n....\nalice\n....\n`,
+            {
+              safe,
+              attributes: {
+                'kroki-fetch-diagram': '',
+                'kroki-cache': 'false',
+                'kroki-server-url': imageServerUrl,
+              },
+            },
+          )
+          assert.ok(
+            !fs.existsSync(path.join(outsideDir, `${name}-${safe}.svg`)),
+          )
+          assert.match(html, /src="data:image\/svg\+xml;base64,/)
+          assert.ok(
+            logs.some((log) => log.includes('embedding the diagram')),
+            logs.join('\n'),
+          )
+        })
+      }
+    }
+    test('writes to a directory of the document inside of the base directory', async () => {
+      const { html, logs } = await run(
+        ':imagesdir: sub\n\n[plantuml,in-sub]\n....\nalice\n....\n',
+        {
+          attributes: {
+            'kroki-fetch-diagram': '',
+            'kroki-cache': 'false',
+            'kroki-server-url': imageServerUrl,
+          },
+        },
+      )
+      assert.match(html, /in-sub\.svg"/)
+      assert.ok(fs.existsSync(path.join(baseDir, 'sub', 'in-sub.svg')))
+      assert.deepStrictEqual(logs, [])
+    })
+    test('writes to a directory outside of the base directory set from the API', async () => {
+      const dir = path.join(outsideDir, 'api-images')
+      const { html } = await run('[plantuml,api]\n....\nalice\n....\n', {
+        attributes: {
+          'kroki-fetch-diagram': '',
+          'kroki-cache': 'false',
+          'kroki-server-url': imageServerUrl,
+          imagesoutdir: dir,
+        },
+      })
+      assert.match(html, /api\.svg"/)
+      assert.ok(fs.existsSync(path.join(dir, 'api.svg')))
+    })
+    test('leaves the output directory to a custom add function', async () => {
+      const added = []
+      const { html } = await run(
+        `:imagesoutdir: ${outsideDir}\n\n[plantuml,custom]\n....\nalice\n....\n`,
+        {
+          attributes: {
+            'kroki-fetch-diagram': '',
+            'kroki-cache': 'false',
+            'kroki-server-url': imageServerUrl,
+          },
+          context: {
+            vfs: {
+              add: async (image) => {
+                added.push(image.basename)
+              },
+            },
+          },
+        },
+      )
+      assert.match(html, /custom\.svg"/)
+      assert.deepStrictEqual(added, ['custom.svg'])
+    })
+    test('ignores the kroki-cache-dir attribute of the document outside of the base directory', async () => {
+      const xdgCacheHome = fs.mkdtempSync(path.join(os.tmpdir(), 'kroki-xdg-'))
+      const originalXdgCacheHome = process.env.XDG_CACHE_HOME
+      process.env.XDG_CACHE_HOME = xdgCacheHome
+      const cacheDir = path.join(outsideDir, 'doc-cache')
+      try {
+        const { logs } = await run(
+          `:kroki-cache-dir: ${cacheDir}\n\n[plantuml,a]\n....\nalice\n....\n\n[plantuml,b]\n....\nbob\n....\n`,
+          {
+            attributes: {
+              'kroki-fetch-diagram': '',
+              'kroki-server-url': imageServerUrl,
+              imagesoutdir: path.join(baseDir, 'images'),
+            },
+          },
+        )
+        assert.ok(!fs.existsSync(cacheDir))
+        assert.ok(fs.readdirSync(path.join(xdgCacheHome, 'kroki')).length > 0)
+        assert.strictEqual(
+          logs.filter((log) => log.includes('kroki-cache-dir')).length,
+          1,
+          logs.join('\n'),
+        )
+      } finally {
+        if (originalXdgCacheHome === undefined) {
+          delete process.env.XDG_CACHE_HOME
+        } else {
+          process.env.XDG_CACHE_HOME = originalXdgCacheHome
+        }
+        fs.rmSync(xdgCacheHome, { recursive: true, force: true })
+      }
+    })
+    test('uses a kroki-cache-dir attribute outside of the base directory set from the API', async () => {
+      const cacheDir = path.join(outsideDir, 'api-cache')
+      await run('[plantuml,c]\n....\nalice\n....\n', {
+        attributes: {
+          'kroki-fetch-diagram': '',
+          'kroki-server-url': imageServerUrl,
+          'kroki-cache-dir': cacheDir,
+          imagesoutdir: path.join(baseDir, 'images'),
+        },
+      })
+      assert.ok(fs.readdirSync(cacheDir).length > 0)
+    })
     test('rejects a format that contains a path separator', async () => {
       const { html } = await run(
         '[plantuml,name,../../evil]\n....\nalice\n....\n',

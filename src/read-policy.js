@@ -78,6 +78,57 @@ export function guardVfs(vfs, doc) {
 }
 
 /**
+ * @param {Object} doc - Asciidoctor document.
+ * @param {string} dir - Directory that the extension is about to write to.
+ * @returns {boolean} `true` when the directory is inside the base directory or the output
+ *   directory given to the converter.
+ */
+const isInsideWriteRoot = (doc, dir) => {
+  const options = (doc.isNested() ? doc.getParentDocument() : doc).getOptions()
+  const roots = [doc.getBaseDir(), options.to_dir]
+  if (doc.isAttributeLocked('outdir')) {
+    roots.push(doc.getAttribute('outdir'))
+  }
+  return roots
+    .filter(Boolean)
+    .some((root) => isInsideDir(dir, resolvePath(root)))
+}
+
+/**
+ * Checks the directory of the generated images when the safe mode is `safe` or higher. A value
+ * set from the API or the CLI is locked, so it cannot come from the document.
+ *
+ * @param {Object} doc - Asciidoctor document.
+ * @param {string} dir - Images output directory, resolved from `imagesoutdir`, `outdir` and `imagesdir`.
+ * @returns {boolean} `true` when the extension can write to this directory.
+ */
+export function isImagesDirAllowed(doc, dir) {
+  if (doc.getSafe() < SAFE_MODE_SAFE) {
+    return true
+  }
+  const locked = doc.getAttribute('imagesoutdir')
+    ? doc.isAttributeLocked('imagesoutdir')
+    : doc.isAttributeLocked('imagesdir') &&
+      (!doc.getAttribute('outdir') || doc.isAttributeLocked('outdir'))
+  return locked || isInsideWriteRoot(doc, dir)
+}
+
+/**
+ * Checks the `kroki-cache-dir` attribute when the safe mode is `safe` or higher.
+ *
+ * @param {Object} doc - Asciidoctor document.
+ * @param {string} dir - Value of the attribute.
+ * @returns {boolean} `true` when the extension can use this directory.
+ */
+export function isCacheDirAllowed(doc, dir) {
+  return (
+    doc.getSafe() < SAFE_MODE_SAFE ||
+    doc.isAttributeLocked('kroki-cache-dir') ||
+    isInsideWriteRoot(doc, dir)
+  )
+}
+
+/**
  * Checks a diagram file name that comes from the document before it is written to the output
  * directory, like Asciidoctor does for the paths it resolves when the safe mode is `safe` or higher.
  *

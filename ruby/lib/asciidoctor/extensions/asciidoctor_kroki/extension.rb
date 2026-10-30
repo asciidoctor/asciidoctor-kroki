@@ -185,6 +185,7 @@ module AsciidoctorExtensions
 
   # Internal processor
   #
+  # rubocop:disable Metrics/ClassLength
   class KrokiProcessor
     include Asciidoctor::Logging
 
@@ -199,13 +200,13 @@ module AsciidoctorExtensions
         # the caller creates on failure keeps the original attributes, such as the title.
         attrs = attrs.dup
         doc = parent.document
-        diagram_text = prepend_plantuml_config(diagram_text, diagram_type, doc, logger)
-        diagram_text = preprocess_plantuml_includes(diagram_text, diagram_type, doc, resource_path, logger)
         # If "subs" attribute is specified, substitute accordingly.
         # Be careful not to specify "specialcharacters" or your diagram code won't be valid anymore!
         if (subs = attrs['subs'])
           diagram_text = parent.apply_subs(diagram_text, parent.resolve_subs(subs))
         end
+        diagram_text = prepend_plantuml_config(diagram_text, diagram_type, doc, logger)
+        diagram_text = preprocess_plantuml_includes(diagram_text, diagram_type, doc, resource_path, logger)
         attrs.delete('opts')
         # Apply the option defined on the block/macro or, as a fallback, the document-wide kroki-default-options.
         if (option = get_option(attrs, doc)) && option != 'none'
@@ -254,13 +255,13 @@ module AsciidoctorExtensions
         opts.delete('separation')
       end
 
-      # Prepends the kroki-plantuml-include file content to the diagram text. Unlike the
-      # !include directives resolved by preprocess_plantuml_includes below, this path is jailed
-      # to the document's safe-mode boundaries via normalize_system_path, since the attribute
-      # value (unlike an !include target written by the diagram's author) may come from outside
-      # the diagram itself (e.g. a document-wide default set by a build script).
+      # Prepends the kroki-plantuml-include file content to the diagram text. A local path is
+      # jailed to the document's safe-mode boundaries via normalize_system_path, and a URL
+      # follows the same rules as an !include directive.
       def prepend_plantuml_config(diagram_text, diagram_type, doc, logger)
         if PLANTUML_TYPES.include?(diagram_type) && doc.safe < ::Asciidoctor::SafeMode::SECURE && (plantuml_include = KrokiAttributes.value(doc.attr('kroki-plantuml-include')))
+          return prepend_remote_plantuml_config(diagram_text, plantuml_include, doc, logger) if plantuml_include.start_with?('http://', 'https://')
+
           plantuml_include_path = doc.normalize_system_path(plantuml_include)
           if ::File.file?(plantuml_include_path) && ::File.readable?(plantuml_include_path)
             config = File.read(plantuml_include_path)
@@ -273,17 +274,34 @@ module AsciidoctorExtensions
         diagram_text
       end
 
+      def prepend_remote_plantuml_config(diagram_text, url, doc, logger)
+        policy = read_policy(doc)
+        raise policy.denial_reason(url) if policy.denial_reason(url)
+
+        config = PlantUmlPreprocessor.preprocess(KrokiHttpLimits.read_uri(url), url, plantuml_include_paths(doc), logger, policy)
+        "#{config}\n#{diagram_text}"
+      rescue StandardError
+        logger.warn message_with_context "Unable to read plantuml-include. File not found or not readable: #{url}.", source_location: doc.reader.cursor_at_mark
+        diagram_text
+      end
+
       # Resolves !include/!include_once/!include_many/!includeurl/!includesub directives found in
       # PlantUML/C4-PlantUML diagram text (including text prepended above), searching resource_path's
-      # own directory and then each directory in kroki-plantuml-include-paths, in order. Unlike
-      # kroki-plantuml-include above, this mirrors the JavaScript extension's preprocessor and is
-      # not jailed to the safe-mode boundary (see src/preprocess.js) — only gated by safe mode itself.
+      # own directory, then each directory in kroki-plantuml-include-paths, in order, and finally the
+      # base directory. Like the JavaScript extension's preprocessor, reads follow the rules of include::.
       def preprocess_plantuml_includes(diagram_text, diagram_type, doc, resource_path, logger)
         return diagram_text unless PLANTUML_TYPES.include?(diagram_type) && doc.safe < ::Asciidoctor::SafeMode::SECURE
 
-        include_paths = KrokiAttributes.value(doc.attr('kroki-plantuml-include-paths'))
-        policy = PlantUmlPreprocessor::ReadPolicy.new(doc.attr?('allow-uri-read'), doc.safe >= ::Asciidoctor::SafeMode::SAFE ? ::File.expand_path(doc.base_dir) : nil)
-        PlantUmlPreprocessor.preprocess(diagram_text, resource_path, include_paths, logger, policy)
+        PlantUmlPreprocessor.preprocess(diagram_text, resource_path, plantuml_include_paths(doc), logger, read_policy(doc))
+      end
+
+      def plantuml_include_paths(doc)
+        KrokiAttributes.value(doc.attr('kroki-plantuml-include-paths'))
+      end
+
+      def read_policy(doc)
+        base_dir = ::File.expand_path(doc.base_dir)
+        PlantUmlPreprocessor::ReadPolicy.new(doc.attr?('allow-uri-read'), doc.safe >= ::Asciidoctor::SafeMode::SAFE ? base_dir : nil, base_dir)
       end
 
       def get_alt(attrs)
@@ -346,10 +364,10 @@ module AsciidoctorExtensions
           # The format is part of the name of the output file and of the cache entry.
           raise "Invalid diagram format '#{kroki_diagram.format}'" if kroki_diagram.format.match?(%r{[\\/]})
 
-          # Embedded images use the same persistent cache, but never write an output image.
-          return { target: kroki_diagram.to_data_uri(kroki_client, **KrokiCache.options(doc, logger)) } if doc.attr?('data-uri') || doc.attr?('kroki-data-uri')
-
           images_output_dir = output_dir_path(doc)
+          # Embedded images use the same persistent cache, but never write an output image.
+          return { target: kroki_diagram.to_data_uri(kroki_client, **KrokiCache.options(doc, logger)) } if embed_image?(doc, images_output_dir, logger)
+
           diagram_name = kroki_diagram.save(images_output_dir, kroki_client, generated_files(doc), logger, **KrokiCache.options(doc, logger))
           # The converter resolves the image target against the document's `imagesdir`
           # attribute, which only matches where we actually wrote the file when
@@ -371,15 +389,25 @@ module AsciidoctorExtensions
           # NOTE: as of this writing, Asciidoctor core's HTML5 converter treats a `data:` URI target
           # the same as any other remote URI and still refuses to read it without `allow-uri-read`
           # (https://github.com/asciidoctor/asciidoctor/issues/3791) — so today this still renders a
-          # blank placeholder, only later than before. A fix decoding `data:` targets directly is
-          # proposed upstream (https://github.com/asciidoctor/asciidoctor/pull/4865, not yet merged);
-          # this branch is aligned with it ahead of time, matching the JavaScript/Node.js extension
-          # (already correct against Asciidoctor.js >= 4.0.2, which carries the equivalent fix), so
-          # it starts working here too as soon as a released gem picks it up — no code change needed.
+          # blank placeholder, only later than before. The fix is merged upstream but not yet in a
+          # released gem (still absent from 2.0.26); this branch is aligned with it ahead of time,
+          # matching the JavaScript/Node.js extension (already correct against Asciidoctor.js >= 4.0.2,
+          # which carries the equivalent fix), so it starts working here too as soon as a released gem
+          # picks it up — no code change needed.
           { target: kroki_diagram.to_data_uri(kroki_client) }
         else
           { target: kroki_diagram.get_diagram_uri(server_url(doc)) }
         end
+      end
+
+      # A document cannot write outside of the directories allowed by the safe mode, so the
+      # diagram is embedded instead.
+      def embed_image?(doc, images_output_dir, logger)
+        return true if doc.attr?('data-uri') || doc.attr?('kroki-data-uri')
+        return false if KrokiPathPolicy.images_dir_allowed?(doc, images_output_dir)
+
+        logger.warn "kroki: embedding the diagram as a data URI, because the directory '#{images_output_dir}' is outside of the base directory."
+        true
       end
 
       # Returns the per-document registry of generated file names, mapping each name
@@ -421,6 +449,8 @@ module AsciidoctorExtensions
       end
     end
   end
+
+  # rubocop:enable Metrics/ClassLength
 
   # Kroki diagram
   #

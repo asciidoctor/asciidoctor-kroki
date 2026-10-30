@@ -5,7 +5,7 @@ require 'tmpdir'
 require_relative '../lib/asciidoctor/extensions/asciidoctor_kroki'
 
 def doc_with(attributes = {})
-  double('doc', attr: nil).tap do |doc|
+  double('doc', attr: nil, safe: 0).tap do |doc|
     allow(doc).to receive(:attr) { |name| attributes[name] }
   end
 end

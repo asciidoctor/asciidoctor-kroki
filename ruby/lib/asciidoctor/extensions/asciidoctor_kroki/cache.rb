@@ -5,6 +5,7 @@ require 'fileutils'
 require 'json'
 require 'securerandom'
 require_relative 'attributes'
+require_relative 'path_policy'
 
 module AsciidoctorExtensions
   # Persistent, content-addressed cache for fetched diagrams, independent of the output
@@ -18,11 +19,15 @@ module AsciidoctorExtensions
 
     class << self
       # Resolves the persistent cache directory.
-      # Uses the `kroki-cache-dir` attribute when set; otherwise defaults to the XDG cache
-      # directory (`$XDG_CACHE_HOME/kroki` or `~/.cache/kroki`).
-      def resolve_cache_dir(doc)
+      # Uses the `kroki-cache-dir` attribute when set and allowed by the safe mode; otherwise
+      # defaults to the XDG cache directory (`$XDG_CACHE_HOME/kroki` or `~/.cache/kroki`).
+      def resolve_cache_dir(doc, logger = ::Asciidoctor::LoggerManager.logger)
         configured = KrokiAttributes.value(doc.attr('kroki-cache-dir'))
-        return configured if configured
+        if configured
+          return configured if KrokiPathPolicy.cache_dir_allowed?(doc, configured)
+
+          warn_ignored_cache_dir(doc, configured, logger)
+        end
 
         xdg_cache_home = ENV['XDG_CACHE_HOME'] || File.join(Dir.home, '.cache')
         File.join(xdg_cache_home, 'kroki')
@@ -55,7 +60,7 @@ module AsciidoctorExtensions
       # unwritable home directory), so failures are only reported, once per document rather
       # than once per diagram.
       def options(doc, logger)
-        cache_dir = resolve_cache_dir(doc)
+        cache_dir = resolve_cache_dir(doc, logger)
         on_cache_error = lambda do |error|
           next if doc.instance_variable_get(:@kroki_cache_warned)
 
@@ -110,6 +115,13 @@ module AsciidoctorExtensions
       end
 
       private
+
+      def warn_ignored_cache_dir(doc, cache_dir, logger)
+        return if doc.instance_variable_get(:@kroki_cache_dir_ignored)
+
+        doc.instance_variable_set(:@kroki_cache_dir_ignored, true)
+        logger.warn "kroki: ignoring the kroki-cache-dir attribute '#{cache_dir}', because it is outside of the base directory."
+      end
 
       def cache_file_path(cache_dir, key, format)
         File.join(cache_dir, "#{key}.#{format}")

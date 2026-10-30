@@ -1,5 +1,6 @@
 // @ts-check
 
+import { delimiter } from 'node:path'
 import { attrValue } from './attributes.js'
 import fetch from './fetch.js'
 import httpClient, { createHttpClient } from './http-client.js'
@@ -190,10 +191,18 @@ const processKroki = async (
   if (doc.getSafe() < SAFE_MODE_SECURE) {
     // A custom virtual file system is responsible for what it reads, and everything is a URL in
     // the browser. Only the preprocessors are guarded: the output files are written by the extension.
-    const preprocessContext =
-      customRead || isBrowser()
-        ? context
-        : { ...context, vfs: guardVfs(context.vfs, doc) }
+    const localFiles = !customRead && !isBrowser()
+    const preprocessContext = localFiles
+      ? { ...context, vfs: guardVfs(context.vfs, doc) }
+      : context
+    // Like include::, a relative path is resolved from the directory of the document, whatever
+    // the current working directory is. The paths are joined with path.posix in preprocess.js.
+    const baseDir = localFiles
+      ? doc.getBaseDir().replace(/\\/g, '/')
+      : undefined
+    if (baseDir && !resource) {
+      resource = { dir: baseDir }
+    }
     if (diagramType === 'vegalite') {
       diagramText = await preprocessVegaLite(
         diagramText,
@@ -204,9 +213,12 @@ const processKroki = async (
       const plantUmlIncludeFile = attrValue(
         doc.getAttribute('kroki-plantuml-include'),
       )
-      const plantUmlIncludePaths = attrValue(
-        doc.getAttribute('kroki-plantuml-include-paths'),
-      )
+      const plantUmlIncludePaths = [
+        attrValue(doc.getAttribute('kroki-plantuml-include-paths')),
+        baseDir,
+      ]
+        .filter(Boolean)
+        .join(delimiter)
       if (plantUmlIncludeFile) {
         if (
           await canReadPlantUmlInclude(

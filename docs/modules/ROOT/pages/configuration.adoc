@@ -30,7 +30,7 @@ An invalid value falls back to `true` with a warning.
 |`true`
 
 |`kroki-cache-dir`
-|Directory used by the persistent cache (see xref:_persistent_cache[]).
+|Directory used by the persistent cache (see xref:_persistent_cache[]). In `safe` and `server` modes, a value set in the document must be inside the base directory or the output directory.
 |XDG cache directory
 
 |`kroki-http-method`
@@ -44,7 +44,7 @@ This attribute only applies when the extension downloads the diagram content its
 |`adaptive`
 
 |`kroki-plantuml-include`
-|A file included at the top of every PlantUML diagram, as if `!include file` was used. Useful for defining a common skin. Accepts a path or a URL.
+|A file included at the top of every PlantUML diagram, as if `!include file` was used. Useful for defining a common skin. Accepts a path (relative to the document's base directory) or a URL (read only if `allow-uri-read` is set).
 |
 
 |`kroki-plantuml-include-paths`
@@ -134,6 +134,10 @@ If the same name is used for two diagrams with different content in the same doc
 Use unique names to keep links stable.
 ====
 
+In `safe` and `server` modes, a document cannot write outside of the base directory or the output directory: when `imagesoutdir`, `imagesdir` or `outdir` set in the document resolve to another location, a warning is logged and the diagram is embedded as a data URI instead.
+This does not apply to values set from the API or the CLI, as a document cannot change them, nor when a custom virtual file system provides the `add` function.
+An attribute with the `@` suffix (for example in an Antora playbook) can be changed by the document, so it follows the same rule.
+
 A named diagram's output file, unlike an anonymous one's, cannot be trusted by name alone — the same name may exist from an earlier build with different (stale) content.
 The persistent cache described below is what lets a named diagram skip the download when its content hasn't actually changed.
 
@@ -155,12 +159,21 @@ Cache misses and refreshes still require the server, and preprocessing external 
 The cache is best-effort: when the cache directory cannot be read or written (for example on a read-only file system), diagrams are fetched from the Kroki server and a warning is logged once per document.
 
 By default, the cache lives in the platform's https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html[XDG cache directory] (`$XDG_CACHE_HOME/kroki`, or `~/.cache/kroki` when `XDG_CACHE_HOME` is unset).
+On Windows, `~` is the user's profile directory (for example `C:\Users\name\.cache\kroki`).
+
+The cache is never purged automatically, so it grows as diagrams change.
+You can safely delete the cache directory, or any file in it, at any time: a diagram that is no longer cached is downloaded again the next time it is needed, which requires the Kroki server to be reachable.
+
 Set `kroki-cache-dir` to use a different location — for example, to point it at a directory your CI pipeline already persists between runs:
 
 [source,asciidoc]
 ----
 :kroki-cache-dir: .cache/kroki
 ----
+
+A relative path is resolved from the current working directory.
+In `safe` and `server` modes, a value set in the document must be inside the base directory or the output directory; otherwise, a warning is logged and the default location is used.
+This does not apply to a value set from the API or the CLI.
 
 This is particularly useful for an Antora site: a full rebuild typically touches only a handful of pages, so most diagrams elsewhere in the site are unchanged, but Antora clears the output directory before every build.
 Pointing `kroki-cache-dir` at a directory your pipeline keeps between builds (a persisted CI cache, or a local directory outside `build/` in a dev loop) avoids re-downloading those unchanged diagrams on every run:
@@ -211,6 +224,9 @@ A resource that is not allowed is not read, and a warning is logged.
 The `!include` directive is left in the diagram source, so that the Kroki server can resolve it, if it's allowed to.
 A Vega-Lite diagram that references a local data file that is not allowed is replaced by an error block.
 
+Like the `include::` directive, a relative path is resolved from the directory of the file that contains it, that is to say the document's base directory for a diagram written in the document.
+It is then searched in `kroki-plantuml-include-paths` and in the base directory, and finally in the current working directory.
+
 These rules do not apply in the browser, where everything is fetched by the browser, or when a custom virtual file system provides the `read` function (as with Antora): it is then responsible for what it reads.
 
 [IMPORTANT]
@@ -259,7 +275,7 @@ The JavaScript/Node.js extension and the Ruby gem share the same version and are
 
 |`inline` option without `allow-uri-read`
 |Yes (requires Asciidoctor.js 4.0.2 or later)
-|No (waiting for https://github.com/asciidoctor/asciidoctor/pull/4865[asciidoctor#4865]; the image is rendered as a blank placeholder)
+|No (fixed in Asciidoctor by https://github.com/asciidoctor/asciidoctor/issues/3791[asciidoctor#3791], but not released yet; the image is rendered as a blank placeholder)
 
 |Image path when `imagesoutdir` differs from `imagesdir`
 |Yes
