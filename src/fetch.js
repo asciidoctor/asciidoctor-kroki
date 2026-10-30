@@ -9,7 +9,8 @@ import {
   resolveCacheMode,
   writeToCache,
 } from './cache.js'
-import { resolveVfs } from './node-fs.js'
+import nodefs, { resolveVfs } from './node-fs.js'
+import { isImagesDirAllowed } from './read-policy.js'
 
 /**
  * Resolves the directory where generated diagram images should be written.
@@ -211,8 +212,22 @@ export default {
       return fetched
     }
 
+    // A custom `add` decides where it writes. Otherwise, a document cannot write outside of the
+    // directories allowed by the safe mode, so the diagram is embedded instead.
+    const outsideOutput =
+      !dataUri &&
+      add === nodefs.add &&
+      !isImagesDirAllowed(doc, imagesOutputDirectory)
+    if (outsideOutput) {
+      doc
+        .getLogger()
+        .warn(
+          `kroki: embedding the diagram as a data URI, because the directory '${imagesOutputDirectory}' is outside of the base directory.`,
+        )
+    }
+
     // Embedded images use the same persistent cache, but never write an output image.
-    if (dataUri) {
+    if (dataUri || outsideOutput) {
       return {
         target: encodeDataUri(await fetchDiagram(), mediaType, encoding),
       }

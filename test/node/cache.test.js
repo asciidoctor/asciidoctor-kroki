@@ -16,6 +16,7 @@ function createDoc(attributes = {}, logger) {
   return {
     getAttribute: (name) => attributes[name],
     getLogger: () => logger,
+    getSafe: () => 0,
   }
 }
 

@@ -1726,7 +1726,7 @@ ${svg}
           // (rather than trying to read it as a remote resource, which requires
           // allow-uri-read) in @asciidoctor/core 4.0.2
           // (https://github.com/asciidoctor/asciidoctor/issues/3791); the equivalent Ruby
-          // core fix is still an open PR (asciidoctor/asciidoctor#4865).
+          // core fix is merged but not yet in a released gem.
           const input = `
 plantuml::test/fixtures/alice.puml[svg,opts=inline]
 `

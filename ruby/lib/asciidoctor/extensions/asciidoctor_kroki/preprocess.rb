@@ -3,6 +3,7 @@
 require 'pathname'
 require 'uri'
 require_relative 'http_limits'
+require_relative 'path_policy'
 
 module AsciidoctorExtensions
   # Resolves PlantUML `!include` directives (and friends) in diagram text before it is sent to
@@ -19,30 +20,16 @@ module AsciidoctorExtensions
 
     # The rules that apply when reading a resource referenced by a document, which are the ones of
     # the include:: directive: a local file must be inside the jail (the base directory when the
-    # safe mode is `safe` or higher), and a URL requires the allow-uri-read attribute.
-    ReadPolicy = Struct.new(:allow_uri_read, :jail) do
+    # safe mode is `safe` or higher), and a URL requires the allow-uri-read attribute. Like
+    # include::, a relative path is resolved from the base directory, if any.
+    ReadPolicy = Struct.new(:allow_uri_read, :jail, :base_dir) do
       # @return [String, nil] the reason why the path cannot be read, if any
       def denial_reason(path)
         if path.start_with?('http://', 'https://')
           'the allow-uri-read attribute is not set' unless allow_uri_read
-        elsif jail && !inside_jail?(path)
+        elsif jail && !KrokiPathPolicy.inside?(path, jail)
           'the file is outside of the base directory'
         end
-      end
-
-      private
-
-      # A lexical check, like Asciidoctor
-      def inside_jail?(path)
-        resolved = normalize(path)
-        dir = normalize(jail)
-        resolved == dir || resolved.start_with?(dir.end_with?('/') ? dir : "#{dir}/")
-      end
-
-      # The case of the drive letter varies on Windows.
-      def normalize(path)
-        expanded = ::File.expand_path(path)
-        ::File::ALT_SEPARATOR ? expanded.downcase : expanded
       end
     end
 
@@ -54,16 +41,16 @@ module AsciidoctorExtensions
       # @param diagram_text [String] the raw diagram source
       # @param resource_path [String, nil] absolute path (or URL) of the file the diagram text was
       #   read from, used to resolve relative !include directives; nil for a diagram written
-      #   directly in the AsciiDoc source (resolved relative to the current working directory,
-      #   like plain !include paths without a match in kroki-plantuml-include-paths)
+      #   directly in the AsciiDoc source (resolved relative to the base directory of the policy)
       # @param include_paths [String, nil] the kroki-plantuml-include-paths attribute value
       #   (a list of directories separated by File::PATH_SEPARATOR)
       # @param logger [#info, #warn] logger used to report includes that were skipped, not raised
       # @param policy [ReadPolicy] the rules that apply when reading an include
       # @return [String] the diagram text with !include directives resolved
       def preprocess(diagram_text, resource_path, include_paths, logger, policy = NO_READ_POLICY)
-        resource = resource_path ? parse_resource(resource_path) : { dir: '', path: nil }
+        resource = resource_path ? parse_resource(resource_path) : { dir: policy.base_dir.to_s, path: nil }
         paths = include_paths.to_s.empty? ? [] : include_paths.split(::File::PATH_SEPARATOR)
+        paths += [policy.base_dir] if policy.base_dir
         diagram_text = preprocess_includes(diagram_text, resource, [], [], Options.new(paths, logger, policy))
         remove_tags(diagram_text)
       end

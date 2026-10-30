@@ -3,11 +3,19 @@ import { mkdir, readFile, rename, rm, stat, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { attrValue } from './attributes.js'
+import { isCacheDirAllowed } from './read-policy.js'
+
+/**
+ * Documents that already reported an ignored `kroki-cache-dir` attribute.
+ *
+ * @type {WeakSet<Object>}
+ */
+const ignoredCacheDirDocuments = new WeakSet()
 
 /**
  * Resolves the persistent cache directory.
- * Uses the `kroki-cache-dir` attribute when set; otherwise defaults to the
- * XDG cache directory (`$XDG_CACHE_HOME/kroki` or `~/.cache/kroki`).
+ * Uses the `kroki-cache-dir` attribute when set and allowed by the safe mode; otherwise
+ * defaults to the XDG cache directory (`$XDG_CACHE_HOME/kroki` or `~/.cache/kroki`).
  *
  * @param {Object} doc - Asciidoctor document.
  * @returns {string} Absolute path to the cache directory.
@@ -15,7 +23,17 @@ import { attrValue } from './attributes.js'
 export const resolveCacheDir = (doc) => {
   const configured = attrValue(doc.getAttribute('kroki-cache-dir'))
   if (configured) {
-    return configured
+    if (isCacheDirAllowed(doc, configured)) {
+      return configured
+    }
+    if (!ignoredCacheDirDocuments.has(doc)) {
+      ignoredCacheDirDocuments.add(doc)
+      doc
+        .getLogger()
+        .warn(
+          `kroki: ignoring the kroki-cache-dir attribute '${configured}', because it is outside of the base directory.`,
+        )
+    }
   }
   const xdgCacheHome =
     process.env.XDG_CACHE_HOME || path.join(os.homedir(), '.cache')

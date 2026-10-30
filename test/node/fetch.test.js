@@ -23,6 +23,7 @@ function createDoc({ attributes = {} } = {}, logger) {
     getOptions: () => ({}),
     getBaseDir: () => '.',
     getLogger: () => logger,
+    getSafe: () => 0,
   }
 }
 

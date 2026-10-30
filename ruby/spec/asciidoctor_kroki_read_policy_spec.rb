@@ -12,6 +12,7 @@ describe 'Read and write policy' do
     Dir.mktmpdir('kroki-base-') do |base_dir|
       Dir.mktmpdir('kroki-outside-') do |outside_dir|
         @base_dir = base_dir
+        @outside_dir = outside_dir
         @secret_file = File.join(outside_dir, 'secret.txt')
         File.write(@secret_file, 'TOP-SECRET')
         File.write(File.join(base_dir, 'inside.puml'), 'skinparam inside true')
@@ -75,7 +76,48 @@ describe 'Read and write policy' do
     (expect html).to include('<a href="https://domain.org/a.puml"')
   end
 
+  context 'with a relative path' do
+    it 'should resolve a !include of a block from the base directory, not from the current directory' do
+      html, = convert(block('plantuml', "!include inside.puml\nalice"))
+      (expect diagram_source(html)).to include('skinparam inside true')
+    end
+    it 'should resolve a !include from the base directory for a block macro in a subdirectory' do
+      File.write(File.join(@base_dir, 'sub', 'macro.puml'), "!include inside.puml\nalice")
+      html, = convert("plantuml::sub/macro.puml[]\n")
+      (expect diagram_source(html)).to include('skinparam inside true')
+    end
+  end
+
+  context 'with the subs attribute' do
+    it 'should apply the substitutions before resolving a !include' do
+      html, = convert(":incdir: #{@base_dir}\n\n[plantuml,subs=attributes+]\n....\n!include {incdir}/inside.puml\nalice\n....\n")
+      (expect diagram_source(html)).to include('skinparam inside true')
+    end
+    it 'should not apply the substitutions to the content of a !include' do
+      File.write(File.join(@base_dir, 'attribute.puml'), 'skinparam {incdir}')
+      html, = convert(":incdir: value\n\n[plantuml,subs=attributes+]\n....\n!include attribute.puml\nalice\n....\n")
+      (expect diagram_source(html)).to include('skinparam {incdir}')
+    end
+  end
+
   context 'with kroki-plantuml-include' do
+    it 'should read a URL with allow-uri-read' do
+      allow(OpenURI).to receive(:open_uri).and_return('REMOTE-CONTENT')
+      html, = convert(block('plantuml', 'alice'), attributes: { 'allow-uri-read' => '', 'kroki-plantuml-include' => 'https://domain.org/a.puml' })
+      (expect diagram_source(html)).to eq "REMOTE-CONTENT\nalice"
+    end
+    it 'should not read a URL without allow-uri-read' do
+      expect(OpenURI).not_to receive(:open_uri)
+      html, logs = convert(block('plantuml', 'alice'), attributes: { 'kroki-plantuml-include' => 'https://domain.org/a.puml' })
+      (expect diagram_source(html)).to eq 'alice'
+      (expect logs.join).to include('Unable to read plantuml-include')
+    end
+    it 'should warn and ignore a URL that cannot be read' do
+      allow(OpenURI).to receive(:open_uri).and_raise(StandardError, 'unreachable')
+      html, logs = convert(block('plantuml', 'alice'), attributes: { 'allow-uri-read' => '', 'kroki-plantuml-include' => 'https://domain.org/a.puml' })
+      (expect diagram_source(html)).to eq 'alice'
+      (expect logs.join).to include('Unable to read plantuml-include')
+    end
     it 'should warn and ignore a missing file' do
       html, logs = convert(block('plantuml', 'alice'), attributes: { 'kroki-plantuml-include' => 'missing.puml' })
       (expect diagram_source(html)).to eq 'alice'
@@ -103,6 +145,47 @@ describe 'Read and write policy' do
         (expect html).to match(/src="[^"]*diag-\h+\.svg"/)
         (expect logs.join).to include('outside of the output directory')
       end
+      { 'imagesoutdir' => ->(dir) { dir }, 'imagesdir' => ->(dir) { "../#{File.basename(dir)}" }, 'outdir' => ->(dir) { dir } }.each do |name, value|
+        it "should embed the diagram when the #{name} attribute of the document is outside of the base directory in #{safe} mode" do
+          html, logs = convert(":#{name}: #{value.call(@outside_dir)}\n\n[plantuml,#{name}]\n....\nalice\n....\n",
+                               safe: safe, attributes: { 'kroki-fetch-diagram' => '', 'kroki-cache' => 'false' })
+          (expect File.exist?(File.join(@outside_dir, "#{name}.svg"))).to be false
+          (expect html).to match(%r{src="data:image/svg\+xml;base64,})
+          (expect logs.join).to include('embedding the diagram')
+        end
+      end
+    end
+    it 'should write to a directory of the document inside of the base directory' do
+      html, logs = convert(":imagesdir: sub\n\n[plantuml,in-sub]\n....\nalice\n....\n", attributes: { 'kroki-fetch-diagram' => '', 'kroki-cache' => 'false' })
+      (expect html).to include('in-sub.svg"')
+      (expect File.exist?(File.join(@base_dir, 'sub', 'in-sub.svg'))).to be true
+      (expect logs).to be_empty
+    end
+    it 'should write to a directory outside of the base directory set from the API' do
+      dir = File.join(@outside_dir, 'api-images')
+      html, = convert("[plantuml,api]\n....\nalice\n....\n", attributes: { 'kroki-fetch-diagram' => '', 'kroki-cache' => 'false', 'imagesoutdir' => dir })
+      (expect html).to include('api.svg"')
+      (expect File.exist?(File.join(dir, 'api.svg'))).to be true
+    end
+    it 'should ignore the kroki-cache-dir attribute of the document outside of the base directory' do
+      original = ENV.fetch('XDG_CACHE_HOME', nil)
+      cache_dir = File.join(@outside_dir, 'doc-cache')
+      Dir.mktmpdir('kroki-xdg-') do |xdg_cache_home|
+        ENV['XDG_CACHE_HOME'] = xdg_cache_home
+        _, logs = convert(":kroki-cache-dir: #{cache_dir}\n\n[plantuml,a]\n....\nalice\n....\n\n[plantuml,b]\n....\nbob\n....\n",
+                          attributes: { 'kroki-fetch-diagram' => '', 'imagesoutdir' => File.join(@base_dir, 'images') })
+        (expect File.exist?(cache_dir)).to be false
+        (expect Dir.children(File.join(xdg_cache_home, 'kroki'))).not_to be_empty
+        expect(logs.count { |log| log.include?('kroki-cache-dir') }).to eq 1
+      ensure
+        ENV['XDG_CACHE_HOME'] = original
+      end
+    end
+    it 'should use a kroki-cache-dir attribute outside of the base directory set from the API' do
+      cache_dir = File.join(@outside_dir, 'api-cache')
+      convert("[plantuml,c]\n....\nalice\n....\n",
+              attributes: { 'kroki-fetch-diagram' => '', 'kroki-cache-dir' => cache_dir, 'imagesoutdir' => File.join(@base_dir, 'images') })
+      (expect Dir.children(cache_dir)).not_to be_empty
     end
     it 'should reject a format that contains a path separator' do
       html, = convert("[plantuml,name,../../evil]\n....\nalice\n....\n", attributes: fetch_attributes)
