@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Browser: support `kroki-fetch-diagram`. Since there is no disk to write to, diagrams are always embedded as data URIs, with or without `data-uri` or `kroki-data-uri`. Previously, the diagram was skipped and replaced by a `kroki-error` block.
+
 ### Fixed
 
 - Ruby: keep the title of a diagram block or block macro on the `kroki-error` block that replaces it when the diagram cannot be converted (e.g., the Kroki server is unreachable), like the JavaScript/Node.js extension. The title was dropped.

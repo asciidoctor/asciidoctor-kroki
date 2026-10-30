@@ -16,7 +16,7 @@
 |`false`
 
 |`kroki-fetch-diagram`
-|Download images from the Kroki server and save them to disk. Not available in the browser.
+|Download images from the Kroki server and save them to disk. In the browser, there is no disk: images are always embedded as data-URI elements.
 |`false`
 
 |`kroki-cache`

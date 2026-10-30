@@ -68,4 +68,30 @@ digraph G { A -> B }
       `Response is not valid SVG:\n${svg.slice(0, 200)}`,
     )
   })
+
+  test('embeds a data URI fetched from the Kroki server with the bundle when kroki-fetch-diagram is set', async () => {
+    // Assembled at runtime so Vite does not resolve (and rewrite) the bundle's imports.
+    const bundleUrl = new URL('../../build/browser/index.js', import.meta.url)
+    const { register: registerBundle } = await import(
+      /* @vite-ignore */ bundleUrl.href
+    )
+    const registry = Extensions.create()
+    registerBundle(registry)
+    const html = await convert('[plantuml]\n....\nalice -> bob\n....\n', {
+      extension_registry: registry,
+      safe: 'safe',
+      attributes: {
+        'kroki-server-url': krokiUrl,
+        'kroki-fetch-diagram': '',
+        'data-uri': '',
+      },
+    })
+
+    const match = html.match(/src="data:image\/svg\+xml;base64,([^"]+)"/)
+    assert.ok(match, `No data URI found in:\n${html}`)
+    assert.ok(
+      atob(match[1]).includes('<svg'),
+      `Data URI is not valid SVG:\n${atob(match[1]).slice(0, 200)}`,
+    )
+  })
 })

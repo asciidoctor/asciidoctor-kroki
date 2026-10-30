@@ -21,14 +21,15 @@ const toDataUri = async (krokiDiagram, krokiClient) => {
 }
 
 /**
- * Browser build of `fetch.js`: `save()` writes to a filesystem, which genuinely has
- * no browser equivalent, so it keeps throwing. `toDataUri()` only needs `fetch` and
- * `btoa` (both browser globals), so this is a straight reimplementation rather than a
- * stub -- swapped in for `src/fetch.js` at build time, see `rollup.config.js`.
+ * Browser build of `fetch.js`: `toDataUri()` only needs `fetch` and `btoa` (both
+ * browser globals), so this is a straight reimplementation rather than a stub --
+ * swapped in for `src/fetch.js` at build time, see `rollup.config.js`. There is no
+ * disk to write to (nor a persistent cache to read from), so `save()` always embeds
+ * the diagram as a `data:` URI, whether or not `data-uri` or `kroki-data-uri` is set.
  */
 export default {
   toDataUri,
-  save: () => {
-    throw new Error('kroki-fetch-diagram is not supported in the browser')
-  },
+  save: async (krokiDiagram, _doc, _target, _vfs, krokiClient) => ({
+    target: await toDataUri(krokiDiagram, krokiClient),
+  }),
 }
