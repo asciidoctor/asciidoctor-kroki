@@ -632,7 +632,7 @@ module AsciidoctorExtensions
     require 'json'
 
     class << self
-      REFERER = "asciidoctor/kroki.rb/#{Asciidoctor::AsciidoctorKroki::VERSION}"
+      REFERER = "asciidoctor/kroki.rb/#{Asciidoctor::AsciidoctorKroki::VERSION}".freeze
 
       def get(uri, opts, _encoding, expected_content_type = nil)
         parsed_uri = URI(uri)

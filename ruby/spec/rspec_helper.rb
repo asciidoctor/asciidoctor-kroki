@@ -5,7 +5,7 @@ require 'testcontainers'
 # Kroki server used by the specs tagged with `kroki_server: true`, started once on first use.
 # The image version is shared with the JavaScript test suite (see .kroki-version).
 module KrokiServer
-  IMAGE = "yuzutech/kroki:#{File.read(File.expand_path('../../.kroki-version', __dir__)).strip}"
+  IMAGE = "yuzutech/kroki:#{File.read(File.expand_path('../../.kroki-version', __dir__)).strip}".freeze
 
   class << self
     def url
