@@ -124,7 +124,7 @@ Ruby 2.7 is no longer supported::
 The gem is tested on Ruby 3.2 and 3.4.
 
 `subs` is applied before the includes are resolved::
-`!include {dir}/file.puml` is now resolved, and the content of an included file is no longer substituted, like in JavaScript.
+`+!include {dir}/file.puml+` is now resolved, and the content of an included file is no longer substituted, like in JavaScript.
 +
 *To upgrade*: if an included file relies on a substitution, set the value in the diagram itself.
 
