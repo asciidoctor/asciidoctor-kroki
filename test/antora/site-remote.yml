@@ -9,7 +9,7 @@ site:
 content:
   sources:
     - url: https://github.com/asciidoctor/asciidoctor-kroki.git
-      branches: master
+      branches: 0.x
       start_path: test/antora/docs
 
 asciidoc:
