@@ -1364,7 +1364,7 @@ plantuml::test/fixtures/alice.puml[svg,opts=inline,theme=bluegray]
           const html = asciidoctor.convert(input, {
             safe: 'safe',
             extension_registry: registry,
-            attributes: { 'kroki-fetch-diagram': '', imagesdir: '.asciidoctor/kroki' }
+            attributes: { 'kroki-fetch-diagram': '', imagesdir: '.asciidoctor/kroki', 'kroki-server-url': krokiServerUrl }
           })
           const svg = fs.readFileSync(ospath.join(__dirname, 'fixtures', 'expected', 'alice-bluegray.svg'), 'utf8')
           expect(html).to.equal(`<div class="imageblock kroki">
