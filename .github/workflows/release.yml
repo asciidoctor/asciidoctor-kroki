@@ -1,0 +1,129 @@
+name: Release
+
+run-name: Release v${{ inputs.version }}
+
+# Releases from the 0.x maintenance branch.
+# npm Trusted Publishing is bound to this file name (release.yml), so keep it.
+# The package is published under the `latest-0` dist-tag so that `latest`
+# keeps pointing to the newest major version released from main.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g. 0.18.2)'
+        required: true
+
+jobs:
+  prepare:
+    if: github.ref == 'refs/heads/0.x'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      version: ${{ steps.set-version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - name: Set version
+        id: set-version
+        run: |
+          VERSION="${{ inputs.version }}"
+          VERSION="${VERSION#v}"
+          case "$VERSION" in
+            0.*) ;;
+            *) echo "::error::Only 0.x versions can be released from the 0.x branch"; exit 1 ;;
+          esac
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+      - name: Bump version
+        run: npm version "${{ steps.set-version.outputs.version }}" --no-git-tag-version
+      - name: Commit and tag
+        run: |
+          VERSION="${{ steps.set-version.outputs.version }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add package.json package-lock.json
+          git commit -m "chore: release v$VERSION"
+          git tag "v$VERSION"
+          git push origin HEAD:0.x
+          git push origin "v$VERSION"
+
+  build:
+    needs: prepare
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: v${{ needs.prepare.outputs.version }}
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      # libgbm-dev is required by Puppeteer 3+
+      - name: Install system dependencies
+        run: sudo apt-get install -y libgbm-dev
+      - name: Install dependencies
+        run: npm ci
+      - name: Lint and test
+        run: |
+          npm run lint
+          npm t
+
+  publish:
+    needs: [prepare, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: v${{ needs.prepare.outputs.version }}
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          registry-url: 'https://registry.npmjs.org'
+      - name: Install dependencies
+        run: npm ci
+      - name: Package
+        run: ./tasks/package.sh
+      - name: Publish to npm
+        run: npm publish --provenance --access public --tag latest-0
+      - name: Upload JS artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: js-dist
+          path: |
+            bin/asciidoctor-kroki.dist.zip
+            bin/asciidoctor-kroki.dist.tar.gz
+
+  release:
+    needs: [prepare, publish]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: v${{ needs.prepare.outputs.version }}
+          fetch-depth: 0
+      - name: Download JS artifacts
+        uses: actions/download-artifact@v8
+        with:
+          name: js-dist
+          path: dist/
+      - name: Create GitHub release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${{ needs.prepare.outputs.version }}"
+          PREVIOUS_TAG=$(git describe --tags --abbrev=0 --match 'v0.*' "v$VERSION^")
+          # --latest=false: the "Latest" GitHub release must stay on the newest major version
+          gh release create "v$VERSION" \
+            --title "v$VERSION" \
+            --generate-notes \
+            --notes-start-tag "$PREVIOUS_TAG" \
+            --latest=false \
+            dist/asciidoctor-kroki.dist.zip \
+            dist/asciidoctor-kroki.dist.tar.gz
