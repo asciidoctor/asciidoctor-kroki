@@ -44,21 +44,7 @@ const BUILTIN_ATTRIBUTES = [
   'subs'
 ]
 
-const wrapError = (err, message) => {
-  const errWrapper = new Error(message)
-  errWrapper.stack += `\nCaused by: ${err.stack || 'unknown'}`
-  const result = {
-    err: {
-      package: 'asciidoctor-kroki',
-      message,
-      stack: errWrapper.stack
-    }
-  }
-  result.$inspect = function () {
-    return JSON.stringify(this.err)
-  }
-  return result
-}
+const skipDiagramMessage = (err, diagramType) => `Skipping ${diagramType} block: ${(err && err.message) || err}`
 
 const createImageSrc = (doc, krokiDiagram, target, vfs, krokiClient) => {
   const shouldFetch = doc.isAttribute('kroki-fetch-diagram')
@@ -185,8 +171,7 @@ function diagramBlock (context) {
       try {
         return processKroki(this, parent, attrs, diagramType, diagramText, context)
       } catch (err) {
-        const errorMessage = wrapError(err, `Skipping ${diagramType} block.`)
-        parent.getDocument().getLogger().warn(errorMessage)
+        parent.getDocument().getLogger().warn(skipDiagramMessage(err, diagramType))
         attrs.role = role ? `${role} kroki-error` : 'kroki-error'
         return this.createBlock(parent, attrs['cloaked-context'], diagramText, attrs)
       }
@@ -223,8 +208,7 @@ function diagramBlockMacro (name, context) {
         const resource = (typeof vfs.parse === 'function' && vfs.parse(target)) || { dir: '' }
         return processKroki(this, parent, attrs, diagramType, diagramText, context, resource)
       } catch (err) {
-        const errorMessage = wrapError(err, `Skipping ${diagramType} block.`)
-        parent.getDocument().getLogger().warn(errorMessage)
+        parent.getDocument().getLogger().warn(skipDiagramMessage(err, diagramType))
         attrs.role = role ? `${role} kroki-error` : 'kroki-error'
         return this.createBlock(parent, 'paragraph', `${err.message} - ${diagramType}::${target}[]`, attrs)
       }

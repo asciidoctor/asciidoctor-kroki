@@ -40,6 +40,52 @@ describe('Registration', () => {
   })
 })
 
+describe('Skipped diagram warning', () => {
+  const convertWithMemoryLogger = (input, attributes) => {
+    const defaultLogger = asciidoctor.LoggerManager.getLogger()
+    const memoryLogger = asciidoctor.MemoryLogger.create()
+    try {
+      asciidoctor.LoggerManager.setLogger(memoryLogger)
+      const registry = asciidoctor.Extensions.create()
+      asciidoctorKroki.register(registry)
+      const html = asciidoctor.convert(input, { safe: 'safe', extension_registry: registry, attributes })
+      return { html, messages: memoryLogger.getMessages() }
+    } finally {
+      asciidoctor.LoggerManager.setLogger(defaultLogger)
+    }
+  }
+
+  it('should log a string message when a diagram block cannot be fetched', () => {
+    const input = `
+[plantuml]
+....
+alice -> bob
+....
+`
+    const { html, messages } = convertWithMemoryLogger(input, {
+      'kroki-fetch-diagram': true,
+      'kroki-server-url': 'http://127.0.0.1:1'
+    })
+    expect(html).to.contain('kroki-error')
+    expect(messages.length).to.equal(1)
+    expect(messages[0].getSeverity()).to.equal('WARN')
+    const text = messages[0].getText()
+    expect(text).to.be.a('string')
+    expect(text).to.match(/^Skipping plantuml block: .+/)
+    expect(text).to.not.contain('[object Object]')
+  })
+
+  it('should log a string message when a diagram block macro target cannot be read', () => {
+    const { html, messages } = convertWithMemoryLogger('plantuml::test/fixtures/does-not-exist.puml[svg]', {})
+    expect(html).to.contain('kroki-error')
+    expect(messages.length).to.equal(1)
+    expect(messages[0].getSeverity()).to.equal('WARN')
+    const text = messages[0].getText()
+    expect(text).to.be.a('string')
+    expect(text).to.match(/^Skipping plantuml block: .*does-not-exist\.puml/)
+  })
+})
+
 describe('Conversion', () => {
   function encode (file) {
     const text = fs.readFileSync(file, 'utf8')
