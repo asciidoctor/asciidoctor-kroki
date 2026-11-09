@@ -54,7 +54,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/Mogztter/asciidoctor-kroki.git"
+    "url": "https://github.com/asciidoctor/asciidoctor-kroki.git"
   },
   "keywords": [
     "asciidoctor",
@@ -66,9 +66,9 @@
   "author": "Guillaume Grossetie (https://github.com/mogztter)",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/Mogztter/asciidoctor-kroki/issues"
+    "url": "https://github.com/asciidoctor/asciidoctor-kroki/issues"
   },
-  "homepage": "https://github.com/Mogztter/asciidoctor-kroki#readme",
+  "homepage": "https://github.com/asciidoctor/asciidoctor-kroki#readme",
   "publishConfig": {
     "access": "public"
   },
