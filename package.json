@@ -63,7 +63,7 @@
     "javascript",
     "extension"
   ],
-  "author": "Guillaume Grossetie (https://github.com/mogztter)",
+  "author": "Guillaume Grossetie (https://github.com/ggrossetie)",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/asciidoctor/asciidoctor-kroki/issues"
