@@ -1,6 +1,6 @@
 import assert from 'node:assert'
 import { describe, test } from 'node:test'
-import { convert, Extensions, MemoryLogger } from '@asciidoctor/core'
+import { convert, Extensions, load, MemoryLogger } from '@asciidoctor/core'
 import { register } from '../src/index.js'
 import { assertContains } from './node/utils.js'
 
@@ -82,5 +82,24 @@ alice -> bob
     )
     // The block is still emitted, tagged with the kroki-error role.
     assertContains(html, 'kroki-error')
+  })
+
+  test('exposes the reason on the kroki-error block when a diagram block cannot be rendered', async () => {
+    const input = `[plantuml,diag,txt]
+....
+alice -> bob
+....
+`
+    const registry = Extensions.create()
+    register(registry)
+    const doc = await load(input, {
+      extension_registry: registry,
+      logger: MemoryLogger.create(),
+      attributes: { 'kroki-server-url': 'http://127.0.0.1:1/invalid' },
+    })
+    const block = doc.getBlocks()[0]
+    assert.strictEqual(block.getRole(), 'kroki-error')
+    assert.strictEqual(block.getSource(), 'alice -> bob')
+    assert.ok(block.getAttribute('kroki-error-message'))
   })
 })

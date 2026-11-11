@@ -44,6 +44,8 @@ module AsciidoctorExtensions
       # conversion, so it's degraded to a warning and the raw diagram source is kept visible.
       logger.warn message_with_context "Skipping #{diagram_type} block: #{e.message}", source_location: source_location
       attrs['role'] = role ? "#{role} kroki-error" : 'kroki-error'
+      # lets consumers of the converted document (e.g. an editor preview) show why the diagram wasn't rendered
+      attrs['kroki-error-message'] = e.message
       create_block(parent, attrs['cloaked-context'], diagram_text, attrs)
     end
 

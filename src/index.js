@@ -358,6 +358,8 @@ function diagramBlock(context, services) {
         const doc = parent.getDocument()
         logger.warn(skipDiagramMessage(doc, err, diagramType, sourceLocation))
         attrs.role = role ? `${role} kroki-error` : 'kroki-error'
+        // lets consumers of the converted document (e.g. an editor preview) show why the diagram wasn't rendered
+        attrs['kroki-error-message'] = err.message
         return this.createBlock(
           parent,
           attrs['cloaked-context'],
