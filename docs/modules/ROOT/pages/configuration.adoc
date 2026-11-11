@@ -17,7 +17,8 @@
 
 |`kroki-fetch-diagram`
 |Download images from the Kroki server and save them to disk. In the browser, there is no disk: images are always embedded as data-URI elements.
-|`false`
+With the `pdf` backend, diagrams are downloaded by default, so that a diagram that can't be rendered is reported during the conversion, instead of being a remote image the PDF converter fails to load. Unset the attribute on the command line (`-a kroki-fetch-diagram!`) or through the API to disable this.
+|`false` (`true` for the `pdf` backend)
 
 |`kroki-cache`
 a|Whether fetched diagrams are kept in a persistent cache (see xref:_persistent_cache[]):

@@ -1,6 +1,13 @@
 import assert from 'node:assert'
 import { describe, test } from 'node:test'
-import { convert, Extensions, MemoryLogger } from '@asciidoctor/core'
+import {
+  ConverterFactory,
+  convert,
+  Extensions,
+  Html5Converter,
+  load,
+  MemoryLogger,
+} from '@asciidoctor/core'
 import { register } from '../src/index.js'
 import { assertContains } from './node/utils.js'
 
@@ -82,5 +89,43 @@ alice -> bob
     )
     // The block is still emitted, tagged with the kroki-error role.
     assertContains(html, 'kroki-error')
+  })
+
+  describe('with the pdf backend', () => {
+    // asciidoctor-pdf is not a dependency: any converter is enough to load a document for the backend
+    ConverterFactory.register(new Html5Converter(), ['pdf'])
+    const input = `[plantuml]
+....
+alice -> bob
+....
+`
+    const loadBlock = async (backend, attributes) => {
+      const registry = Extensions.create()
+      register(registry)
+      const doc = await load(input, {
+        backend,
+        safe: 'safe',
+        extension_registry: registry,
+        logger: MemoryLogger.create(),
+        // Unreachable server so fetching the diagram fails deterministically offline.
+        attributes: { 'kroki-server-url': 'http://127.0.0.1:1', ...attributes },
+      })
+      return doc.getBlocks()[0]
+    }
+
+    test('fetches the diagram by default, so that a failure is reported', async () => {
+      const block = await loadBlock('pdf', {})
+      assert.strictEqual(block.getRole(), 'kroki-error')
+    })
+
+    test('does not fetch the diagram when kroki-fetch-diagram is unset', async () => {
+      const block = await loadBlock('pdf', { 'kroki-fetch-diagram': null })
+      assert.strictEqual(block.getContext(), 'image')
+    })
+
+    test('does not fetch the diagram by default for another backend', async () => {
+      const block = await loadBlock('html5', {})
+      assert.strictEqual(block.getContext(), 'image')
+    })
   })
 })

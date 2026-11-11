@@ -66,6 +66,18 @@ const skipDiagramMessage = (doc, err, diagramType, sourceLocation) => {
 }
 
 /**
+ * Diagrams are fetched when `kroki-fetch-diagram` is set, and by default for the PDF backend: the converter
+ * doesn't see the response of the Kroki server when it loads the image itself, so it couldn't report an error.
+ * The default is disabled with `kroki-fetch-diagram` unset on the command line or through the API.
+ *
+ * @param {Object} doc - Asciidoctor document.
+ * @returns {boolean}
+ */
+const isFetchDiagram = (doc) =>
+  doc.isAttribute('kroki-fetch-diagram') ||
+  (doc.getBackend() === 'pdf' && !doc.isAttributeLocked('kroki-fetch-diagram'))
+
+/**
  * Resolves the image node's `target` and, when the file was written outside the
  * document's own `imagesdir`, the `imagesdir` override to set on that node.
  *
@@ -79,10 +91,7 @@ const createImageSrc = async (
   krokiClient,
   inline,
 ) => {
-  if (
-    doc.isAttribute('kroki-fetch-diagram') &&
-    doc.getSafe() < SAFE_MODE_SECURE
-  ) {
+  if (isFetchDiagram(doc) && doc.getSafe() < SAFE_MODE_SECURE) {
     // The format is part of the name of the output file and of the cache entry.
     if (/[\\/]/.test(krokiDiagram.format)) {
       throw new Error(`Invalid diagram format '${krokiDiagram.format}'`)
