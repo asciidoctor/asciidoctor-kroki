@@ -1,3 +1,7 @@
+import { HttpError, serverMessageOf } from './http-error.js'
+
+export { HttpError } from './http-error.js'
+
 export const DEFAULT_TIMEOUT = 60000
 export const DEFAULT_MAX_RESPONSE_SIZE = 25 * 1024 * 1024
 
@@ -75,6 +79,15 @@ const readBody = async (response, maxResponseSize) => {
   return byteArray
 }
 
+const emptyResponseError = (method, uri, status) =>
+  new HttpError(
+    'unexpected-response',
+    method,
+    uri,
+    'server returns an empty response',
+    { status },
+  )
+
 const httpRequest = async (
   uri,
   method,
@@ -91,8 +104,11 @@ const httpRequest = async (
     if (signal.aborted) {
       throw e
     }
-    throw new Error(
-      `${method} ${uri} - error; reason: ${networkErrorReason(e)}`,
+    throw new HttpError(
+      'network',
+      method,
+      uri,
+      `error; reason: ${networkErrorReason(e)}`,
       { cause: e },
     )
   }
@@ -102,8 +118,12 @@ const httpRequest = async (
       if (
         !contentType.toLowerCase().startsWith(expectedContentType.toLowerCase())
       ) {
-        throw new Error(
-          `${method} ${uri} - unexpected content-type; expected: ${expectedContentType}, got: ${contentType}`,
+        throw new HttpError(
+          'unexpected-response',
+          method,
+          uri,
+          `unexpected content-type; expected: ${expectedContentType}, got: ${contentType}`,
+          { status: response.status },
         )
       }
     }
@@ -116,13 +136,13 @@ const httpRequest = async (
       if (data !== '') {
         return data
       }
-      throw new Error(`${method} ${uri} - server returns an empty response`)
+      throw emptyResponseError(method, uri, response.status)
     }
     const data = new TextDecoder().decode(byteArray)
     if (data !== '') {
       return data
     }
-    throw new Error(`${method} ${uri} - server returns an empty response`)
+    throw emptyResponseError(method, uri, response.status)
   }
   // The reason of the failure is in the body, regardless of the encoding requested for a successful response.
   let errorBody = ''
@@ -131,13 +151,25 @@ const httpRequest = async (
       await readBody(response, maxResponseSize),
     )
   } catch (_) {}
+  const serverMessage = serverMessageOf(
+    errorBody,
+    response.headers.get('content-type') || '',
+  )
   if (response.status === 414) {
-    throw new Error(
-      `${method} ${uri} - server returns 414 (URI Too Long). The diagram URI is too long for the server. Consider using the 'kroki-http-method' attribute set to 'post' or 'adaptive' to send the diagram source via POST.`,
+    throw new HttpError(
+      'http',
+      method,
+      uri,
+      "server returns 414 (URI Too Long). The diagram URI is too long for the server. Consider using the 'kroki-http-method' attribute set to 'post' or 'adaptive' to send the diagram source via POST.",
+      { status: response.status, serverMessage },
     )
   }
-  throw new Error(
-    `${method} ${uri} - server returns ${response.status} status code; response: ${errorBody}`,
+  throw new HttpError(
+    'http',
+    method,
+    uri,
+    `server returns ${response.status} status code; response: ${serverMessage ?? ''}`,
+    { status: response.status, serverMessage },
   )
 }
 
@@ -170,12 +202,23 @@ export function createHttpClient({
       )
     } catch (e) {
       if (e instanceof ResponseTooLargeError) {
-        throw new Error(
-          `${method} ${uri} - response exceeds maximum size of ${maxResponseSize} bytes`,
+        throw new HttpError(
+          'size-limit',
+          method,
+          uri,
+          `response exceeds maximum size of ${maxResponseSize} bytes`,
         )
       }
       if (timedOut && e.name === 'AbortError') {
-        throw new Error(`${method} ${uri} - timed out after ${timeout}ms`)
+        throw new HttpError(
+          'timeout',
+          method,
+          uri,
+          `timed out after ${timeout}ms`,
+          {
+            cause: e,
+          },
+        )
       }
       throw e
     } finally {

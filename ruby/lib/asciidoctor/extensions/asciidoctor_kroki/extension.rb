@@ -4,6 +4,7 @@ require 'cgi'
 require 'pathname'
 require 'asciidoctor/extensions' unless RUBY_ENGINE == 'opal'
 require_relative 'attributes'
+require_relative 'http_error'
 require_relative 'http_limits'
 require_relative 'preprocess'
 require_relative 'cache'
@@ -677,7 +678,12 @@ module AsciidoctorExtensions
     # so it's replaced by display_uri in the error message.
     def get(uri, display_uri, opts, encoding, expected_content_type)
       @http_client.get(uri, opts, encoding, expected_content_type)
+    rescue HttpError => e
+      raise unless e.url == uri
+
+      raise e.with_url(display_uri)
     rescue => e # rubocop:disable Style/RescueStandardError
+      # an error raised by a custom HTTP client
       raise unless e.message.include?(uri)
 
       raise e.exception(e.message.gsub(uri) { display_uri })
@@ -688,15 +694,23 @@ module AsciidoctorExtensions
   #
   class KrokiHttpClient
     require 'net/http'
+    require 'openssl'
     require 'uri'
     require 'json'
 
     class << self
       REFERER = "asciidoctor/kroki.rb/#{Asciidoctor::AsciidoctorKroki::VERSION}".freeze
+      # The output format is part of the path, so the server only uses this header to format
+      # an error, which is then returned as {"error": {"code": 400, "message": "..."}}.
+      ACCEPT = 'application/json'
+      # Errors raised by Net::HTTP when the server can't be reached.
+      NETWORK_ERRORS = [SocketError, SystemCallError, IOError, OpenSSL::SSL::SSLError, ::Net::ProtocolError].freeze
+      # Errors raised by Net::HTTP when the connection can't be opened or a read doesn't complete in time.
+      TIMEOUT_ERRORS = [::Net::OpenTimeout, ::Net::ReadTimeout].freeze
 
       def get(uri, opts, _encoding, expected_content_type = nil)
         headers = opts.transform_keys { |key| "Kroki-Diagram-Options-#{key}" }
-                      .merge({ 'referer' => REFERER })
+                      .merge({ 'referer' => REFERER, 'accept' => ACCEPT })
         send_request('GET', uri, ::Net::HTTP::Get.new(URI(uri), headers), expected_content_type)
       end
 
@@ -704,7 +718,8 @@ module AsciidoctorExtensions
         headers = opts.transform_keys { |key| "Kroki-Diagram-Options-#{key}" }
                       .merge({
                                'Content-Type' => 'text/plain',
-                               'referer' => REFERER
+                               'referer' => REFERER,
+                               'accept' => ACCEPT
                              })
         request = ::Net::HTTP::Post.new(URI(uri), headers)
         request.body = data
@@ -715,10 +730,16 @@ module AsciidoctorExtensions
 
       def send_request(method, uri, request, expected_content_type)
         parsed_uri = URI(uri)
-        response = KrokiHttpLimits.with_timeout(method, uri) do
-          ::Net::HTTP.start(parsed_uri.hostname, parsed_uri.port, use_ssl: (parsed_uri.scheme == 'https')) do |http|
-            http.request(request) { |incoming| read_body(incoming, method, uri) }
+        response = begin
+          KrokiHttpLimits.with_timeout(method, uri) do
+            ::Net::HTTP.start(parsed_uri.hostname, parsed_uri.port, use_ssl: (parsed_uri.scheme == 'https')) do |http|
+              http.request(request) { |incoming| read_body(incoming, method, uri) }
+            end
           end
+        rescue *TIMEOUT_ERRORS => e
+          raise HttpError.new('timeout', method, uri, "error; reason: #{e.message}")
+        rescue *NETWORK_ERRORS => e
+          raise HttpError.new('network', method, uri, "error; reason: #{e.message}")
         end
         handle_response(response, method, uri, expected_content_type)
       end
@@ -745,19 +766,26 @@ module AsciidoctorExtensions
           if expected_content_type
             content_type = (response['content-type'] || '').downcase
             unless content_type.start_with?(expected_content_type.downcase)
-              raise "#{method} #{uri} - unexpected content-type; expected: #{expected_content_type}, got: #{content_type}"
+              raise HttpError.new('unexpected-response', method, uri,
+                                  "unexpected content-type; expected: #{expected_content_type}, got: #{content_type}",
+                                  status: response.code.to_i)
             end
           end
           body = response.body
-          raise "#{method} #{uri} - server returns an empty response" if body.nil? || body.empty?
+          raise HttpError.new('unexpected-response', method, uri, 'server returns an empty response', status: response.code.to_i) if body.nil? || body.empty?
 
           return body
         end
-        if response.code == '414'
-          raise "#{method} #{uri} - server returns 414 (URI Too Long). The diagram URI is too long for the server. " \
-                "Consider using the 'kroki-http-method' attribute set to 'post' or 'adaptive' to send the diagram source via POST."
+        status = response.code.to_i
+        server_message = HttpError.server_message_of(response.body, response['content-type'])
+        if status == 414
+          raise HttpError.new('http', method, uri,
+                              'server returns 414 (URI Too Long). The diagram URI is too long for the server. ' \
+                              "Consider using the 'kroki-http-method' attribute set to 'post' or 'adaptive' to send the diagram source via POST.",
+                              status: status, server_message: server_message)
         end
-        raise "#{method} #{uri} - server returns #{response.code} status code; response: #{response.body}"
+        raise HttpError.new('http', method, uri, "server returns #{status} status code; response: #{server_message}",
+                            status: status, server_message: server_message)
       end
     end
   end

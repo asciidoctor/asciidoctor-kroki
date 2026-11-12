@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'timeout'
+require_relative 'http_error'
 
 module AsciidoctorExtensions
   # Limits of the HTTP requests sent to Kroki and of the remote resources read by the extension,
@@ -18,11 +19,13 @@ module AsciidoctorExtensions
       def with_timeout(method, uri, &)
         ::Timeout.timeout(self::TIMEOUT, TimedOut, &)
       rescue TimedOut
-        raise "#{method} #{uri} - timed out after #{self::TIMEOUT}s"
+        raise HttpError.new('timeout', method, uri, "timed out after #{self::TIMEOUT}s")
       end
 
       def check_size(size, method, uri)
-        raise "#{method} #{uri} - response exceeds maximum size of #{self::MAX_RESPONSE_SIZE} bytes" if size > self::MAX_RESPONSE_SIZE
+        return unless size > self::MAX_RESPONSE_SIZE
+
+        raise HttpError.new('size-limit', method, uri, "response exceeds maximum size of #{self::MAX_RESPONSE_SIZE} bytes")
       end
 
       def read_uri(uri)

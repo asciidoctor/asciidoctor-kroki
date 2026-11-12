@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Requests to the Kroki server accept `application/json`, so that the server returns an error as JSON. The warning logged for a diagram that can't be rendered contains the reason returned by the server without the `Error 400:` prefix, for instance `server returns 400 status code; response: Syntax Error? (Assumed diagram type: sequence) (line: 2)` (Ruby and JavaScript/Node.js) ([#549](https://github.com/asciidoctor/asciidoctor-kroki/issues/549)).
+- An HTTP request that fails raises an `HttpError` with the type of the failure (`network`, `timeout`, `http`, `unexpected-response` or `size-limit`), the HTTP status and the reason returned by the server, instead of an error with a message only (Ruby and JavaScript/Node.js) ([#549](https://github.com/asciidoctor/asciidoctor-kroki/issues/549)).
+- Ruby: the warning logged for a network error starts with the method and the URL of the request, like the JavaScript/Node.js extension ([#549](https://github.com/asciidoctor/asciidoctor-kroki/issues/549)).
+
 ### Fixed
 
 - JavaScript/Node.js: report the cause of a network error (for instance `connect ECONNREFUSED 127.0.0.1:8000` or `getaddrinfo ENOTFOUND kroki.example.com`) instead of the generic `fetch failed` ([#548](https://github.com/asciidoctor/asciidoctor-kroki/issues/548)).

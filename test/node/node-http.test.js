@@ -12,8 +12,10 @@ import {
 } from '@asciidoctor/core'
 import httpClient, {
   createHttpClient,
+  HttpError,
   networkErrorReason,
 } from '../../src/http-client.js'
+import { serverMessageOf } from '../../src/http-error.js'
 import { register } from '../../src/index.js'
 import { createNodeFs } from '../../src/node-fs.js'
 
@@ -138,6 +140,171 @@ describe('Async HTTP client (fetch)', () => {
     } finally {
       await worker.terminate()
     }
+  })
+
+  describe('structured errors', () => {
+    const rejectsWith = async (fn, expected) =>
+      assert.rejects(fn, (err) => {
+        assert.ok(err instanceof HttpError, String(err))
+        for (const [key, value] of Object.entries(expected)) {
+          assert.strictEqual(err[key], value, `${key}: ${err.message}`)
+        }
+        return true
+      })
+
+    test('uses the message of a JSON error returned by Kroki as the server message', async () => {
+      const { worker, port } = await startServer('400-json-server.js')
+      const url = `http://localhost:${port}/plantuml/png`
+      try {
+        await rejectsWith(() => httpClient.post(url, 'x', {}, 'binary'), {
+          type: 'http',
+          method: 'POST',
+          url,
+          status: 400,
+          serverMessage:
+            'Syntax Error? (Assumed diagram type: sequence) (line: 2)',
+          message: `POST ${url} - server returns 400 status code; response: Syntax Error? (Assumed diagram type: sequence) (line: 2)`,
+        })
+      } finally {
+        await worker.terminate()
+      }
+    })
+    test('uses the raw body as the server message when it is not JSON', async () => {
+      const { worker, port } = await startServer('500-server.js')
+      try {
+        await rejectsWith(
+          () => httpClient.get(`http://localhost:${port}`, {}, 'utf8'),
+          {
+            type: 'http',
+            status: 500,
+            serverMessage: '500 Something went bad!',
+          },
+        )
+      } finally {
+        await worker.terminate()
+      }
+    })
+    test('has the http type and the status on HTTP 414', async () => {
+      const { worker, port } = await startServer('414-server.js')
+      try {
+        await rejectsWith(
+          () => httpClient.get(`http://localhost:${port}`, {}, 'utf8'),
+          { type: 'http', status: 414, serverMessage: '414 URI Too Long' },
+        )
+      } finally {
+        await worker.terminate()
+      }
+    })
+    test('has the unexpected-response type on an empty response', async () => {
+      const { worker, port } = await startServer('204-server.js')
+      try {
+        await rejectsWith(
+          () => httpClient.get(`http://localhost:${port}`, {}, 'utf8'),
+          { type: 'unexpected-response', status: 204 },
+        )
+      } finally {
+        await worker.terminate()
+      }
+    })
+    test('has the unexpected-response type on an unexpected content type', async () => {
+      const { worker, port } = await startServer('200-html-server.js')
+      try {
+        await rejectsWith(
+          () =>
+            httpClient.get(
+              `http://localhost:${port}`,
+              {},
+              'utf8',
+              'image/svg+xml',
+            ),
+          { type: 'unexpected-response', status: 200 },
+        )
+      } finally {
+        await worker.terminate()
+      }
+    })
+    test('has the network type and keeps the cause of a network error', async () => {
+      const server = createServer()
+      await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve))
+      const { port } = server.address()
+      await new Promise((resolve) => server.close(resolve))
+      await assert.rejects(
+        () => httpClient.get(`http://127.0.0.1:${port}`, {}, 'utf8'),
+        (err) => {
+          assert.ok(err instanceof HttpError, String(err))
+          assert.strictEqual(err.type, 'network')
+          assert.strictEqual(err.status, undefined)
+          assert.ok(err.cause, 'the error has a cause')
+          return true
+        },
+      )
+    })
+    test('has the timeout type when the response is not received in time', async () => {
+      const { worker, port } = await startServer('slow-body-server.js')
+      try {
+        await rejectsWith(
+          () =>
+            createHttpClient({ timeout: 300 }).get(
+              `http://localhost:${port}`,
+              {},
+              'utf8',
+            ),
+          { type: 'timeout' },
+        )
+      } finally {
+        await worker.terminate()
+      }
+    })
+    test('has the size-limit type when the response is too large', async () => {
+      const { worker, port } = await startServer(
+        'oversized-chunked-server.js',
+        { size: 2048 },
+      )
+      try {
+        await rejectsWith(
+          () =>
+            createHttpClient({ maxResponseSize: 1024 }).get(
+              `http://localhost:${port}`,
+              {},
+              'utf8',
+            ),
+          { type: 'size-limit' },
+        )
+      } finally {
+        await worker.terminate()
+      }
+    })
+  })
+
+  describe('server message', () => {
+    test('extracts the message of a Kroki JSON error', () => {
+      assert.strictEqual(
+        serverMessageOf(
+          '{"error":{"code":400,"message":"Unsupported output format"}}',
+          'application/json',
+        ),
+        'Unsupported output format',
+      )
+    })
+    test('returns the trimmed body when it is not JSON', () => {
+      assert.strictEqual(
+        serverMessageOf('Error 400: Syntax Error?\n', 'text/plain'),
+        'Error 400: Syntax Error?',
+      )
+    })
+    test('returns the body of an invalid or unexpected JSON response', () => {
+      assert.strictEqual(
+        serverMessageOf('{"message":"nope"}', 'application/json'),
+        '{"message":"nope"}',
+      )
+      assert.strictEqual(
+        serverMessageOf('<html>', 'application/json; charset=utf-8'),
+        '<html>',
+      )
+    })
+    test('returns undefined for an empty body', () => {
+      assert.strictEqual(serverMessageOf('  ', 'text/plain'), undefined)
+    })
   })
 
   describe('network error reason', () => {
