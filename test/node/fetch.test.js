@@ -122,7 +122,8 @@ describe('fetch.save', () => {
       read: async (p) => files.get(p),
       add: (img) =>
         files.set(
-          path.format({ dir: img.relative, base: img.basename }),
+          // fetch.js builds POSIX paths, also on Windows
+          path.posix.format({ dir: img.relative, base: img.basename }),
           img.contents.toString(),
         ),
     }
