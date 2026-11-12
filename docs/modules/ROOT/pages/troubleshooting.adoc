@@ -32,3 +32,12 @@ The images are then referenced using a relative path rather than a direct link t
 When a diagram cannot be converted — for example, the Kroki server is unreachable or a referenced diagram file does not exist — the document conversion does not fail.
 Instead, the extension logs a warning (`Skipping <type> block: <reason>`) and renders the diagram source as-is.
 The `kroki-error` CSS class is added to the resulting block so failed diagrams can be styled or located in the output.
+The reason is also set as the `kroki-error-message` attribute of this block, both for a delimited block and for a block macro, so that a tool processing the converted document, such as an editor preview, can show it next to the diagram.
+For instance, a diagram with a syntax error gives:
+
+----
+GET https://kroki.io/plantuml/svg - server returns 400 status code; response: Syntax Error? (Assumed diagram type: sequence) (line: 2)
+----
+
+This attribute is set by the extension, and the HTML converter doesn't render it.
+Its content is meant to be displayed, not parsed: the wording can change between versions, and it differs between the Ruby and the JavaScript extension.

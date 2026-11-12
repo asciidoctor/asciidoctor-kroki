@@ -51,8 +51,17 @@ const BUILTIN_ATTRIBUTES = [
  * @param {Object} [sourceLocation] - Reader cursor pointing at the block, if any.
  * @returns {Object|string} An auto-formatting log message.
  */
+/**
+ * Returns the reason why a diagram couldn't be rendered.
+ * A rejection isn't necessarily an Error, for instance with a custom virtual file system.
+ *
+ * @param {any} err
+ * @returns {string}
+ */
+const errorReason = (err) => err?.message || String(err)
+
 const skipDiagramMessage = (doc, err, diagramType, sourceLocation) => {
-  const text = `Skipping ${diagramType} block: ${err.message || err}`
+  const text = `Skipping ${diagramType} block: ${errorReason(err)}`
   if (typeof doc.messageWithContext === 'function') {
     return doc.messageWithContext(text, { source_location: sourceLocation })
   }
@@ -358,6 +367,8 @@ function diagramBlock(context, services) {
         const doc = parent.getDocument()
         logger.warn(skipDiagramMessage(doc, err, diagramType, sourceLocation))
         attrs.role = role ? `${role} kroki-error` : 'kroki-error'
+        // lets consumers of the converted document (e.g. an editor preview) show why the diagram wasn't rendered
+        attrs['kroki-error-message'] = errorReason(err)
         return this.createBlock(
           parent,
           attrs['cloaked-context'],
@@ -443,8 +454,10 @@ function diagramBlockMacro(name, context, services) {
       context.logger = parent.getDocument().getLogger()
       const role = attrs.role
       const diagramType = name
-      const errorBlock = (text) => {
+      const errorBlock = (text, err) => {
         attrs.role = role ? `${role} kroki-error` : 'kroki-error'
+        // lets consumers of the converted document (e.g. an editor preview) show why the diagram wasn't rendered
+        attrs['kroki-error-message'] = errorReason(err)
         return this.createBlock(parent, 'paragraph', text, attrs)
       }
       let diagramText
@@ -455,6 +468,7 @@ function diagramBlockMacro(name, context, services) {
         doc.getLogger().warn(skipDiagramMessage(doc, err, diagramType))
         return errorBlock(
           `Unresolved block macro - ${diagramType}::${sourceTarget}[]`,
+          err,
         )
       }
       try {
@@ -473,7 +487,10 @@ function diagramBlockMacro(name, context, services) {
       } catch (err) {
         const doc = parent.getDocument()
         doc.getLogger().warn(skipDiagramMessage(doc, err, diagramType))
-        return errorBlock(`${err.message} - ${diagramType}::${sourceTarget}[]`)
+        return errorBlock(
+          `${errorReason(err)} - ${diagramType}::${sourceTarget}[]`,
+          err,
+        )
       }
     })
   }
