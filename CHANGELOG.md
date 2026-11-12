@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- JavaScript/Node.js: report the cause of a network error (for instance `connect ECONNREFUSED 127.0.0.1:8000` or `getaddrinfo ENOTFOUND kroki.example.com`) instead of the generic `fetch failed` ([#548](https://github.com/asciidoctor/asciidoctor-kroki/issues/548)).
+- JavaScript/Node.js: report the reason returned by the Kroki server for a binary output format, such as `png`. It was left out of the message ([#548](https://github.com/asciidoctor/asciidoctor-kroki/issues/548)).
+- Identify a failed GET request to Kroki by `<server>/<type>/<format>` instead of the full request URI, which contains the encoded diagram and can be several kilobytes long (Ruby and JavaScript/Node.js) ([#548](https://github.com/asciidoctor/asciidoctor-kroki/issues/548)).
+
 ## [2.0.0] - 2026-10-30
 
 It includes every change from the `2.0.0-rc.*` prereleases. See [What's New in 2.0](https://docs.asciidoctor.org/kroki-extension/latest/whats-new/) to upgrade from version 1.0.

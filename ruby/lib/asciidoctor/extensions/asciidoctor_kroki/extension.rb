@@ -660,16 +660,28 @@ module AsciidoctorExtensions
                                               'The server may reject the request with a 414 (URI Too Long). Consider using the ' \
                                               "'kroki-http-method' attribute set to 'adaptive' or 'post'.",
                                               source_location: @source_location
-            @http_client.get(uri, opts, encoding, expected_content_type)
+            get(uri, "#{@server_url}/#{type}/#{format}", opts, encoding, expected_content_type)
           else
             @http_client.post("#{@server_url}/#{type}/#{format}", text, opts, encoding, expected_content_type)
           end
         else
-          @http_client.get(uri, opts, encoding, expected_content_type)
+          get(uri, "#{@server_url}/#{type}/#{format}", opts, encoding, expected_content_type)
         end
       else
         @http_client.post("#{@server_url}/#{type}/#{format}", text, opts, encoding, expected_content_type)
       end
+    end
+
+    private
+
+    # The request URI contains the encoded diagram, which can be several kilobytes long,
+    # so it's replaced by display_uri in the error message.
+    def get(uri, display_uri, opts, encoding, expected_content_type)
+      @http_client.get(uri, opts, encoding, expected_content_type)
+    rescue => e # rubocop:disable Style/RescueStandardError
+      raise unless e.message.include?(uri)
+
+      raise e.exception(e.message.gsub(uri) { display_uri })
     end
   end
 

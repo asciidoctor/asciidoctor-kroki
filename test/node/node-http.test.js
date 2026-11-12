@@ -1,4 +1,5 @@
 import assert from 'node:assert'
+import { createServer } from 'node:net'
 import ospath, { dirname } from 'node:path'
 import { describe, test } from 'node:test'
 import { fileURLToPath } from 'node:url'
@@ -9,7 +10,10 @@ import {
   LoggerManager,
   MemoryLogger,
 } from '@asciidoctor/core'
-import httpClient, { createHttpClient } from '../../src/http-client.js'
+import httpClient, {
+  createHttpClient,
+  networkErrorReason,
+} from '../../src/http-client.js'
 import { register } from '../../src/index.js'
 import { createNodeFs } from '../../src/node-fs.js'
 
@@ -45,6 +49,38 @@ describe('Async HTTP client (fetch)', () => {
     } finally {
       await worker.terminate()
     }
+  })
+  test('includes the response body on HTTP 500 when a binary response is requested', async () => {
+    const { worker, port } = await startServer('500-server.js')
+    try {
+      await assert.rejects(
+        () => httpClient.get(`http://localhost:${port}`, {}, 'binary'),
+        (err) => {
+          assert.ok(
+            err.message.includes('response: 500 Something went bad!'),
+            err.message,
+          )
+          return true
+        },
+      )
+    } finally {
+      await worker.terminate()
+    }
+  })
+  test('includes the cause of a network error', async () => {
+    // a port on which nothing listens
+    const server = createServer()
+    await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve))
+    const { port } = server.address()
+    await new Promise((resolve) => server.close(resolve))
+    await assert.rejects(
+      () => httpClient.get(`http://127.0.0.1:${port}`, {}, 'utf8'),
+      (err) => {
+        assert.ok(err.message.includes('ECONNREFUSED'), err.message)
+        assert.ok(!err.message.includes('fetch failed'), err.message)
+        return true
+      },
+    )
   })
   test('rejects with "server returns an empty response" on HTTP 204', async () => {
     const { worker, port } = await startServer('204-server.js')
@@ -102,6 +138,47 @@ describe('Async HTTP client (fetch)', () => {
     } finally {
       await worker.terminate()
     }
+  })
+
+  describe('network error reason', () => {
+    test('uses the message of the cause', () => {
+      const cause = Object.assign(
+        new Error('getaddrinfo ENOTFOUND example.invalid'),
+        { code: 'ENOTFOUND' },
+      )
+      assert.strictEqual(
+        networkErrorReason(new TypeError('fetch failed', { cause })),
+        'getaddrinfo ENOTFOUND example.invalid',
+      )
+    })
+    test('adds the code of the cause when the message does not contain it', () => {
+      const cause = Object.assign(new Error('certificate has expired'), {
+        code: 'CERT_HAS_EXPIRED',
+      })
+      assert.strictEqual(
+        networkErrorReason(new TypeError('fetch failed', { cause })),
+        'certificate has expired (CERT_HAS_EXPIRED)',
+      )
+    })
+    test('uses the messages of an AggregateError cause', () => {
+      const cause = Object.assign(
+        new AggregateError([
+          new Error('connect ECONNREFUSED ::1:8000'),
+          new Error('connect ECONNREFUSED 127.0.0.1:8000'),
+        ]),
+        { code: 'ECONNREFUSED' },
+      )
+      assert.strictEqual(
+        networkErrorReason(new TypeError('fetch failed', { cause })),
+        'connect ECONNREFUSED ::1:8000, connect ECONNREFUSED 127.0.0.1:8000',
+      )
+    })
+    test('uses the message of the error when there is no cause', () => {
+      assert.strictEqual(
+        networkErrorReason(new TypeError('Failed to fetch')),
+        'Failed to fetch',
+      )
+    })
   })
 
   describe('resource limits', () => {
