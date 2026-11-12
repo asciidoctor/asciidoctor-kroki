@@ -492,18 +492,17 @@ module AsciidoctorExtensions
       named = @target.is_a?(::String) && !@target.empty?
       diagram_name = named ? "#{@target}.#{@format}" : "diag-#{Digest::SHA256.hexdigest diagram_url}.#{@format}"
       file_path = File.join(output_dir_path, diagram_name)
+      # An existing output file cannot be trusted: a file with a stable name may come from a previous
+      # build with different content (see #90), and even a content-addressed file may have been
+      # rendered by an earlier version of the Kroki server (see #551). So the diagram goes through
+      # fetch_diagram, which reads it from the persistent cache when it is enabled and unchanged, and
+      # honors kroki-cache=false/refresh. Warn when the same name is reused for a diagram with
+      # different content.
       if named
-        # A stable file may exist from a previous build with stale content, so it cannot be
-        # trusted by name alone: go through fetch_diagram, which re-fetches only when the
-        # persistent cache doesn't already have this exact content (see #90). Warn when the
-        # same name is reused for a diagram with different content.
         warn_on_name_clash(generated_files, diagram_name, diagram_url, logger)
         generated_files[diagram_name] = diagram_url if generated_files
-        fetch_and_write(output_dir_path, file_path, kroki_client, cache_dir, cache_mode, on_cache_error)
-      elsif !File.exist?(file_path)
-        # Content-addressed name: an existing output file necessarily has identical content.
-        fetch_and_write(output_dir_path, file_path, kroki_client, cache_dir, cache_mode, on_cache_error)
       end
+      fetch_and_write(output_dir_path, file_path, kroki_client, cache_dir, cache_mode, on_cache_error)
       diagram_name
     end
 
