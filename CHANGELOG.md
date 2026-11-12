@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - JavaScript/Node.js: report the cause of a network error (for instance `connect ECONNREFUSED 127.0.0.1:8000` or `getaddrinfo ENOTFOUND kroki.example.com`) instead of the generic `fetch failed` ([#548](https://github.com/asciidoctor/asciidoctor-kroki/issues/548)).
 - JavaScript/Node.js: report the reason returned by the Kroki server for a binary output format, such as `png`. It was left out of the message ([#548](https://github.com/asciidoctor/asciidoctor-kroki/issues/548)).
 - Identify a failed GET request to Kroki by `<server>/<type>/<format>` instead of the full request URI, which contains the encoded diagram and can be several kilobytes long (Ruby and JavaScript/Node.js) ([#548](https://github.com/asciidoctor/asciidoctor-kroki/issues/548)).
+- With `kroki-fetch-diagram`, a diagram without a name is no longer reused from its existing output file: it goes through the persistent cache, like a named diagram. `kroki-cache: refresh` and `kroki-cache: false` now download it again, for instance to pick up the rendering of an upgraded Kroki server. With the default cache settings, an unchanged diagram is still not downloaded again, unless the cache directory was cleared (Ruby and JavaScript/Node.js) ([#551](https://github.com/asciidoctor/asciidoctor-kroki/issues/551)).
 
 ## [2.0.0] - 2026-10-30
 

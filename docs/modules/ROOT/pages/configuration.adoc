@@ -127,7 +127,6 @@ alice -> bob
 generates `my-diagram.svg`.
 
 * *Anonymous diagram* — a content-addressed name such as `diag-<checksum>.svg` is generated so anonymous diagrams never collide.
-If a file with this name already exists in the output directory, it necessarily has the same content, so the diagram is not downloaded again.
 
 [WARNING]
 ====
@@ -139,8 +138,8 @@ In `safe` and `server` modes, a document cannot write outside of the base direct
 This does not apply to values set from the API or the CLI, as a document cannot change them, nor when a custom virtual file system provides the `add` function.
 An attribute with the `@` suffix (for example in an Antora playbook) can be changed by the document, so it follows the same rule.
 
-A named diagram's output file, unlike an anonymous one's, cannot be trusted by name alone — the same name may exist from an earlier build with different (stale) content.
-The persistent cache described below is what lets a named diagram skip the download when its content hasn't actually changed.
+An existing output file is never trusted: a named diagram's file may exist from an earlier build with different (stale) content, and even an anonymous diagram's file may have been rendered by an earlier version of the Kroki server.
+The persistent cache described below is what lets a diagram skip the download when its content hasn't actually changed, and `kroki-cache: refresh` downloads it again and overwrites its output file.
 
 [#_persistent_cache]
 == Persistent cache

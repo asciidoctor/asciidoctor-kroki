@@ -92,15 +92,19 @@ describe AsciidoctorExtensions::KrokiDiagram do
     kroki_http_client = AsciidoctorExtensions::KrokiHttpClient
     kroki_client = AsciidoctorExtensions::KrokiClient.new(server_url: 'https://kroki.io', http_method: 'get', http_client: kroki_http_client)
     output_dir_path = "#{__dir__}/../.asciidoctor/kroki"
+    cache_dir = Dir.mktmpdir('kroki-diagram-cache-spec-')
+    cache_options = { cache_dir: cache_dir, cache_mode: { enabled: true, refresh: false } }
     # make sure that we are doing only one GET request
     diagram_contents = File.read("#{__dir__}/fixtures/plantuml-diagram.png", mode: 'rb')
     expect(kroki_http_client).to receive(:get).once.and_return(diagram_contents)
-    diagram_name = kroki_diagram.save(output_dir_path, kroki_client)
+    diagram_name = kroki_diagram.save(output_dir_path, kroki_client, nil, nil, **cache_options)
     diagram_path = File.join(output_dir_path, diagram_name)
     expect(File.exist?(diagram_path)).to be_truthy, "diagram should be saved at: #{diagram_path}"
-    # calling again... should read the file from disk (and not do a GET request)
-    kroki_diagram.save(output_dir_path, kroki_client)
+    # calling again... should read the diagram from the persistent cache (and not do a GET request)
+    kroki_diagram.save(output_dir_path, kroki_client, nil, nil, **cache_options)
     expect(File.size(diagram_path)).to be_eql(diagram_contents.length), 'diagram should be fully saved on disk'
+  ensure
+    FileUtils.rm_rf(cache_dir) if cache_dir
   end
   it 'should warn when the same target name is reused for diagrams with different content' do
     generated_files = {}
@@ -207,6 +211,33 @@ describe AsciidoctorExtensions::KrokiDiagram do
 
       expect(fetched.call).to eq(2)
       expect(read_back_fetched.call).to eq(0)
+    end
+
+    it 're-fetches an anonymous diagram and overwrites its existing output file in refresh mode (#551)' do
+      client, fetched = counting_client
+      diagram = AsciidoctorExtensions::KrokiDiagram.new('plantuml', 'svg', 'CACHE-REFRESH-ANONYMOUS alice -> bob')
+      output_dir = wiped_output_dir
+      # The output file exists, for instance rendered by an earlier version of the Kroki server.
+      diagram_name = diagram.save(output_dir, client, nil, nil, cache_dir: cache_dir, cache_mode: { enabled: true, refresh: false })
+      File.write(File.join(output_dir, diagram_name), '<svg>stale</svg>')
+
+      diagram.save(output_dir, client, nil, nil, cache_dir: cache_dir, cache_mode: { enabled: true, refresh: true })
+
+      expect(fetched.call).to eq(2)
+      expect(File.read(File.join(output_dir, diagram_name))).to eq('<svg/>')
+    end
+
+    it 're-fetches an anonymous diagram even if its output file exists when the cache is disabled (#551)' do
+      client, fetched = counting_client
+      diagram = AsciidoctorExtensions::KrokiDiagram.new('plantuml', 'svg', 'CACHE-DISABLED-ANONYMOUS alice -> bob')
+      output_dir = wiped_output_dir
+      diagram_name = diagram.save(output_dir, client)
+      File.write(File.join(output_dir, diagram_name), '<svg>stale</svg>')
+
+      diagram.save(output_dir, client)
+
+      expect(fetched.call).to eq(2)
+      expect(File.read(File.join(output_dir, diagram_name))).to eq('<svg/>')
     end
 
     it 'is host-dependent: the same content on a different server is fetched again' do

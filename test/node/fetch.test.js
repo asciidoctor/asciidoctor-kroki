@@ -91,16 +91,17 @@ describe('fetch.save', () => {
     assert.strictEqual(result.target, `diag-${hash}.svg`)
   })
 
-  test('reuses an existing content-addressed file without re-fetching', async () => {
+  test('re-fetches an anonymous diagram even if its file exists, as it may be stale', async () => {
     let fetched = 0
+    const writes = []
     const vfs = {
       exists: () => true,
-      read: async () => '<svg/>',
-      add: () => {},
+      read: async () => 'STALE',
+      add: (img) => writes.push(img),
     }
     const client = createKrokiClient(async () => {
       fetched++
-      return '<svg/>'
+      return 'FRESH'
     })
     await fetch.save(
       createDiagram('svg', 'https://kroki.io/plantuml/svg/AAA'),
@@ -109,7 +110,31 @@ describe('fetch.save', () => {
       vfs,
       client,
     )
-    assert.strictEqual(fetched, 0)
+    assert.strictEqual(fetched, 1)
+    assert.strictEqual(writes[0].contents.toString(), 'FRESH')
+  })
+
+  test('reuses the file of an anonymous diagram already generated in the same conversion', async () => {
+    let fetched = 0
+    const files = new Map()
+    const vfs = {
+      exists: (p) => files.has(p),
+      read: async (p) => files.get(p),
+      add: (img) =>
+        files.set(
+          path.format({ dir: img.relative, base: img.basename }),
+          img.contents.toString(),
+        ),
+    }
+    const client = createKrokiClient(async () => {
+      fetched++
+      return '<svg/>'
+    })
+    const doc = createDoc()
+    const diagram = createDiagram('svg', 'https://kroki.io/plantuml/svg/AAA')
+    await fetch.save(diagram, doc, undefined, vfs, client)
+    await fetch.save(diagram, doc, undefined, vfs, client)
+    assert.strictEqual(fetched, 1)
   })
 
   test('always re-fetches a named diagram even if a stale file exists', async () => {
@@ -280,6 +305,38 @@ describe('fetch.save persistent cache', () => {
     await fetch.save(diagram, createCacheDoc(), 'foo', wipedOutputVfs(), client)
 
     assert.strictEqual(fetched, 1)
+  })
+
+  test('kroki-cache: refresh re-fetches an anonymous diagram and overwrites its existing output file', async () => {
+    let fetched = 0
+    const writes = []
+    // The output file exists, for instance rendered by an earlier version of the Kroki server.
+    const staleOutputVfs = {
+      exists: () => true,
+      read: async () => '<svg>stale</svg>',
+      add: (img) => writes.push(img),
+    }
+    const client = createKrokiClient(async () => {
+      fetched++
+      return '<svg>fresh</svg>'
+    })
+    const diagram = createDiagram(
+      'svg',
+      'https://kroki.io/plantuml/svg/CACHE-REFRESH-ANONYMOUS',
+      { encode: () => 'CACHE-REFRESH-ANONYMOUS' },
+    )
+
+    await fetch.save(
+      diagram,
+      createCacheDoc({ 'kroki-cache': 'refresh' }),
+      undefined,
+      staleOutputVfs,
+      client,
+    )
+
+    assert.strictEqual(fetched, 1)
+    assert.strictEqual(writes.length, 1)
+    assert.strictEqual(writes[0].contents.toString(), '<svg>fresh</svg>')
   })
 
   test('a named diagram whose content changed is re-fetched even with a persistent cache hit for the old content', async () => {
