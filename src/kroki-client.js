@@ -158,8 +158,9 @@ export class KrokiClient {
             .warn(
               `The diagram URI length (${uri.length}) exceeds kroki-max-uri-length (${this.maxUriLength}). The server may reject the request with a 414 (URI Too Long). Consider using the 'kroki-http-method' attribute set to 'adaptive' or 'post'.`,
             )
-          return this.httpClient.get(
+          return this.#get(
             uri,
+            `${serverUrl}/${type}/${format}`,
             headers,
             encoding,
             expectedContentType,
@@ -173,7 +174,13 @@ export class KrokiClient {
           expectedContentType,
         )
       }
-      return this.httpClient.get(uri, headers, encoding, expectedContentType)
+      return this.#get(
+        uri,
+        `${serverUrl}/${type}/${format}`,
+        headers,
+        encoding,
+        expectedContentType,
+      )
     }
     return this.httpClient.post(
       `${serverUrl}/${type}/${format}`,
@@ -182,6 +189,36 @@ export class KrokiClient {
       encoding,
       expectedContentType,
     )
+  }
+
+  /**
+   * Sends a GET request to Kroki.
+   * The request URI contains the encoded diagram, which can be several kilobytes long,
+   * so it's replaced by `displayUri` in the error message.
+   *
+   * @param {string} uri - Request URI, including the encoded diagram.
+   * @param {string} displayUri - URI identifying the request in an error message.
+   * @param {Object<string, string>} headers - Request headers.
+   * @param {BufferEncoding|null} encoding - Encoding for the response body.
+   * @param {string} [expectedContentType] - Expected content type of the response.
+   * @returns {Promise<string>} Rendered diagram content.
+   */
+  async #get(uri, displayUri, headers, encoding, expectedContentType) {
+    try {
+      return await this.httpClient.get(
+        uri,
+        headers,
+        encoding,
+        expectedContentType,
+      )
+    } catch (err) {
+      if (typeof err?.message === 'string' && err.message.includes(uri)) {
+        throw new Error(err.message.replaceAll(uri, displayUri), {
+          cause: err,
+        })
+      }
+      throw err
+    }
   }
 
   /**

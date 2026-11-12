@@ -207,6 +207,57 @@ describe('Kroki HTTP client', () => {
     })
   })
 
+  describe('error messages', () => {
+    test('identifies a failed GET request without the encoded diagram', async () => {
+      const doc = await load('')
+      const uri =
+        'https://kroki.io/plantuml/svg/SyfFKj2rKt3CoKnELR1Io4ZDoSa70000'
+      const cause = new Error(`GET ${uri} - server returns 400 status code`)
+      const krokiClient = new KrokiClient(doc, {
+        get: async () => {
+          throw cause
+        },
+        post: async () => '',
+      })
+      const krokiDiagram = {
+        type: 'plantuml',
+        format: 'svg',
+        text: 'alice -> bob',
+        opts: {},
+        getDiagramUri: () => uri,
+      }
+      await assert.rejects(
+        () => krokiClient.getImage(krokiDiagram),
+        (err) => {
+          assert.strictEqual(
+            err.message,
+            'GET https://kroki.io/plantuml/svg - server returns 400 status code',
+          )
+          assert.strictEqual(err.cause, cause)
+          return true
+        },
+      )
+    })
+    test('rethrows an error that does not contain the request URI unchanged', async () => {
+      const doc = await load('')
+      const error = new Error('something else')
+      const krokiClient = new KrokiClient(doc, {
+        get: async () => {
+          throw error
+        },
+        post: async () => '',
+      })
+      const krokiDiagram = {
+        type: 'plantuml',
+        format: 'svg',
+        text: 'alice -> bob',
+        opts: {},
+        getDiagramUri: () => 'https://kroki.io/plantuml/svg/encoded',
+      }
+      await assert.rejects(() => krokiClient.getImage(krokiDiagram), error)
+    })
+  })
+
   describe('POST mode', () => {
     test('removes trailing slashes from the server URL', async () => {
       const doc = await load('')

@@ -13,6 +13,34 @@ export const DEFAULT_MAX_RESPONSE_SIZE = 25 * 1024 * 1024
 class ResponseTooLargeError extends Error {}
 
 /**
+ * Returns the reason of a network error.
+ * `fetch` in Node.js rejects with the generic message "fetch failed" and keeps the actual cause
+ * (connection refused, unknown host, TLS error...) in `error.cause`.
+ * When a host name resolves to several addresses, the cause is an AggregateError
+ * with an empty message and one error per address.
+ */
+export const networkErrorReason = (error) => {
+  const cause = error?.cause
+  if (!cause) {
+    return error?.message ?? String(error)
+  }
+  let reason = cause.message
+  if (!reason && Array.isArray(cause.errors)) {
+    reason = cause.errors
+      .map((e) => e?.message)
+      .filter(Boolean)
+      .join(', ')
+  }
+  if (!reason) {
+    return cause.code ?? error.message
+  }
+  if (cause.code && !reason.includes(cause.code)) {
+    return `${reason} (${cause.code})`
+  }
+  return reason
+}
+
+/**
  * Reads the response body incrementally so that no more than `maxResponseSize` bytes
  * are ever accumulated, even when the server omits (or lies about) `Content-Length`.
  */
@@ -63,7 +91,10 @@ const httpRequest = async (
     if (signal.aborted) {
       throw e
     }
-    throw new Error(`${method} ${uri} - error; reason: ${e.message}`)
+    throw new Error(
+      `${method} ${uri} - error; reason: ${networkErrorReason(e)}`,
+      { cause: e },
+    )
   }
   if (response.ok) {
     if (expectedContentType) {
@@ -93,14 +124,13 @@ const httpRequest = async (
     }
     throw new Error(`${method} ${uri} - server returns an empty response`)
   }
+  // The reason of the failure is in the body, regardless of the encoding requested for a successful response.
   let errorBody = ''
-  if (encoding !== 'binary') {
-    try {
-      errorBody = new TextDecoder().decode(
-        await readBody(response, maxResponseSize),
-      )
-    } catch (_) {}
-  }
+  try {
+    errorBody = new TextDecoder().decode(
+      await readBody(response, maxResponseSize),
+    )
+  } catch (_) {}
   if (response.status === 414) {
     throw new Error(
       `${method} ${uri} - server returns 414 (URI Too Long). The diagram URI is too long for the server. Consider using the 'kroki-http-method' attribute set to 'post' or 'adaptive' to send the diagram source via POST.`,

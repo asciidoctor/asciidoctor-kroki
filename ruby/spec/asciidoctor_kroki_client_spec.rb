@@ -113,4 +113,30 @@ describe AsciidoctorExtensions::KrokiClient do
     result = kroki_client.get_image(kroki_diagram, 'utf8')
     expect(result).to eq('GET diagram-uri')
   end
+  it 'should identify a failed GET request without the encoded diagram' do
+    kroki_http_client = Class.new do
+      class << self
+        def get(uri, _, _, _)
+          raise "GET #{uri} - server returns 400 status code; response: Error 400: Syntax Error?"
+        end
+      end
+    end
+    kroki_diagram = AsciidoctorExtensions::KrokiDiagram.new('plantuml', 'svg', 'alice -> bob')
+    kroki_client = AsciidoctorExtensions::KrokiClient.new(server_url: 'http://localhost:8000', http_method: 'get', http_client: kroki_http_client)
+    (expect { kroki_client.get_image(kroki_diagram, 'utf8') }).to raise_error(
+      RuntimeError, 'GET http://localhost:8000/plantuml/svg - server returns 400 status code; response: Error 400: Syntax Error?'
+    )
+  end
+  it 'should not change an error that does not contain the request URI' do
+    kroki_http_client = Class.new do
+      class << self
+        def get(_, _, _, _)
+          raise Errno::ECONNREFUSED, 'connect(2) for "localhost" port 8000'
+        end
+      end
+    end
+    kroki_diagram = AsciidoctorExtensions::KrokiDiagram.new('plantuml', 'svg', 'alice -> bob')
+    kroki_client = AsciidoctorExtensions::KrokiClient.new(server_url: 'http://localhost:8000', http_method: 'get', http_client: kroki_http_client)
+    (expect { kroki_client.get_image(kroki_diagram, 'utf8') }).to raise_error(Errno::ECONNREFUSED, /port 8000/)
+  end
 end
