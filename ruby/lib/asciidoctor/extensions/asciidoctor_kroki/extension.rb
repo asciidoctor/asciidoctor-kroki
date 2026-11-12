@@ -345,10 +345,19 @@ module AsciidoctorExtensions
         format
       end
 
+      # Diagrams are fetched when `kroki-fetch-diagram` is set, and by default for the PDF backend: the converter
+      # doesn't see the response of the Kroki server when it loads the image itself, so it couldn't report an error.
+      # The default is disabled with `kroki-fetch-diagram` unset on the command line or through the API.
+      def fetch_diagram?(doc)
+        return true if doc.attr('kroki-fetch-diagram')
+
+        doc.backend == 'pdf' && !doc.attribute_locked?('kroki-fetch-diagram')
+      end
+
       # Checks a diagram file name that comes from the document before it is written to the output
       # directory, like Asciidoctor does for the paths it resolves when the safe mode is `safe` or higher.
       def output_name(doc, target, logger)
-        return target unless target.is_a?(::String) && doc.attr('kroki-fetch-diagram') && doc.safe.between?(::Asciidoctor::SafeMode::SAFE, ::Asciidoctor::SafeMode::SERVER)
+        return target unless target.is_a?(::String) && fetch_diagram?(doc) && doc.safe.between?(::Asciidoctor::SafeMode::SAFE, ::Asciidoctor::SafeMode::SERVER)
         return target unless target.split(%r{[\\/]}).include?('..')
 
         logger.warn "kroki: ignoring the diagram file name '#{target}', because it is outside of the output directory."
@@ -361,7 +370,7 @@ module AsciidoctorExtensions
       end
 
       def create_image_src(doc, kroki_diagram, kroki_client, logger, inline: false)
-        if doc.attr('kroki-fetch-diagram') && doc.safe < ::Asciidoctor::SafeMode::SECURE
+        if fetch_diagram?(doc) && doc.safe < ::Asciidoctor::SafeMode::SECURE
           # The format is part of the name of the output file and of the cache entry.
           raise "Invalid diagram format '#{kroki_diagram.format}'" if kroki_diagram.format.match?(%r{[\\/]})
 
