@@ -2,6 +2,7 @@ import pako from 'pako'
 import packageJson from '../package.json' with { type: 'json' }
 import { attrValue } from './attributes.js'
 import { toBase64 } from './base64.js'
+import { HttpError } from './http-error.js'
 
 /** @type {number} Default maximum URI length before switching to POST. */
 const MAX_URI_DEFAULT_VALUE = 4000
@@ -140,6 +141,9 @@ export class KrokiClient {
     const opts = krokiDiagram.opts
     const headers = {
       Referer: REFERER,
+      // The output format is part of the path, so the server only uses this header to format
+      // an error, which is then returned as {"error": {"code": 400, "message": "..."}}.
+      Accept: 'application/json',
       ...Object.fromEntries(
         Object.entries(opts).map(([key, value]) => [
           `Kroki-Diagram-Options-${key}`,
@@ -212,6 +216,10 @@ export class KrokiClient {
         expectedContentType,
       )
     } catch (err) {
+      if (err instanceof HttpError && err.url === uri) {
+        throw err.withUrl(displayUri)
+      }
+      // an error raised by a custom HTTP client
       if (typeof err?.message === 'string' && err.message.includes(uri)) {
         throw new Error(err.message.replaceAll(uri, displayUri), {
           cause: err,

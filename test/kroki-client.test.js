@@ -3,7 +3,7 @@
 import assert from 'node:assert'
 import { describe, mock, test } from 'node:test'
 import { load } from '@asciidoctor/core'
-import httpClient from '../src/http-client.js'
+import httpClient, { HttpError } from '../src/http-client.js'
 import { KrokiClient, KrokiDiagram } from '../src/kroki-client.js'
 import { referenceEncode } from './reference-encode.js'
 
@@ -207,6 +207,36 @@ describe('Kroki HTTP client', () => {
     })
   })
 
+  describe('request headers', () => {
+    test('accepts application/json, so that the server returns an error as JSON', async () => {
+      const requests = []
+      const krokiClient = new KrokiClient(await load(''), {
+        get: async (_uri, headers) => {
+          requests.push(headers)
+          return ''
+        },
+        post: async (_uri, _body, headers) => {
+          requests.push(headers)
+          return ''
+        },
+      })
+      const krokiDiagram = {
+        type: 'plantuml',
+        format: 'svg',
+        text: 'alice -> bob',
+        opts: {},
+        getDiagramUri: () => 'https://kroki.io/plantuml/svg/encoded',
+      }
+      await krokiClient.getImage(krokiDiagram)
+      krokiClient.method = 'post'
+      await krokiClient.getImage(krokiDiagram)
+      assert.strictEqual(requests.length, 2)
+      for (const headers of requests) {
+        assert.strictEqual(headers.Accept, 'application/json')
+      }
+    })
+  })
+
   describe('error messages', () => {
     test('identifies a failed GET request without the encoded diagram', async () => {
       const doc = await load('')
@@ -234,6 +264,46 @@ describe('Kroki HTTP client', () => {
             'GET https://kroki.io/plantuml/svg - server returns 400 status code',
           )
           assert.strictEqual(err.cause, cause)
+          return true
+        },
+      )
+    })
+    test('keeps the fields of an HttpError when it shortens the URI', async () => {
+      const doc = await load('')
+      const uri =
+        'https://kroki.io/plantuml/svg/SyfFKj2rKt3CoKnELR1Io4ZDoSa70000'
+      const cause = new HttpError(
+        'http',
+        'GET',
+        uri,
+        'server returns 400 status code; response: Syntax Error?',
+        { status: 400, serverMessage: 'Syntax Error?' },
+      )
+      const krokiClient = new KrokiClient(doc, {
+        get: async () => {
+          throw cause
+        },
+        post: async () => '',
+      })
+      const krokiDiagram = {
+        type: 'plantuml',
+        format: 'svg',
+        text: 'alice -> bob',
+        opts: {},
+        getDiagramUri: () => uri,
+      }
+      await assert.rejects(
+        () => krokiClient.getImage(krokiDiagram),
+        (err) => {
+          assert.ok(err instanceof HttpError)
+          assert.strictEqual(err.type, 'http')
+          assert.strictEqual(err.url, 'https://kroki.io/plantuml/svg')
+          assert.strictEqual(err.status, 400)
+          assert.strictEqual(err.serverMessage, 'Syntax Error?')
+          assert.strictEqual(
+            err.message,
+            'GET https://kroki.io/plantuml/svg - server returns 400 status code; response: Syntax Error?',
+          )
           return true
         },
       )
