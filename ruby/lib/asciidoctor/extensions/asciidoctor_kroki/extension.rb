@@ -90,15 +90,17 @@ module AsciidoctorExtensions
       end
 
       unless (path = resolve_target_path(parent, target))
-        logger.warn message_with_context "Skipping #{diagram_type} block: block macro not found: #{target}.", source_location: parent.document.reader.cursor_at_mark
-        return create_error_block(parent, unresolved_block_macro_message(diagram_type, target), attrs, role)
+        reason = "block macro not found: #{target}"
+        logger.warn message_with_context "Skipping #{diagram_type} block: #{reason}.", source_location: parent.document.reader.cursor_at_mark
+        return create_error_block(parent, unresolved_block_macro_message(diagram_type, target), attrs, role, reason)
       end
 
       begin
         diagram_text = read(path)
       rescue => e # rubocop:disable Style/RescueStandardError
-        logger.warn message_with_context "Skipping #{diagram_type} block: failed to read #{path}. #{e}.", source_location: parent.document.reader.cursor_at_mark
-        return create_error_block(parent, unresolved_block_macro_message(diagram_type, target), attrs, role)
+        reason = "failed to read #{path}. #{e}"
+        logger.warn message_with_context "Skipping #{diagram_type} block: #{reason}.", source_location: parent.document.reader.cursor_at_mark
+        return create_error_block(parent, unresolved_block_macro_message(diagram_type, target), attrs, role, reason)
       end
       begin
         KrokiProcessor.process(self, parent, attrs, diagram_type, diagram_text, @logger, resource_path: path)
@@ -106,7 +108,7 @@ module AsciidoctorExtensions
         # Matches the JavaScript/Node.js extension: a failure talking to the Kroki server
         # shouldn't abort the whole document conversion, so it's degraded to a warning instead.
         logger.warn message_with_context "Skipping #{diagram_type} block: #{e.message}", source_location: parent.document.reader.cursor_at_mark
-        create_error_block(parent, "#{e.message} - #{diagram_type}::#{target}[]", attrs, role)
+        create_error_block(parent, "#{e.message} - #{diagram_type}::#{target}[]", attrs, role, e.message)
       end
     end
     # rubocop:enable Metrics/AbcSize
@@ -127,8 +129,12 @@ module AsciidoctorExtensions
       true
     end
 
-    def create_error_block(parent, message, attrs, role)
+    # @param message [String] the text of the paragraph that replaces the block macro
+    # @param reason [String] why the diagram couldn't be rendered, exposed as the kroki-error-message attribute
+    def create_error_block(parent, message, attrs, role, reason)
       attrs['role'] = role.nil_or_empty? ? 'kroki-error' : "#{role} kroki-error"
+      # lets consumers of the converted document (e.g. an editor preview) show why the diagram wasn't rendered
+      attrs['kroki-error-message'] = reason
       create_block(parent, 'paragraph', message, attrs)
     end
 

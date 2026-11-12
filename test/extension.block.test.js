@@ -92,14 +92,20 @@ alice -> bob
 `
     const registry = Extensions.create()
     register(registry)
+    const memoryLogger = MemoryLogger.create()
     const doc = await load(input, {
       extension_registry: registry,
-      logger: MemoryLogger.create(),
+      logger: memoryLogger,
       attributes: { 'kroki-server-url': 'http://127.0.0.1:1/invalid' },
     })
     const block = doc.getBlocks()[0]
     assert.strictEqual(block.getRole(), 'kroki-error')
     assert.strictEqual(block.getSource(), 'alice -> bob')
-    assert.ok(block.getAttribute('kroki-error-message'))
+    const reason = block.getAttribute('kroki-error-message')
+    assertContains(reason, 'http://127.0.0.1:1/invalid/plantuml/txt')
+    // the attribute contains the reason that is logged
+    const logs = memoryLogger.getMessages()
+    assert.strictEqual(logs.length, 1)
+    assert.strictEqual(logs[0].getText(), `Skipping plantuml block: ${reason}`)
   })
 })

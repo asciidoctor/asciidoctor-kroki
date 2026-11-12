@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Expose the reason why a diagram couldn't be rendered as the `kroki-error-message` attribute of the `kroki-error` block, for a delimited block and for a block macro, so that a tool processing the converted document, such as an editor preview, can show it (Ruby and JavaScript/Node.js) ([#544](https://github.com/asciidoctor/asciidoctor-kroki/issues/544)).
+
 ### Changed
 
 - Requests to the Kroki server accept `application/json`, so that the server returns an error as JSON. The warning logged for a diagram that can't be rendered contains the reason returned by the server without the `Error 400:` prefix, for instance `server returns 400 status code; response: Syntax Error? (Assumed diagram type: sequence) (line: 2)` (Ruby and JavaScript/Node.js) ([#549](https://github.com/asciidoctor/asciidoctor-kroki/issues/549)).

@@ -9,6 +9,7 @@ import {
   convert,
   Extensions,
   LoggerManager,
+  load as loadDocument,
   MemoryLogger,
 } from '@asciidoctor/core'
 import { register } from '../../src/index.js'
@@ -477,6 +478,43 @@ describe('Read and write policy', () => {
         logs.some((log) => log.includes('Skipping plantuml block')),
         logs.join('\n'),
       )
+    })
+    // Loads the document and returns it with the text of the messages logged during the conversion.
+    const load = async (input, attributes = {}) => {
+      const logger = MemoryLogger.create()
+      const registry = Extensions.create()
+      register(registry)
+      const doc = await loadDocument(input, {
+        extension_registry: registry,
+        logger,
+        safe: 'safe',
+        base_dir: baseDir,
+        attributes,
+      })
+      return { doc, logs: logger.getMessages().map((m) => m.getText()) }
+    }
+    test('exposes the logged reason as kroki-error-message when the target cannot be read', async () => {
+      const { doc, logs } = await load('plantuml::missing.puml[]\n')
+      const block = doc.getBlocks()[0]
+      assert.strictEqual(block.getRole(), 'kroki-error')
+      const reason = block.getAttribute('kroki-error-message')
+      assert.ok(reason, 'the reason is exposed')
+      assert.deepStrictEqual(logs, [`Skipping plantuml block: ${reason}`])
+    })
+    test('exposes the logged reason as kroki-error-message when the Kroki server round-trip fails', async () => {
+      fs.writeFileSync(path.join(baseDir, 'alice.puml'), 'alice -> bob')
+      const { doc, logs } = await load('plantuml::alice.puml[svg]\n', {
+        'kroki-fetch-diagram': '',
+        'kroki-server-url': 'http://127.0.0.1:1',
+      })
+      const block = doc.getBlocks()[0]
+      assert.strictEqual(block.getRole(), 'kroki-error')
+      const reason = block.getAttribute('kroki-error-message')
+      assert.ok(
+        reason.includes('http://127.0.0.1:1/plantuml/svg'),
+        String(reason),
+      )
+      assert.deepStrictEqual(logs, [`Skipping plantuml block: ${reason}`])
     })
   })
 })
