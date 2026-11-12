@@ -63,8 +63,12 @@ describe('Conversion', () => {
 
       before(
         async () => {
+          // Diagrams without an explicit name are written to a file named after the diagram URL,
+          // which contains the port of the Kroki container. Docker often reuses ports, so a file
+          // left by a previous run (possibly with another Kroki version) would be reused.
+          // fs.rmSync doesn't expand globs, so the directory itself is removed.
           fs.rmSync(
-            ospath.join(__dirname, '..', '..', '.asciidoctor', 'kroki', '*'),
+            ospath.join(__dirname, '..', '..', '.asciidoctor', 'kroki'),
             {
               recursive: true,
               force: true,
